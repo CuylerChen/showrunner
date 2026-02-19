@@ -1,6 +1,6 @@
 import { Step } from '../../types'
 
-const SYSTEM_PROMPT = `You are a browser automation expert.
+const SYSTEM_PROMPT = `You are a browser automation expert using Playwright.
 Given a product URL and a user description, generate a precise list of browser automation steps.
 
 Return ONLY a valid JSON array. No explanation, no markdown, no extra text.
@@ -16,7 +16,14 @@ Each step must follow this schema:
 
 Rules:
 - First step is always navigate to the product URL
-- Use specific CSS selectors (prefer [data-testid], aria roles, or descriptive class names)
+- Selectors must be valid Playwright locator strings. Allowed formats:
+  - CSS: [data-testid="foo"], .class-name, #id, button, input[type="email"]
+  - Playwright text: text="Sign up", button:has-text("Get Started")
+  - ARIA: [role="button"], [aria-label="Close"]
+  - NEVER use jQuery selectors like :contains(), :eq(), :first — they are invalid
+  - Prefer [data-testid], [aria-label], or :has-text() for text-based buttons
+- For "navigate" steps, put the URL in "value" and set "selector" to null
+- For "wait" steps, put milliseconds in "value" (e.g. "2000")
 - narration must be natural spoken English, present tense
 - Maximum 8 steps`
 
