@@ -5,10 +5,11 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 // 主模型 + 备用模型列表，自动降级（ID 均已验证存在于 OpenRouter）
 const MODELS = [
   process.env.OPENROUTER_MODEL ?? 'meta-llama/llama-3.3-70b-instruct:free',
-  'google/gemma-3-27b-it:free',
-  'openai/gpt-oss-120b:free',
   'qwen/qwen3-coder:free',
   'mistralai/mistral-small-3.1-24b-instruct:free',
+  'upstage/solar-pro-3:free',
+  'z-ai/glm-4.5-air:free',
+  'stepfun/step-3.5-flash:free',
   'nousresearch/hermes-3-llama-3.1-405b:free',
 ]
 
@@ -88,10 +89,11 @@ export async function parseSteps(
       return steps
     } catch (err) {
       lastError = err as Error
-      // 429/404/空内容/格式错误 均降级到下一个模型
+      // 4xx 限速/模型不可用/内容问题 均降级到下一个模型；401/402 鉴权错误不重试
       const isRetryable =
         lastError.message.includes('429') ||
         lastError.message.includes('404') ||
+        lastError.message.includes('400') ||
         lastError.message.includes('空内容') ||
         lastError.message.includes('格式错误') ||
         lastError.message.includes('步骤为空')
