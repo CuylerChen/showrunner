@@ -2,13 +2,14 @@ import { Step } from '../../types'
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
-// 主模型 + 备用模型列表，自动降级
+// 主模型 + 备用模型列表，自动降级（ID 均已验证存在于 OpenRouter）
 const MODELS = [
   process.env.OPENROUTER_MODEL ?? 'meta-llama/llama-3.3-70b-instruct:free',
+  'google/gemma-3-27b-it:free',
+  'openai/gpt-oss-120b:free',
+  'qwen/qwen3-coder:free',
   'mistralai/mistral-small-3.1-24b-instruct:free',
-  'qwen/qwen-2.5-72b-instruct:free',
-  'google/gemini-2.0-flash-exp:free',
-  'microsoft/phi-4-reasoning-plus:free',
+  'nousresearch/hermes-3-llama-3.1-405b:free',
 ]
 
 const SYSTEM_PROMPT = `You are a browser automation expert.
@@ -96,6 +97,7 @@ export async function parseSteps(
         lastError.message.includes('步骤为空')
       if (!isRetryable) throw lastError
       console.warn(`[parser] 模型 ${model} 失败 (${lastError.message.slice(0, 80)})，降级到下一个...`)
+      await new Promise(r => setTimeout(r, 1000))
     }
   }
 
