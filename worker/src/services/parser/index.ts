@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import { Step } from '../../types'
 
 const SYSTEM_PROMPT = `You are a browser automation expert.
@@ -25,28 +24,43 @@ export async function parseSteps(
   productUrl: string,
   description: string | null
 ): Promise<Omit<Step, 'id' | 'demo_id' | 'status' | 'timestamp_start' | 'timestamp_end'>[]> {
-  const apiKey = process.env.GOOGLE_AI_KEY
-  if (!apiKey) throw new Error('GOOGLE_AI_KEY 未配置')
-
-  const genAI = new GoogleGenerativeAI(apiKey)
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
-    systemInstruction: SYSTEM_PROMPT,
-  })
+  const apiKey = process.env.DEEPSEEK_API_KEY
+  if (!apiKey) throw new Error('DEEPSEEK_API_KEY 未配置')
 
   const userMessage = description
     ? `Product URL: ${productUrl}\nDemo description: ${description}`
     : `Product URL: ${productUrl}\nGenerate a sensible onboarding demo flow for this product.`
 
-  console.log('[parser] 调用 Gemini 1.5 Flash...')
+  console.log('[parser] 调用 DeepSeek API...')
 
-  const result = await model.generateContent({
-    contents: [{ role: 'user', parts: [{ text: userMessage }] }],
-    generationConfig: { temperature: 0.3, maxOutputTokens: 2000 },
+  const resp = await fetch('https://api.deepseek.com/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'deepseek-chat',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userMessage },
+      ],
+      temperature: 0.3,
+      max_tokens: 2000,
+    }),
   })
 
-  const raw = result.response.text().trim()
-  if (!raw) throw new Error('Gemini 返回空内容')
+  if (!resp.ok) {
+    const err = await resp.text()
+    throw new Error(`DeepSeek API 错误 ${resp.status}: ${err.slice(0, 200)}`)
+  }
+
+  const data = (await resp.json()) as {
+    choices: { message: { content: string } }[]
+  }
+
+  const raw = data.choices?.[0]?.message?.content?.trim() ?? ''
+  if (!raw) throw new Error('DeepSeek 返回空内容')
 
   const match = raw.match(/\[[\s\S]*\]/)
   if (!match) throw new Error(`返回格式错误: ${raw.slice(0, 200)}`)
@@ -54,6 +68,6 @@ export async function parseSteps(
   const steps = JSON.parse(match[0])
   if (!Array.isArray(steps) || steps.length === 0) throw new Error('步骤为空')
 
-  console.log(`[parser] Gemini 成功，解析 ${steps.length} 个步骤`)
+  console.log(`[parser] DeepSeek 成功，解析 ${steps.length} 个步骤`)
   return steps
 }
