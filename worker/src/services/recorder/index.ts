@@ -40,7 +40,10 @@ export async function recordDemo(
 ): Promise<RecordResult> {
   fs.mkdirSync(outputDir, { recursive: true })
 
-  const browser = await chromium.launch({ headless: true })
+  const browser = await chromium.launch({
+    headless: true,
+    executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ?? '/usr/bin/chromium',
+  })
   const context = await browser.newContext({
     viewport: VIEWPORT,
     recordVideo: {
