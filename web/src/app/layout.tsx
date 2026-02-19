@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Space_Grotesk, DM_Sans } from 'next/font/google'
+import { Space_Grotesk, Inter } from 'next/font/google'
 import './globals.css'
 
 const spaceGrotesk = Space_Grotesk({
@@ -8,9 +8,9 @@ const spaceGrotesk = Space_Grotesk({
   weight: ['400', '500', '600', '700'],
 })
 
-const dmSans = DM_Sans({
+const inter = Inter({
   subsets: ['latin'],
-  variable: '--font-dm-sans',
+  variable: '--font-inter',
   weight: ['400', '500', '600', '700'],
 })
 
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${dmSans.variable}`}>
+    <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable}`}>
       <body className="min-h-screen antialiased">{children}</body>
     </html>
   )

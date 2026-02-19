@@ -12,14 +12,14 @@ const LABELS: Record<DemoStatus, string> = {
 }
 
 const DOT_CLASS: Record<DemoStatus, string> = {
-  pending:    'bg-slate-500',
-  parsing:    'bg-indigo-400 animate-pulse-dot',
-  review:     'bg-yellow-400',
-  recording:  'bg-indigo-400 animate-pulse-dot',
-  paused:     'bg-red-400',
-  processing: 'bg-violet-400 animate-pulse-dot',
-  completed:  'bg-green-400',
-  failed:     'bg-red-400',
+  pending:    'bg-slate-400',
+  parsing:    'bg-indigo-500 animate-pulse-dot',
+  review:     'bg-amber-500',
+  recording:  'bg-indigo-500 animate-pulse-dot',
+  paused:     'bg-red-500',
+  processing: 'bg-purple-500 animate-pulse-dot',
+  completed:  'bg-green-500',
+  failed:     'bg-red-500',
 }
 
 export function StatusBadge({ status }: { status: DemoStatus }) {

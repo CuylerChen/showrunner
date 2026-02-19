@@ -14,28 +14,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
-      {/* ── 顶部导航栏 ───────────────────────────────────── */}
+    <div className="min-h-screen" style={{ background: 'var(--bg-surface)' }}>
+      {/* ── 顶部导航 ─────────────────────────────────────── */}
       <header className="sticky top-0 z-20"
-        style={{
-          background: 'rgba(5,9,17,0.88)',
-          borderBottom: '1px solid var(--border)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-        }}>
+        style={{ background: 'white', borderBottom: '1px solid var(--border)' }}>
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <Link href="/dashboard" className="cursor-pointer">
             <ShowrunnerLogo size={26} />
           </Link>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleLogout}
-              className="btn-outline rounded-lg px-3.5 py-1.5 text-xs cursor-pointer"
-            >
-              退出登录
-            </button>
-          </div>
+          <button
+            onClick={handleLogout}
+            className="btn-outline rounded-lg px-3.5 py-1.5 text-sm cursor-pointer"
+          >
+            退出登录
+          </button>
         </div>
       </header>
 
