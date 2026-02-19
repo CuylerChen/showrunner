@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y \
     fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
-# 告知 Playwright 使用系统 Chromium，跳过内置下载
+# 告知 Playwright 使用系统 Chromium，跳过浏览器下载（但保留 ffmpeg 下载）
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium
 
@@ -33,6 +33,9 @@ WORKDIR /app
 # ── 安装依赖 ──────────────────────────────────────────
 COPY package*.json ./
 RUN npm ci
+
+# ── 下载 Playwright 专用 FFmpeg（recordVideo 需要）──────
+RUN npx playwright install ffmpeg
 
 # ── 复制源码 ──────────────────────────────────────────
 COPY . .
