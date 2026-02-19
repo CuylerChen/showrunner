@@ -1,12 +1,14 @@
 import { Step } from '../../types'
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
+
 // 主模型 + 备用模型列表，自动降级
 const MODELS = [
   process.env.OPENROUTER_MODEL ?? 'meta-llama/llama-3.3-70b-instruct:free',
-  'qwen/qwen3-coder:free',
-  'deepseek/deepseek-r1-0528:free',
   'mistralai/mistral-small-3.1-24b-instruct:free',
+  'qwen/qwen-2.5-72b-instruct:free',
+  'google/gemini-2.0-flash-exp:free',
+  'microsoft/phi-4-reasoning-plus:free',
 ]
 
 const SYSTEM_PROMPT = `You are a browser automation expert.
@@ -15,12 +17,12 @@ Given a product URL and a user description, generate a precise list of browser a
 Return ONLY a valid JSON array. No explanation, no markdown, no extra text.
 Each step must follow this schema:
 {
-  "position": number,       // 1-based step index
-  "title": string,          // short user-facing label (≤ 40 chars)
+  "position": number,
+  "title": string,
   "action_type": "navigate" | "click" | "fill" | "wait" | "assert",
-  "selector": string | null,  // CSS selector (null for navigate/wait)
-  "value": string | null,     // URL for navigate, text for fill, ms for wait
-  "narration": string         // English narration (1-2 sentences, spoken aloud)
+  "selector": string | null,
+  "value": string | null,
+  "narration": string
 }
 
 Rules:
@@ -35,7 +37,7 @@ async function callModel(model: string, userMessage: string) {
     headers: {
       'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://showrunner.app',
+      'HTTP-Referer': 'https://showrunner.cuylerchen.uk',
     },
     body: JSON.stringify({
       model,
@@ -44,7 +46,7 @@ async function callModel(model: string, userMessage: string) {
         { role: 'user',   content: userMessage },
       ],
       temperature: 0.3,
-      max_tokens: 1500,
+      max_tokens: 2000,
     }),
   })
 
@@ -66,12 +68,10 @@ export async function parseSteps(
 
   let lastError: Error | null = null
 
-  // 依次尝试每个模型，429/404 时自动降级
   for (const model of MODELS) {
     try {
       console.log(`[parser] 尝试模型: ${model}`)
       const json = await callModel(model, userMessage)
-      // DeepSeek R1 等推理模型将答案放在 reasoning_content 或 content 里
       const msg  = json.choices?.[0]?.message ?? {}
       const raw  = (msg.content || msg.reasoning_content || '').trim()
 
@@ -87,9 +87,15 @@ export async function parseSteps(
       return steps
     } catch (err) {
       lastError = err as Error
-      const isRetryable = lastError.message.includes('429') || lastError.message.includes('404')
-      if (!isRetryable) throw lastError  // 非限速错误直接抛出
-      console.warn(`[parser] 模型 ${model} 失败 (${lastError.message.slice(0, 60)})，降级到下一个...`)
+      // 429/404/空内容/格式错误 均降级到下一个模型
+      const isRetryable =
+        lastError.message.includes('429') ||
+        lastError.message.includes('404') ||
+        lastError.message.includes('空内容') ||
+        lastError.message.includes('格式错误') ||
+        lastError.message.includes('步骤为空')
+      if (!isRetryable) throw lastError
+      console.warn(`[parser] 模型 ${model} 失败 (${lastError.message.slice(0, 80)})，降级到下一个...`)
     }
   }
 
