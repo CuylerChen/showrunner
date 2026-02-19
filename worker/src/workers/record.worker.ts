@@ -12,7 +12,7 @@ export interface RecordJobData {
   steps: Step[]
 }
 
-async function process(job: Job<RecordJobData>) {
+async function processJob(job: Job<RecordJobData>) {
   const { demoId, steps: jobSteps } = job.data
   console.log(`[record] 开始录制 demo=${demoId}，共 ${jobSteps.length} 步`)
 
@@ -89,7 +89,7 @@ async function onFailed(job: Job<RecordJobData> | undefined, err: Error) {
 }
 
 export function startRecordWorker() {
-  const worker = new Worker<RecordJobData>('record-queue', process, {
+  const worker = new Worker<RecordJobData>('record-queue', processJob, {
     connection,
     concurrency: 1,
   })

@@ -17,7 +17,7 @@ export interface MergeJobData {
 
 const VIDEO_DIR = process.env.VIDEO_DIR ?? '/data/videos'
 
-async function process(job: Job<MergeJobData>) {
+async function processJob(job: Job<MergeJobData>) {
   const { demoId, videoPath, audioPaths, stepTimestamps } = job.data
   console.log(`[merge] 开始合成 demo=${demoId}`)
 
@@ -92,7 +92,7 @@ async function onFailed(job: Job<MergeJobData> | undefined, err: Error) {
 }
 
 export function startMergeWorker() {
-  const worker = new Worker<MergeJobData>('merge-queue', process, {
+  const worker = new Worker<MergeJobData>('merge-queue', processJob, {
     connection,
     concurrency: 2,
   })

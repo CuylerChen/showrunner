@@ -14,7 +14,7 @@ export interface TtsJobData {
   stepTimestamps: { stepId: string; start: number; end: number }[]
 }
 
-async function process(job: Job<TtsJobData>) {
+async function processJob(job: Job<TtsJobData>) {
   const { demoId, steps, videoPath, stepTimestamps } = job.data
   console.log(`[tts] 开始生成旁白 demo=${demoId}`)
 
@@ -64,7 +64,7 @@ async function onFailed(job: Job<TtsJobData> | undefined, err: Error) {
 }
 
 export function startTtsWorker() {
-  const worker = new Worker<TtsJobData>('tts-queue', process, {
+  const worker = new Worker<TtsJobData>('tts-queue', processJob, {
     connection,
     concurrency: 2,
   })

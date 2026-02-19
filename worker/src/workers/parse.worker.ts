@@ -10,7 +10,7 @@ export interface ParseJobData {
   description: string | null
 }
 
-async function process(job: Job<ParseJobData>) {
+async function processJob(job: Job<ParseJobData>) {
   const { demoId, productUrl, description } = job.data
   console.log(`[parse] 开始解析 demo=${demoId}`)
 
@@ -73,7 +73,7 @@ async function onFailed(job: Job<ParseJobData> | undefined, err: Error) {
 }
 
 export function startParseWorker() {
-  const worker = new Worker<ParseJobData>('parse-queue', process, {
+  const worker = new Worker<ParseJobData>('parse-queue', processJob, {
     connection,
     concurrency: 3,
   })
