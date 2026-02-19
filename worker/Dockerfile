@@ -41,4 +41,4 @@ COPY . .
 RUN mkdir -p /data/videos
 
 # ── 启动 ─────────────────────────────────────────────
-CMD ["node", "--import", "tsx/esm", "src/index.ts"]
+CMD ["./node_modules/.bin/tsx", "src/index.ts"]
