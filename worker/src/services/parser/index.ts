@@ -1,7 +1,7 @@
 import { Step } from '../../types'
 
 const SYSTEM_PROMPT = `You are a browser automation expert using Playwright.
-Given a product URL and a user description, generate a precise list of browser automation steps.
+Given a product URL, the page's visible text content, and a user description, generate a precise list of browser automation steps.
 
 Return ONLY a valid JSON array. No explanation, no markdown, no extra text.
 Each step must follow this schema:
@@ -15,21 +15,40 @@ Each step must follow this schema:
 }
 
 Rules:
-- First step is always navigate to the product URL
-- Selectors must be valid Playwright locator strings. Allowed formats:
-  - Text match (preferred for buttons/links): text="Get Started" or text=Sign up
-    → "text=" matches ANY element type (a, button, span, div) containing that text
-    → Use this when you don't know the exact tag
+- First step is always navigate to the product URL (action_type: "navigate", value: the URL, selector: null)
+- Use the provided page text content to pick selectors that match REAL elements on the page
+- Selectors must be valid Playwright locator strings:
+  - Text match (best for buttons/links): text="Exact Button Text"
   - Has-text with tag: button:has-text("Submit"), a:has-text("Login")
-    → Only use when you are certain of the tag type
-  - CSS: [data-testid="foo"], .class-name, #id, input[type="email"]
-  - ARIA: [role="button"][name="Submit"], [aria-label="Close"]
-  - NEVER use jQuery selectors like :contains(), :eq(), :first — they are INVALID in Playwright
-  - For clickable text of unknown tag, always use text="..." format
+  - CSS attributes: [data-testid="foo"], [aria-label="Close"], input[type="email"]
+  - NEVER use jQuery selectors like :contains(), :eq() — they are INVALID
 - For "navigate" steps, put the URL in "value" and set "selector" to null
-- For "wait" steps, put milliseconds in "value" (e.g. "2000")
+- For "wait" steps, put milliseconds in "value" (e.g. "2000"), selector: null
 - narration must be natural spoken English, present tense
 - Maximum 8 steps`
+
+// 抓取页面可见文字（截断到 3000 字符避免超出 token 限制）
+async function fetchPageText(url: string): Promise<string> {
+  try {
+    const resp = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ShowrunnerBot/1.0)' },
+      signal: AbortSignal.timeout(8000),
+    })
+    if (!resp.ok) return ''
+    const html = await resp.text()
+    // 提取纯文本：去掉 script/style 标签，再去掉所有 HTML 标签
+    const text = html
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[\s\S]*?<\/style>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 3000)
+    return text
+  } catch {
+    return ''
+  }
+}
 
 export async function parseSteps(
   productUrl: string,
@@ -38,9 +57,22 @@ export async function parseSteps(
   const apiKey = process.env.DEEPSEEK_API_KEY
   if (!apiKey) throw new Error('DEEPSEEK_API_KEY 未配置')
 
-  const userMessage = description
-    ? `Product URL: ${productUrl}\nDemo description: ${description}`
-    : `Product URL: ${productUrl}\nGenerate a sensible onboarding demo flow for this product.`
+  // 先抓取页面内容，让 AI 根据真实 DOM 文字生成选择器
+  console.log('[parser] 抓取页面内容...')
+  const pageText = await fetchPageText(productUrl)
+  if (pageText) {
+    console.log(`[parser] 页面文字已获取 (${pageText.length} 字符)`)
+  } else {
+    console.warn('[parser] 无法获取页面内容，将凭 URL 猜测步骤')
+  }
+
+  const userMessage = [
+    `Product URL: ${productUrl}`,
+    pageText ? `Page text content:\n${pageText}` : '',
+    description
+      ? `Demo description: ${description}`
+      : 'Generate a sensible onboarding demo flow for this product.',
+  ].filter(Boolean).join('\n\n')
 
   console.log('[parser] 调用 DeepSeek API...')
 

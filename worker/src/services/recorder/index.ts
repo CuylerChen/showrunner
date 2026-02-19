@@ -4,8 +4,11 @@ import fs from 'fs'
 import { Step, RecordResult } from '../../types'
 
 const VIEWPORT = { width: 1280, height: 720 }
-const STEP_PAUSE_MS = 800   // 每步操作后停顿，让画面稳定
-const ACTION_TIMEOUT = 15000 // 等待元素最长 15 秒
+const STEP_PAUSE_MS = 800    // 每步操作后停顿，让画面稳定
+const ACTION_TIMEOUT = 15000  // 等待元素最长 15 秒
+
+// navigate 失败则抛出（无法继续）；click/fill/assert 失败则跳过
+const HARD_FAIL_TYPES = new Set(['navigate'])
 
 async function executeStep(page: Page, step: Step): Promise<void> {
   switch (step.action_type) {
@@ -63,18 +66,23 @@ export async function recordDemo(
       console.log(`[recorder] Step ${step.position}: ${step.title} | selector=${step.selector ?? 'n/a'}`)
       await executeStep(page, step)
     } catch (err) {
+      const errMsg = (err as Error).message
       // 截图帮助调试选择器问题
       try {
         const screenshotPath = path.join(outputDir, `step-${step.position}-error.png`)
         await page.screenshot({ path: screenshotPath, fullPage: false })
         console.error(`[recorder] Step ${step.position} 失败截图: ${screenshotPath}`)
       } catch {}
-      // 关闭浏览器确保视频文件写入
-      await context.close()
-      await browser.close()
-      throw new Error(
-        `Step ${step.position} "${step.title}" failed: ${(err as Error).message}`
-      )
+
+      if (HARD_FAIL_TYPES.has(step.action_type)) {
+        // navigate 失败无法继续，关闭并抛出
+        await context.close()
+        await browser.close()
+        throw new Error(`Step ${step.position} "${step.title}" failed: ${errMsg}`)
+      }
+
+      // click / fill / assert 失败 → 跳过此步，继续录制
+      console.warn(`[recorder] Step ${step.position} 跳过 (${step.action_type}): ${errMsg.slice(0, 120)}`)
     }
 
     const stepEnd = (Date.now() - startTime) / 1000
