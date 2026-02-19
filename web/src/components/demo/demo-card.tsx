@@ -12,7 +12,7 @@ interface DemoCardProps {
   status: DemoStatus
   duration: number | null
   share_token: string
-  created_at: string
+  created_at: string | Date
 }
 
 export function DemoCard(props: DemoCardProps) {
@@ -23,7 +23,7 @@ export function DemoCard(props: DemoCardProps) {
     catch { return props.product_url }
   })()
 
-  const date = new Date(props.created_at).toLocaleDateString('zh-CN', {
+  const date = new Date(props.created_at as string).toLocaleDateString('zh-CN', {
     month: 'short', day: 'numeric',
   })
 
