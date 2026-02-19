@@ -30,7 +30,7 @@ export async function parseSteps(
 
   const genAI = new GoogleGenerativeAI(apiKey)
   const model = genAI.getGenerativeModel({
-    model: 'gemini-2.0-flash',
+    model: 'gemini-1.5-flash',
     systemInstruction: SYSTEM_PROMPT,
   })
 
@@ -38,7 +38,7 @@ export async function parseSteps(
     ? `Product URL: ${productUrl}\nDemo description: ${description}`
     : `Product URL: ${productUrl}\nGenerate a sensible onboarding demo flow for this product.`
 
-  console.log('[parser] 调用 Gemini 2.0 Flash...')
+  console.log('[parser] 调用 Gemini 1.5 Flash...')
 
   const result = await model.generateContent({
     contents: [{ role: 'user', parts: [{ text: userMessage }] }],
