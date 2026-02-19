@@ -31,24 +31,46 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {/* 页头 */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Demo 工作台</h1>
-        <p className="mt-1 text-sm text-zinc-500">粘贴产品 URL，自动生成可分享的演示视频</p>
+        <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+          Demo 工作台
+        </h1>
+        <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
+          粘贴产品 URL，AI 自动生成可分享的演示视频
+        </p>
       </div>
 
+      {/* 创建表单 */}
       <CreateForm />
 
+      {/* Demo 列表 */}
       <div>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-400">
-          我的 Demo（{demos.length}）
-        </h2>
+        <div className="flex items-center gap-2 mb-4">
+          <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
+            我的 Demo
+          </h2>
+          {demos.length > 0 && (
+            <span className="rounded-full px-2 py-0.5 text-xs font-medium"
+              style={{ background: 'rgba(99,102,241,0.12)', color: '#818CF8' }}>
+              {demos.length}
+            </span>
+          )}
+        </div>
 
         {demos.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-zinc-200 py-16 text-center">
-            <p className="text-sm text-zinc-400">还没有 Demo，上方输入 URL 开始生成</p>
+          <div className="rounded-xl py-16 text-center"
+            style={{ border: '1px dashed var(--border-bright)' }}>
+            <div className="text-3xl mb-3">🎬</div>
+            <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+              还没有 Demo
+            </p>
+            <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+              在上方输入产品 URL 开始生成
+            </p>
           </div>
         ) : (
-          <div className="grid gap-3">
+          <div className="space-y-2">
             {demos.map(demo => (
               <DemoCard key={demo.id} {...demo} />
             ))}

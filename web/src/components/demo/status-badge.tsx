@@ -5,27 +5,26 @@ const LABELS: Record<DemoStatus, string> = {
   parsing:    'AI 解析中',
   review:     '待确认',
   recording:  '录制中',
-  paused:     '已暂停',
+  paused:     '已中断',
   processing: '合成中',
   completed:  '已完成',
   failed:     '失败',
 }
 
-const DOTS: Record<DemoStatus, string> = {
-  pending:    'bg-zinc-400',
-  parsing:    'bg-blue-500 animate-pulse',
-  review:     'bg-amber-500',
-  recording:  'bg-blue-500 animate-pulse',
-  paused:     'bg-red-500',
-  processing: 'bg-violet-500 animate-pulse',
-  completed:  'bg-green-500',
-  failed:     'bg-red-500',
-}
+const ANIMATED = new Set(['parsing', 'recording', 'processing'])
 
 export function StatusBadge({ status }: { status: DemoStatus }) {
   return (
-    <span className={`status-${status} inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${DOTS[status]}`} />
+    <span className={`status-${status} inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${
+        status === 'parsing'    ? 'bg-indigo-400 animate-pulse-dot' :
+        status === 'recording'  ? 'bg-indigo-400 animate-pulse-dot' :
+        status === 'processing' ? 'bg-violet-400 animate-pulse-dot' :
+        status === 'completed'  ? 'bg-green-400' :
+        status === 'review'     ? 'bg-yellow-400' :
+        status === 'failed' || status === 'paused' ? 'bg-red-400' :
+        'bg-slate-400'
+      }`} />
       {LABELS[status]}
     </span>
   )

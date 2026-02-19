@@ -5,16 +5,15 @@ import { useRouter } from 'next/navigation'
 
 export function CreateForm() {
   const router = useRouter()
-  const [url, setUrl]           = useState('')
-  const [desc, setDesc]         = useState('')
-  const [loading, setLoading]   = useState(false)
-  const [error, setError]       = useState<string | null>(null)
+  const [url, setUrl]         = useState('')
+  const [desc, setDesc]       = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
     setLoading(true)
-
     try {
       const res = await fetch('/api/demos', {
         method:  'POST',
@@ -22,12 +21,7 @@ export function CreateForm() {
         body:    JSON.stringify({ product_url: url, description: desc || null }),
       })
       const data = await res.json()
-
-      if (!data.success) {
-        setError(data.error?.message ?? '创建失败，请重试')
-        return
-      }
-
+      if (!data.success) { setError(data.error?.message ?? '创建失败，请重试'); return }
       setUrl('')
       setDesc('')
       router.refresh()
@@ -39,14 +33,23 @@ export function CreateForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-      <h2 className="mb-4 text-lg font-semibold">生成新的 Demo</h2>
+    <form onSubmit={handleSubmit}
+      className="glass-card rounded-2xl p-6"
+      style={{ boxShadow: '0 4px 32px rgba(0,0,0,0.4)' }}>
 
-      {/* URL 输入 */}
+      {/* 标题行 */}
+      <div className="flex items-center gap-2 mb-5">
+        <div className="h-2 w-2 rounded-full" style={{ background: '#6366F1', boxShadow: '0 0 6px #6366F1' }} />
+        <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+          生成新的 Demo
+        </h2>
+      </div>
+
       <div className="space-y-3">
+        {/* URL 输入 */}
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-zinc-700">
-            产品 URL <span className="text-red-500">*</span>
+          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+            产品 URL <span style={{ color: '#F87171' }}>*</span>
           </label>
           <input
             type="url"
@@ -54,36 +57,44 @@ export function CreateForm() {
             placeholder="https://app.yourproduct.com"
             value={url}
             onChange={e => setUrl(e.target.value)}
-            className="w-full rounded-lg border border-zinc-200 px-3.5 py-2.5 text-sm outline-none transition placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100"
+            className="input-dark w-full rounded-lg px-3.5 py-2.5 text-sm"
           />
         </div>
 
-        {/* 描述（可选） */}
+        {/* 描述 */}
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-zinc-700">
-            演示什么？
-            <span className="ml-1.5 font-normal text-zinc-400">（可选，不填 AI 自动决定）</span>
+          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+            演示内容
+            <span className="ml-1.5 font-normal" style={{ color: 'var(--text-muted)' }}>（可选，留空由 AI 决定）</span>
           </label>
           <input
             type="text"
-            placeholder="用户注册 → 创建第一个项目 → 导出报告"
+            placeholder="例：用户注册 → 创建项目 → 导出报告"
             value={desc}
             onChange={e => setDesc(e.target.value)}
-            className="w-full rounded-lg border border-zinc-200 px-3.5 py-2.5 text-sm outline-none transition placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100"
+            className="input-dark w-full rounded-lg px-3.5 py-2.5 text-sm"
           />
         </div>
       </div>
 
       {error && (
-        <p className="mt-3 rounded-lg bg-red-50 px-3.5 py-2.5 text-sm text-red-600">{error}</p>
+        <div className="mt-3 rounded-lg px-3.5 py-2.5 text-xs"
+          style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#FCA5A5' }}>
+          {error}
+        </div>
       )}
 
       <button
         type="submit"
         disabled={loading || !url}
-        className="mt-4 w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
+        className="btn-brand mt-4 w-full rounded-lg py-2.5 text-sm font-semibold"
       >
-        {loading ? '生成中...' : '生成 Demo →'}
+        {loading ? (
+          <span className="flex items-center justify-center gap-2">
+            <span className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+            AI 解析中...
+          </span>
+        ) : '生成 Demo →'}
       </button>
     </form>
   )

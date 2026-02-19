@@ -4,16 +4,16 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { StatusBadge } from '@/components/demo/status-badge'
 import { useDemoRealtime } from '@/hooks/use-demo-realtime'
-import type { Demo, Step, DemoStatus } from '@/types'
+import type { Demo, Step } from '@/types'
 
 type DemoWithSteps = Demo & { steps: Step[] }
 
 export default function DemoDetailPage() {
   const { id }  = useParams<{ id: string }>()
   const router  = useRouter()
-  const [demo, setDemo]     = useState<DemoWithSteps | null>(null)
-  const [steps, setSteps]   = useState<Step[]>([])
-  const [loading, setLoading]   = useState(true)
+  const [demo, setDemo]       = useState<DemoWithSteps | null>(null)
+  const [steps, setSteps]     = useState<Step[]>([])
+  const [loading, setLoading] = useState(true)
   const [starting, setStarting] = useState(false)
   const [resolving, setResolving] = useState<string | null>(null)
 
@@ -22,13 +22,10 @@ export default function DemoDetailPage() {
   useEffect(() => {
     fetch(`/api/demos/${id}`)
       .then(r => r.json())
-      .then(d => {
-        if (d.success) { setDemo(d.data); setSteps(d.data.steps ?? []) }
-      })
+      .then(d => { if (d.success) { setDemo(d.data); setSteps(d.data.steps ?? []) } })
       .finally(() => setLoading(false))
   }, [id])
 
-  // 状态变为 completed 自动跳转分享页
   useEffect(() => {
     if (status === 'completed' && demo?.share_token) {
       router.push(`/share/${demo.share_token}`)
@@ -44,140 +41,188 @@ export default function DemoDetailPage() {
   async function resolveStep(stepId: string, action: 'skip' | 'retry') {
     setResolving(stepId)
     await fetch(`/api/demos/${id}/steps/${stepId}/resolve`, {
-      method:  'POST',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ action }),
+      body: JSON.stringify({ action }),
     })
     setResolving(null)
   }
 
-  async function updateStep(stepId: string, field: 'title' | 'narration', value: string) {
+  function updateStep(stepId: string, field: 'title' | 'narration', value: string) {
     setSteps(prev => prev.map(s => s.id === stepId ? { ...s, [field]: value } : s))
   }
 
   async function saveSteps() {
     await fetch(`/api/demos/${id}/steps`, {
-      method:  'PUT',
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ steps: steps.map(s => ({ id: s.id, position: s.position, title: s.title, narration: s.narration })) }),
+      body: JSON.stringify({ steps: steps.map(s => ({ id: s.id, position: s.position, title: s.title, narration: s.narration })) }),
     })
   }
 
-  if (loading) return <div className="py-20 text-center text-sm text-zinc-400">加载中...</div>
-  if (!demo)   return <div className="py-20 text-center text-sm text-zinc-400">Demo 不存在</div>
+  if (loading) return (
+    <div className="flex items-center justify-center py-32">
+      <div className="flex items-center gap-3">
+        <div className="h-4 w-4 rounded-full border-2 border-indigo-400/30 border-t-indigo-400 animate-spin" />
+        <span className="text-sm" style={{ color: 'var(--text-muted)' }}>加载中...</span>
+      </div>
+    </div>
+  )
 
-  const isPaused   = status === 'paused'
-  const isReview   = status === 'review'
-  const isRunning  = ['recording', 'processing', 'parsing'].includes(status)
+  if (!demo) return (
+    <div className="flex items-center justify-center py-32">
+      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Demo 不存在</p>
+    </div>
+  )
+
+  const isPaused  = status === 'paused'
+  const isReview  = status === 'review'
+  const isRunning = ['recording', 'processing', 'parsing'].includes(status)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-2xl">
       {/* 页头 */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold">{demo.title ?? demo.product_url}</h1>
-          <p className="mt-0.5 text-sm text-zinc-400">{demo.product_url}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold truncate" style={{ color: 'var(--text-primary)' }}>
+            {demo.title ?? demo.product_url}
+          </h1>
+          <p className="mt-0.5 text-sm truncate" style={{ color: 'var(--text-muted)' }}>
+            {demo.product_url}
+          </p>
         </div>
         <StatusBadge status={status} />
       </div>
 
       {/* 错误提示 */}
       {isPaused && errorMessage && (
-        <div className="rounded-xl bg-red-50 border border-red-100 px-4 py-3">
-          <p className="text-sm font-medium text-red-700">录制中断</p>
-          <p className="mt-0.5 text-sm text-red-500">{errorMessage}</p>
+        <div className="rounded-xl px-4 py-3.5"
+          style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+          <p className="text-sm font-semibold" style={{ color: '#FCA5A5' }}>⚠ 录制中断</p>
+          <p className="mt-1 text-xs leading-relaxed" style={{ color: 'rgba(252,165,165,0.7)' }}>
+            {errorMessage}
+          </p>
         </div>
       )}
 
       {/* 进行中提示 */}
       {isRunning && (
-        <div className="rounded-xl bg-blue-50 border border-blue-100 px-4 py-3">
-          <p className="text-sm text-blue-600">
-            {status === 'parsing'   && '⏳ AI 正在解析步骤，请稍候...'}
-            {status === 'recording' && '⏳ 正在录制，完成后自动跳转...'}
-            {status === 'processing' && '⏳ 正在合成视频，即将完成...'}
+        <div className="rounded-xl px-4 py-3.5 flex items-center gap-3"
+          style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}>
+          <div className="h-3.5 w-3.5 flex-shrink-0 rounded-full border-2 border-indigo-400/30 border-t-indigo-400 animate-spin" />
+          <p className="text-sm" style={{ color: '#818CF8' }}>
+            {status === 'parsing'    && 'AI 正在解析页面并规划步骤...'}
+            {status === 'recording'  && '正在录制浏览器操作，完成后自动跳转...'}
+            {status === 'processing' && '正在合成视频，即将完成...'}
           </p>
         </div>
       )}
 
       {/* 步骤列表 */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
-            步骤（{steps.length}）
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
+            步骤 ({steps.length})
           </h2>
           {isReview && (
-            <button onClick={saveSteps} className="text-xs text-zinc-500 underline-offset-2 hover:underline">
+            <button onClick={saveSteps}
+              className="text-xs transition-colors"
+              style={{ color: 'var(--text-muted)' }}
+              onMouseEnter={e => (e.target as HTMLElement).style.color = '#818CF8'}
+              onMouseLeave={e => (e.target as HTMLElement).style.color = 'var(--text-muted)'}>
               保存修改
             </button>
           )}
         </div>
 
         {steps.map((step, idx) => (
-          <div
-            key={step.id}
-            className={`rounded-xl border bg-white p-4 transition ${
-              step.status === 'failed'  ? 'border-red-200 bg-red-50' :
-              step.status === 'skipped' ? 'border-zinc-100 opacity-50' :
-              step.status === 'completed' ? 'border-green-100' :
-              'border-zinc-200'
-            }`}
-          >
+          <div key={step.id}
+            className="glass-card rounded-xl p-4 transition-all"
+            style={{
+              borderColor:
+                step.status === 'failed'    ? 'rgba(239,68,68,0.3)' :
+                step.status === 'skipped'   ? 'rgba(255,255,255,0.04)' :
+                step.status === 'completed' ? 'rgba(34,197,94,0.2)' :
+                'var(--border)',
+              opacity: step.status === 'skipped' ? 0.5 : 1,
+              background:
+                step.status === 'failed'    ? 'rgba(239,68,68,0.05)' :
+                step.status === 'completed' ? 'rgba(34,197,94,0.04)' :
+                'var(--bg-card)',
+            }}>
             <div className="flex items-start gap-3">
               {/* 序号 */}
-              <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-zinc-100 text-xs font-medium text-zinc-500">
-                {idx + 1}
+              <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-semibold"
+                style={{
+                  background: step.status === 'completed' ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.12)',
+                  color: step.status === 'completed' ? '#86EFAC' : '#818CF8',
+                  border: `1px solid ${step.status === 'completed' ? 'rgba(34,197,94,0.2)' : 'rgba(99,102,241,0.2)'}`,
+                }}>
+                {step.status === 'completed' ? '✓' : idx + 1}
               </span>
 
               <div className="flex-1 min-w-0">
-                {/* 步骤标题（review 时可编辑） */}
+                {/* 步骤标题 */}
                 {isReview ? (
                   <input
                     value={step.title}
                     onChange={e => updateStep(step.id, 'title', e.target.value)}
-                    className="w-full text-sm font-medium text-zinc-900 bg-transparent outline-none border-b border-transparent focus:border-zinc-300"
+                    className="input-dark w-full rounded-md px-2 py-1 text-sm font-medium bg-transparent border-0 border-b focus:border-b"
+                    style={{ color: 'var(--text-primary)', borderBottom: '1px solid var(--border)' }}
                   />
                 ) : (
-                  <p className="text-sm font-medium text-zinc-900">{step.title}</p>
+                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                    {step.title}
+                  </p>
                 )}
 
-                {/* 动作类型标签 */}
-                <span className="mt-1 inline-block rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-500">
-                  {step.action_type}
-                  {step.selector && ` · ${step.selector}`}
-                </span>
+                {/* 动作标签 */}
+                <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                  <span className="inline-block rounded px-1.5 py-0.5 text-xs font-mono"
+                    style={{ background: 'rgba(99,102,241,0.1)', color: '#818CF8' }}>
+                    {step.action_type}
+                  </span>
+                  {step.selector && (
+                    <span className="inline-block rounded px-1.5 py-0.5 text-xs font-mono truncate max-w-xs"
+                      style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)' }}>
+                      {step.selector}
+                    </span>
+                  )}
+                </div>
 
-                {/* 旁白（review 时可编辑） */}
+                {/* 旁白 */}
                 {isReview ? (
                   <textarea
                     value={step.narration ?? ''}
                     onChange={e => updateStep(step.id, 'narration', e.target.value)}
                     rows={2}
                     placeholder="旁白文案（英文朗读）"
-                    className="mt-2 w-full rounded-lg border border-zinc-100 bg-zinc-50 px-2.5 py-1.5 text-xs text-zinc-500 outline-none focus:border-zinc-300 resize-none"
+                    className="input-dark mt-2 w-full rounded-lg px-2.5 py-1.5 text-xs resize-none"
                   />
                 ) : (
                   step.narration && (
-                    <p className="mt-1 text-xs italic text-zinc-400">"{step.narration}"</p>
+                    <p className="mt-1.5 text-xs italic" style={{ color: 'var(--text-muted)' }}>
+                      &ldquo;{step.narration}&rdquo;
+                    </p>
                   )
                 )}
               </div>
 
-              {/* 失败时的介入按钮 */}
+              {/* 失败步骤按钮 */}
               {isPaused && step.status === 'failed' && (
                 <div className="flex gap-2 flex-shrink-0">
                   <button
                     disabled={!!resolving}
                     onClick={() => resolveStep(step.id, 'retry')}
-                    className="rounded-lg bg-blue-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-                  >
+                    className="btn-brand rounded-lg px-3 py-1.5 text-xs font-medium"
+                    style={{ boxShadow: 'none' }}>
                     {resolving === step.id ? '...' : '重试'}
                   </button>
                   <button
                     disabled={!!resolving}
                     onClick={() => resolveStep(step.id, 'skip')}
-                    className="rounded-lg border border-zinc-200 px-2.5 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-50 disabled:opacity-50"
-                  >
+                    className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all"
+                    style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
                     跳过
                   </button>
                 </div>
@@ -192,9 +237,14 @@ export default function DemoDetailPage() {
         <button
           onClick={startRecording}
           disabled={starting}
-          className="w-full rounded-xl bg-zinc-900 py-3 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:opacity-50"
+          className="btn-brand w-full rounded-xl py-3.5 text-sm font-semibold"
         >
-          {starting ? '正在触发录制...' : '✓ 确认步骤，开始录制 →'}
+          {starting ? (
+            <span className="flex items-center justify-center gap-2">
+              <span className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+              正在触发录制...
+            </span>
+          ) : '▶  确认步骤，开始录制'}
         </button>
       )}
     </div>

@@ -1,37 +1,117 @@
 @import "tailwindcss";
 
+/* ── 设计系统 tokens ──────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #0f0f0f;
-  --muted: #f4f4f5;
-  --muted-fg: #71717a;
-  --border: #e4e4e7;
-  --accent: #18181b;
-  --accent-fg: #ffffff;
-  --ring: #18181b;
-  --radius: 0.5rem;
+  --bg-base:     #070B14;
+  --bg-surface:  #0D1117;
+  --bg-elevated: #141B2D;
+  --bg-card:     #0F1620;
+
+  --brand:       #6366F1;
+  --brand-light: #818CF8;
+  --brand-dim:   rgba(99,102,241,0.15);
+  --brand-glow:  rgba(99,102,241,0.35);
+
+  --accent:      #06B6D4;
+  --accent-dim:  rgba(6,182,212,0.12);
+
+  --text-primary:   #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted:     #475569;
+
+  --border:        rgba(255,255,255,0.07);
+  --border-bright: rgba(255,255,255,0.12);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+/* ── 全局基础 ─────────────────────────────────────────── */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* 状态颜色 */
-.status-pending    { @apply bg-zinc-100 text-zinc-500; }
-.status-parsing    { @apply bg-blue-50  text-blue-600;  }
-.status-review     { @apply bg-amber-50 text-amber-600; }
-.status-recording  { @apply bg-blue-50  text-blue-600;  }
-.status-paused     { @apply bg-red-50   text-red-600;   }
-.status-processing { @apply bg-violet-50 text-violet-600; }
-.status-completed  { @apply bg-green-50 text-green-600; }
-.status-failed     { @apply bg-red-50   text-red-600;   }
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+
+/* ── 状态颜色 ─────────────────────────────────────────── */
+.status-pending    { background: rgba(71,85,105,0.2);   color: #94A3B8; border: 1px solid rgba(71,85,105,0.3); }
+.status-parsing    { background: rgba(99,102,241,0.15); color: #818CF8; border: 1px solid rgba(99,102,241,0.3); }
+.status-review     { background: rgba(234,179,8,0.12);  color: #FCD34D; border: 1px solid rgba(234,179,8,0.25); }
+.status-recording  { background: rgba(99,102,241,0.15); color: #818CF8; border: 1px solid rgba(99,102,241,0.3); }
+.status-paused     { background: rgba(239,68,68,0.12);  color: #FCA5A5; border: 1px solid rgba(239,68,68,0.25); }
+.status-processing { background: rgba(139,92,246,0.15); color: #C4B5FD; border: 1px solid rgba(139,92,246,0.3); }
+.status-completed  { background: rgba(34,197,94,0.12);  color: #86EFAC; border: 1px solid rgba(34,197,94,0.25); }
+.status-failed     { background: rgba(239,68,68,0.12);  color: #FCA5A5; border: 1px solid rgba(239,68,68,0.25); }
+
+/* ── 动画 ─────────────────────────────────────────────── */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+.animate-pulse-dot { animation: pulse-dot 1.4s ease-in-out infinite; }
+
+@keyframes shimmer-text {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, #6366F1 0%, #818CF8 35%, #A5B4FC 55%, #6366F1 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer-text 4s linear infinite;
+}
+
+/* ── 工具类 ───────────────────────────────────────────── */
+.glass-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+.glass-card-hover {
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.glass-card-hover:hover {
+  border-color: var(--border-bright);
+  box-shadow: 0 4px 32px rgba(0,0,0,0.5);
+}
+
+.btn-brand {
+  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+  color: white;
+  transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
+  box-shadow: 0 0 24px rgba(99,102,241,0.4);
+}
+.btn-brand:hover:not(:disabled) {
+  opacity: 0.9;
+  box-shadow: 0 0 36px rgba(99,102,241,0.5);
+}
+.btn-brand:active:not(:disabled) { transform: scale(0.98); }
+.btn-brand:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+.input-dark {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.input-dark::placeholder { color: var(--text-muted); }
+.input-dark:focus {
+  outline: none;
+  border-color: #6366F1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
