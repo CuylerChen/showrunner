@@ -16,6 +16,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@google/generative-ai": "^0.24.0",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "bullmq": "^5.69.3",
     "dotenv": "^17.3.1",
