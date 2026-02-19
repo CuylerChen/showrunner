@@ -60,9 +60,15 @@ export async function recordDemo(
     const stepStart = (Date.now() - startTime) / 1000
 
     try {
-      console.log(`[recorder] Step ${step.position}: ${step.title}`)
+      console.log(`[recorder] Step ${step.position}: ${step.title} | selector=${step.selector ?? 'n/a'}`)
       await executeStep(page, step)
     } catch (err) {
+      // 截图帮助调试选择器问题
+      try {
+        const screenshotPath = path.join(outputDir, `step-${step.position}-error.png`)
+        await page.screenshot({ path: screenshotPath, fullPage: false })
+        console.error(`[recorder] Step ${step.position} 失败截图: ${screenshotPath}`)
+      } catch {}
       // 关闭浏览器确保视频文件写入
       await context.close()
       await browser.close()

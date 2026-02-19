@@ -17,11 +17,15 @@ Each step must follow this schema:
 Rules:
 - First step is always navigate to the product URL
 - Selectors must be valid Playwright locator strings. Allowed formats:
-  - CSS: [data-testid="foo"], .class-name, #id, button, input[type="email"]
-  - Playwright text: text="Sign up", button:has-text("Get Started")
-  - ARIA: [role="button"], [aria-label="Close"]
-  - NEVER use jQuery selectors like :contains(), :eq(), :first — they are invalid
-  - Prefer [data-testid], [aria-label], or :has-text() for text-based buttons
+  - Text match (preferred for buttons/links): text="Get Started" or text=Sign up
+    → "text=" matches ANY element type (a, button, span, div) containing that text
+    → Use this when you don't know the exact tag
+  - Has-text with tag: button:has-text("Submit"), a:has-text("Login")
+    → Only use when you are certain of the tag type
+  - CSS: [data-testid="foo"], .class-name, #id, input[type="email"]
+  - ARIA: [role="button"][name="Submit"], [aria-label="Close"]
+  - NEVER use jQuery selectors like :contains(), :eq(), :first — they are INVALID in Playwright
+  - For clickable text of unknown tag, always use text="..." format
 - For "navigate" steps, put the URL in "value" and set "selector" to null
 - For "wait" steps, put milliseconds in "value" (e.g. "2000")
 - narration must be natural spoken English, present tense
