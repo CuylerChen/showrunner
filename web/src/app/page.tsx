@@ -1,9 +1,11 @@
 import Link from 'next/link'
-import { auth } from '@clerk/nextjs/server'
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 
 export default async function HomePage() {
-  const { userId } = await auth()
+  // 如果已登录（middleware 注入了 x-user-id header），直接跳转到 dashboard
+  const headersList = await headers()
+  const userId = headersList.get('x-user-id')
   if (userId) redirect('/dashboard')
 
   return (
@@ -32,7 +34,7 @@ export default async function HomePage() {
           </Link>
         </div>
 
-        <p className="mt-6 text-xs text-zinc-400">注册后免费生成第一个 Demo，无需信用卡</p>
+        <p className="mt-6 text-xs text-zinc-400">注册后免费生成前 3 个 Demo，无需信用卡</p>
       </div>
     </div>
   )

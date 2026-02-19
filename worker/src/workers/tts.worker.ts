@@ -1,6 +1,7 @@
 import { Worker, Job } from 'bullmq'
 import { connection } from '../utils/redis'
-import { supabase } from '../utils/supabase'
+import { db, demos, jobs } from '../utils/db'
+import { eq } from 'drizzle-orm'
 import { generateNarration } from '../services/tts'
 import { mergeQueue } from '../queues'
 import { Paths } from '../utils/paths'
@@ -17,19 +18,20 @@ async function process(job: Job<TtsJobData>) {
   const { demoId, steps, videoPath, stepTimestamps } = job.data
   console.log(`[tts] 开始生成旁白 demo=${demoId}`)
 
-  await supabase
-    .from('jobs')
-    .insert({ demo_id: demoId, type: 'tts', status: 'running', started_at: new Date().toISOString() })
+  await db.insert(jobs).values({
+    id:         crypto.randomUUID(),
+    demo_id:    demoId,
+    type:       'tts',
+    status:     'running',
+    started_at: new Date(),
+  })
 
-  // 生成旁白音频
   const { audioPaths, totalDuration } = await generateNarration(steps, Paths.ttsDir(demoId))
 
-  // 标记完成，入队 merge-queue
-  await supabase
-    .from('jobs')
-    .update({ status: 'completed', completed_at: new Date().toISOString() })
-    .eq('demo_id', demoId)
-    .eq('type', 'tts')
+  await db
+    .update(jobs)
+    .set({ status: 'completed', completed_at: new Date() })
+    .where(eq(jobs.demo_id, demoId))
 
   await mergeQueue.add('merge', {
     demoId,
@@ -50,16 +52,15 @@ async function onFailed(job: Job<TtsJobData> | undefined, err: Error) {
   const { demoId } = job.data
   console.error(`[tts] 失败 demo=${demoId}:`, err.message)
 
-  await supabase
-    .from('demos')
-    .update({ status: 'failed', error_message: `TTS 生成失败: ${err.message}` })
-    .eq('id', demoId)
+  await db
+    .update(demos)
+    .set({ status: 'failed', error_message: `TTS 生成失败: ${err.message}` })
+    .where(eq(demos.id, demoId))
 
-  await supabase
-    .from('jobs')
-    .update({ status: 'failed', error_message: err.message, completed_at: new Date().toISOString() })
-    .eq('demo_id', demoId)
-    .eq('type', 'tts')
+  await db
+    .update(jobs)
+    .set({ status: 'failed', error_message: err.message, completed_at: new Date() })
+    .where(eq(jobs.demo_id, demoId))
 }
 
 export function startTtsWorker() {

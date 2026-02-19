@@ -10,10 +10,10 @@ export async function GET() {
   if (!sub) return err('NOT_FOUND', '订阅信息不存在')
 
   return ok({
-    plan:                    sub.plan,
-    status:                  sub.status,
-    demos_used_this_month:   sub.demos_used_this_month,
-    demos_limit:             sub.demos_limit,
-    current_period_end:      sub.current_period_end,
+    plan:                  sub.plan,
+    status:                sub.status,
+    demos_used_this_month: sub.demos_used_this_month,
+    demos_limit:           sub.demos_limit,
+    current_period_end:    sub.current_period_end,
   })
 }

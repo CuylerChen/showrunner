@@ -1,0 +1,102 @@
+version: '3.9'
+
+services:
+  # ── MySQL ─────────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE:      ${MYSQL_DATABASE}
+      MYSQL_USER:          ${MYSQL_USER}
+      MYSQL_PASSWORD:      ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./supabase/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis ─────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Web (Next.js) ─────────────────────────────────────────────
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV:          production
+      MYSQL_HOST:        mysql
+      MYSQL_PORT:        "3306"
+      MYSQL_USER:        ${MYSQL_USER}
+      MYSQL_PASSWORD:    ${MYSQL_PASSWORD}
+      MYSQL_DATABASE:    ${MYSQL_DATABASE}
+      JWT_SECRET:        ${JWT_SECRET}
+      REDIS_URL:         redis://redis:6379
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+      VIDEO_DIR:         /data/videos
+    volumes:
+      - video_data:/data/videos
+    expose:
+      - "3000"
+
+  # ── Worker (BullMQ) ───────────────────────────────────────────
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV:          production
+      MYSQL_HOST:        mysql
+      MYSQL_PORT:        "3306"
+      MYSQL_USER:        ${MYSQL_USER}
+      MYSQL_PASSWORD:    ${MYSQL_PASSWORD}
+      MYSQL_DATABASE:    ${MYSQL_DATABASE}
+      REDIS_URL:         redis://redis:6379
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      OPENROUTER_MODEL:   ${OPENROUTER_MODEL:-meta-llama/llama-3.3-70b-instruct:free}
+      VIDEO_DIR:         /data/videos
+    volumes:
+      - video_data:/data/videos
+
+  # ── Nginx ─────────────────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - video_data:/data/videos:ro
+
+volumes:
+  mysql_data:
+  redis_data:
+  video_data:

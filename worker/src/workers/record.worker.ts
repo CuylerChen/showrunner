@@ -1,6 +1,7 @@
 import { Worker, Job } from 'bullmq'
 import { connection } from '../utils/redis'
-import { supabase } from '../utils/supabase'
+import { db, demos, steps, jobs } from '../utils/db'
+import { eq } from 'drizzle-orm'
 import { recordDemo } from '../services/recorder'
 import { ttsQueue } from '../queues'
 import { Paths } from '../utils/paths'
@@ -12,80 +13,66 @@ export interface RecordJobData {
 }
 
 async function process(job: Job<RecordJobData>) {
-  const { demoId, steps } = job.data
-  console.log(`[record] 开始录制 demo=${demoId}，共 ${steps.length} 步`)
+  const { demoId, steps: jobSteps } = job.data
+  console.log(`[record] 开始录制 demo=${demoId}，共 ${jobSteps.length} 步`)
 
   // 1. 更新状态为 recording
-  await supabase
-    .from('demos')
-    .update({ status: 'recording' })
-    .eq('id', demoId)
+  await db.update(demos).set({ status: 'recording' }).where(eq(demos.id, demoId))
 
-  await supabase
-    .from('jobs')
-    .insert({ demo_id: demoId, type: 'record', status: 'running', started_at: new Date().toISOString() })
+  await db.insert(jobs).values({
+    id:         crypto.randomUUID(),
+    demo_id:    demoId,
+    type:       'record',
+    status:     'running',
+    started_at: new Date(),
+  })
 
   Paths.ensureAll(demoId)
 
-  // 2. 逐步录制，每步失败时更新状态并抛出（触发 paused）
   let videoPath: string
   let stepTimestamps: { stepId: string; start: number; end: number }[]
 
   try {
-    const result = await recordDemo(steps, Paths.videoDir(demoId))
+    const result = await recordDemo(jobSteps, Paths.videoDir(demoId))
     videoPath = result.videoPath
     stepTimestamps = result.stepTimestamps
   } catch (err) {
-    // 找到失败的步骤（通过错误信息中的 position）
-    const failedStep = steps.find(s => (err as Error).message.includes(`Step ${s.position}`))
+    const failedStep = jobSteps.find(s => (err as Error).message.includes(`Step ${s.position}`))
 
     if (failedStep) {
-      await supabase
-        .from('steps')
-        .update({ status: 'failed' })
-        .eq('id', failedStep.id)
+      await db.update(steps).set({ status: 'failed' }).where(eq(steps.id, failedStep.id))
     }
 
-    // demo 状态改为 paused，等用户介入
-    await supabase
-      .from('demos')
-      .update({
-        status: 'paused',
-        error_message: (err as Error).message,
-      })
-      .eq('id', demoId)
+    await db
+      .update(demos)
+      .set({ status: 'paused', error_message: (err as Error).message })
+      .where(eq(demos.id, demoId))
 
-    await supabase
-      .from('jobs')
-      .update({ status: 'failed', error_message: (err as Error).message, completed_at: new Date().toISOString() })
-      .eq('demo_id', demoId)
-      .eq('type', 'record')
+    await db
+      .update(jobs)
+      .set({ status: 'failed', error_message: (err as Error).message, completed_at: new Date() })
+      .where(eq(jobs.demo_id, demoId))
 
-    throw err  // 让 BullMQ 记录失败，但不再重试（paused 由用户处理）
+    throw err
   }
 
   // 3. 更新每步时间戳到数据库
   for (const ts of stepTimestamps) {
-    await supabase
-      .from('steps')
-      .update({
-        status: 'completed',
-        timestamp_start: ts.start,
-        timestamp_end: ts.end,
-      })
-      .eq('id', ts.stepId)
+    await db
+      .update(steps)
+      .set({ status: 'completed', timestamp_start: ts.start, timestamp_end: ts.end })
+      .where(eq(steps.id, ts.stepId))
   }
 
   // 4. 标记 job 完成，入队 tts-queue
-  await supabase
-    .from('jobs')
-    .update({ status: 'completed', completed_at: new Date().toISOString() })
-    .eq('demo_id', demoId)
-    .eq('type', 'record')
+  await db
+    .update(jobs)
+    .set({ status: 'completed', completed_at: new Date() })
+    .where(eq(jobs.demo_id, demoId))
 
   await ttsQueue.add('tts', {
     demoId,
-    steps,
+    steps: jobSteps,
     videoPath,
     stepTimestamps,
   }, {
@@ -99,13 +86,12 @@ async function process(job: Job<RecordJobData>) {
 async function onFailed(job: Job<RecordJobData> | undefined, err: Error) {
   if (!job) return
   console.error(`[record] 失败 demo=${job.data.demoId}:`, err.message)
-  // 状态已在 process 内部更新为 paused，此处无需重复操作
 }
 
 export function startRecordWorker() {
   const worker = new Worker<RecordJobData>('record-queue', process, {
     connection,
-    concurrency: 1,  // 录制资源密集，串行处理
+    concurrency: 1,
   })
 
   worker.on('failed', onFailed)

@@ -4,9 +4,7 @@ FROM node:20-slim
 # Playwright Chromium + FFmpeg + libvips（Kokoro TTS 需要）
 RUN apt-get update && apt-get install -y \
     ffmpeg \
-    # libvips for kokoro-js/sharp
     libvips-dev \
-    # Playwright / Chromium headless 依赖
     chromium \
     libnss3 \
     libatk1.0-0 \
@@ -38,6 +36,9 @@ RUN npm ci --omit=dev
 
 # ── 复制源码 ──────────────────────────────────────────
 COPY . .
+
+# 创建视频持久化目录
+RUN mkdir -p /data/videos
 
 # ── 启动 ─────────────────────────────────────────────
 CMD ["node", "--import", "tsx/esm", "src/index.ts"]

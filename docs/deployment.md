@@ -1,19 +1,17 @@
 # Showrunner — 部署指南
-> 版本：v0.1 | 更新时间：2026-02-19
+> 版本：v0.2 | 更新时间：2026-02-19
 
 ## 部署架构
 
 ```
 GitHub Repo
   ├── web/      → Vercel（前端 + API Routes）
-  └── worker/   → Railway（录制 Worker）
-                    └── Redis → Railway（BullMQ 队列）
+  └── worker/   → VPS（录制 Worker + Redis）
 
 第三方服务：
   Supabase   数据库 + 存储 + Realtime
   Clerk      用户认证
   OpenRouter AI 步骤解析
-  LemonSqueezy 订阅支付
 ```
 
 ---
@@ -22,26 +20,43 @@ GitHub Repo
 
 ### 1.1 创建项目
 1. 访问 [supabase.com](https://supabase.com) → 新建项目
-2. 记录 **Project URL** 和 **API Keys**（anon key + service_role key）
+2. 项目名称：`showrunner`，设置数据库密码并保存
+3. Region：选离你最近的节点
 
 ### 1.2 运行数据库 Schema
-1. 进入 Supabase Dashboard → **SQL Editor**
-2. 复制 `supabase/schema.sql` 内容，全部执行
+1. 进入 Supabase Dashboard → **SQL Editor** → New query
+2. 复制 `supabase/schema.sql` 全部内容，执行
 
-### 1.3 创建 Storage Bucket
-1. 进入 **Storage** → **New Bucket**
-2. Bucket 名称：`videos`
-3. Public：**关闭**（私有，通过 service_role 上传）
+> 如果报错，先执行以下清理语句再重跑：
+> ```sql
+> drop table if exists jobs, steps, demos, subscriptions, users cascade;
+> drop type if exists job_status, job_type, step_status, action_type, demo_status, sub_status, plan_type cascade;
+> drop function if exists requesting_user_id, handle_updated_at cascade;
+> ```
 
-### 1.4 开启 Realtime
-1. 进入 **Database** → **Replication**
-2. 找到 `demos` 表，开启 **INSERT** 和 **UPDATE** 事件
+### 1.3 开启 Realtime
+在 SQL Editor 中执行：
+```sql
+alter publication supabase_realtime add table demos;
+```
+
+验证：
+```sql
+select tablename from pg_publication_tables where pubname = 'supabase_realtime';
+```
+结果中出现 `demos` 即成功。
+
+### 1.4 创建 Storage Bucket
+1. 左侧菜单 → **Storage** → **New bucket**
+2. 名称：`videos`
+3. Public bucket：**关闭**（私有）
 
 ### 1.5 收集环境变量
+进入 **Project Settings** → **API**：
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://<project-id>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...        ← 点击 Reveal 显示
 ```
 
 ---
@@ -49,29 +64,28 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 ## 第二步：Clerk
 
 ### 2.1 创建应用
-1. 访问 [clerk.com](https://clerk.com) → 创建新应用
-2. 登录方式：Email + Google
-3. 记录 **Publishable Key** 和 **Secret Key**
+1. 访问 [clerk.com](https://clerk.com) → **Create application**
+2. 名称：`Showrunner`，登录方式：Email + Google
 
-### 2.2 配置重定向 URL
-在 Clerk Dashboard → **Paths** 中设置：
-```
-Sign-in URL:           /sign-in
-Sign-up URL:           /sign-up
-After sign-in URL:     /dashboard
-After sign-up URL:     /dashboard
-```
+### 2.2 配置 JWT（Supabase 集成）
+1. Clerk Dashboard → **Configure** → **JWT Templates**
+2. **New template** → 选择 **Supabase**
+3. Signing key：填入 Supabase **Project Settings → API → JWT Settings → JWT Secret**
+4. 保存
 
-### 2.3 配置 Webhook
-1. 进入 **Webhooks** → **Add Endpoint**
-2. URL：`https://your-domain.vercel.app/api/webhooks/clerk`
-3. 监听事件：`user.created` `user.updated` `user.deleted`
-4. 记录 **Signing Secret**
-
-### 2.4 收集环境变量
+### 2.3 收集 API Keys
+进入 **Configure** → **API Keys**：
 ```
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...
 CLERK_SECRET_KEY=sk_live_...
+```
+
+### 2.4 配置 Webhook（Vercel 部署完成后）
+1. **Configure** → **Webhooks** → **Add Endpoint**
+2. URL：`https://your-domain.vercel.app/api/webhooks/clerk`
+3. 监听事件：`user.created` `user.updated` `user.deleted`
+4. 记录 **Signing Secret**：
+```
 CLERK_WEBHOOK_SECRET=whsec_...
 ```
 
@@ -79,8 +93,8 @@ CLERK_WEBHOOK_SECRET=whsec_...
 
 ## 第三步：OpenRouter
 
-1. 访问 [openrouter.ai](https://openrouter.ai) → 注册
-2. 进入 **Keys** → **Create Key**
+1. 访问 [openrouter.ai](https://openrouter.ai) → 注册/登录
+2. 右上角头像 → **Keys** → **Create Key**
 3. 收集环境变量：
 ```
 OPENROUTER_API_KEY=sk-or-...
@@ -89,86 +103,100 @@ OPENROUTER_MODEL=meta-llama/llama-3.3-70b-instruct:free
 
 ---
 
-## 第四步：LemonSqueezy
+## 第四步：VPS 部署（Ubuntu 22.04）
 
-### 4.1 创建 Store
-1. 访问 [lemonsqueezy.com](https://lemonsqueezy.com) → 创建 Store
-2. 记录 **Store ID**
+VPS 要求：内存 ≥ 2GB，CPU ≥ 2 核，磁盘 ≥ 20GB。
 
-### 4.2 创建产品
-创建两个订阅产品：
-
-**Starter Plan**
-- 类型：Subscription
-- 价格：$19/月
-- 记录 **Variant ID**
-
-**Pro Plan**
-- 类型：Subscription
-- 价格：$49/月
-- 记录 **Variant ID**
-
-### 4.3 配置 Webhook
-1. 进入 **Settings** → **Webhooks** → 添加 Webhook
-2. URL：`https://your-domain.vercel.app/api/webhooks/lemonsqueezy`
-3. 监听事件：
-   - `subscription_created`
-   - `subscription_updated`
-   - `subscription_cancelled`
-   - `subscription_expired`
-4. 记录 **Signing Secret**
-
-### 4.4 收集环境变量
-```
-LEMONSQUEEZY_API_KEY=eyJ...
-LEMONSQUEEZY_WEBHOOK_SECRET=...
-LEMONSQUEEZY_STORE_ID=12345
-LEMONSQUEEZY_STARTER_VARIANT_ID=11111
-LEMONSQUEEZY_PRO_VARIANT_ID=22222
+### 4.1 安装 Docker
+```bash
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
+newgrp docker
+docker --version
 ```
 
----
-
-## 第五步：Railway（Redis + Worker）
-
-### 5.1 创建 Redis 服务
-1. 访问 [railway.app](https://railway.app) → New Project
-2. 添加 **Redis** 服务（官方插件）
-3. 记录内网 **REDIS_URL**（格式：`redis://default:xxx@redis.railway.internal:6379`）
-
-### 5.2 部署 Worker
-1. 在同一 Railway Project 中 → **New Service** → **GitHub Repo**
-2. 选择你的仓库，**Root Directory** 设置为 `worker`
-3. Railway 会自动检测 `Dockerfile` 并构建
-
-### 5.3 配置 Worker 环境变量
-在 Railway Worker 服务的 **Variables** 中添加：
-```
+### 4.2 创建目录和环境变量
+```bash
+mkdir -p ~/showrunner
+cat > ~/showrunner/.env << 'EOF'
 SUPABASE_URL=https://<project-id>.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
-REDIS_URL=${{Redis.REDIS_URL}}         # 引用 Railway 内部 Redis URL
+REDIS_URL=redis://redis:6379
 OPENROUTER_API_KEY=sk-or-...
 OPENROUTER_MODEL=meta-llama/llama-3.3-70b-instruct:free
+EOF
 ```
 
-> `${{Redis.REDIS_URL}}` 是 Railway 的内部引用语法，自动填充 Redis 连接串
+### 4.3 创建 docker-compose.yml
+```bash
+cat > ~/showrunner/docker-compose.yml << 'EOF'
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
 
-### 5.4 资源配置（建议）
-在 Railway → **Settings** → **Resources**：
-- Memory：**2GB**（Playwright + Kokoro TTS 需要）
-- CPU：**2 vCPU**
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      - redis
+
+volumes:
+  redis_data:
+EOF
+```
+
+### 4.4 拉取代码并构建
+```bash
+cd ~/showrunner
+git clone https://github.com/CuylerChen/showrunner.git repo
+cp repo/worker/Dockerfile .
+cp -r repo/worker/src .
+cp repo/worker/package*.json .
+cp repo/worker/tsconfig.json .
+docker compose up -d --build
+```
+
+### 4.5 查看日志
+```bash
+docker compose logs -f worker
+```
+
+正常输出：
+```
+[parse worker] ready
+[record worker] ready
+[tts worker] ready
+[merge worker] ready
+```
+
+### 4.6 获取 Redis 公网地址（供 Vercel 使用）
+Redis 运行在 VPS 内部，Vercel 需要通过公网访问。
+```
+REDIS_URL=redis://<VPS公网IP>:6379
+```
+
+> 确保 VPS 防火墙放开 6379 端口，或者使用 Redis 密码保护：
+> 在 docker-compose.yml 的 redis 服务中加入 `command: redis-server --requirepass yourpassword`
+> 则 URL 变为：`redis://:yourpassword@<VPS公网IP>:6379`
 
 ---
 
-## 第六步：Vercel（前端）
+## 第五步：Vercel（前端）
 
-### 6.1 部署项目
-1. 访问 [vercel.com](https://vercel.com) → New Project → Import GitHub Repo
-2. **Root Directory** 设置为 `web`
-3. Framework：自动检测为 Next.js
+### 5.1 部署项目
+1. 访问 [vercel.com](https://vercel.com) → **New Project** → Import GitHub Repo
+2. 选择 `showrunner` 仓库
+3. **Root Directory** 设置为 `web`
+4. Framework：自动检测为 Next.js
 
-### 6.2 配置环境变量
-在 Vercel → **Settings** → **Environment Variables** 中添加所有变量：
+### 5.2 配置环境变量
+在 Vercel → **Settings** → **Environment Variables** 中添加：
 
 ```bash
 # Clerk
@@ -185,31 +213,25 @@ NEXT_PUBLIC_SUPABASE_URL=https://<project-id>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 
-# Redis（Railway 对外暴露的公网 URL）
-REDIS_URL=redis://default:xxx@your-railway-redis.railway.app:6379
+# Redis（VPS 公网地址）
+REDIS_URL=redis://<VPS公网IP>:6379
 
 # OpenRouter
 OPENROUTER_API_KEY=sk-or-...
-
-# LemonSqueezy
-LEMONSQUEEZY_API_KEY=eyJ...
-LEMONSQUEEZY_WEBHOOK_SECRET=...
-LEMONSQUEEZY_STORE_ID=12345
-LEMONSQUEEZY_STARTER_VARIANT_ID=11111
-LEMONSQUEEZY_PRO_VARIANT_ID=22222
 
 # App URL
 NEXT_PUBLIC_APP_URL=https://your-domain.vercel.app
 ```
 
-### 6.3 触发部署
+### 5.3 触发部署
 保存环境变量后点击 **Redeploy**，等待构建完成。
+
+### 5.4 配置 Clerk Webhook
+Vercel 部署完成、获得域名后，回到 Clerk 完成 2.4 步骤的 Webhook 配置。
 
 ---
 
-## 第七步：验证联调
-
-按以下顺序验证每个环节：
+## 第六步：验证联调
 
 ```
 1. 访问 https://your-domain.vercel.app
@@ -226,18 +248,15 @@ NEXT_PUBLIC_APP_URL=https://your-domain.vercel.app
    ✅ 创建 Demo 记录（status: parsing）
    ✅ Dashboard 上状态实时更新（Supabase Realtime）
 
-5. 检查 Railway Worker 日志
-   ✅ 看到 [parse] 开始解析 demo=xxx
+5. 检查 VPS Worker 日志
+   ✅ docker compose logs -f worker
+   ✅ 看到 [parse] 开始解析
    ✅ 看到 [record] 开始录制
    ✅ 看到 [merge] 合成完成
 
 6. Demo 状态变为 completed
    ✅ 自动跳转分享页
    ✅ 视频可播放，步骤可点击跳转
-
-7. 测试订阅（LemonSqueezy 测试模式）
-   ✅ 用完免费额度后弹出付费引导
-   ✅ 完成付款后额度自动升级
 ```
 
 ---
@@ -250,34 +269,41 @@ NEXT_PUBLIC_APP_URL=https://your-domain.vercel.app
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk |
 | `CLERK_SECRET_KEY` | Clerk |
 | `CLERK_WEBHOOK_SECRET` | Clerk Webhook |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | 固定值 `/sign-in` |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | 固定值 `/sign-up` |
+| `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL` | 固定值 `/dashboard` |
+| `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL` | 固定值 `/dashboard` |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase |
-| `REDIS_URL` | Railway Redis（公网） |
+| `REDIS_URL` | VPS 公网地址 |
 | `OPENROUTER_API_KEY` | OpenRouter |
-| `LEMONSQUEEZY_*` | LemonSqueezy |
-| `NEXT_PUBLIC_APP_URL` | 你的 Vercel 域名 |
+| `NEXT_PUBLIC_APP_URL` | Vercel 域名 |
 
-### Railway（worker）
+### VPS Worker（.env）
 | 变量 | 来源 |
 |------|------|
 | `SUPABASE_URL` | Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase |
-| `REDIS_URL` | Railway Redis（内网引用） |
+| `REDIS_URL` | 固定值 `redis://redis:6379` |
 | `OPENROUTER_API_KEY` | OpenRouter |
+| `OPENROUTER_MODEL` | 固定值 |
 
 ---
 
 ## 常见问题
 
 **Q: Worker 构建失败，Playwright 无法找到 Chromium**
-Dockerfile 中已设置 `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium`，确保 Railway 构建时使用的是项目 Dockerfile 而非 Nixpacks。
+Dockerfile 中已设置 `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium`，确保构建时使用的是项目 `Dockerfile` 而非自动检测。
 
 **Q: Kokoro TTS 不工作**
-Railway 使用 Node 20 + Linux 环境，sharp/libvips 会正确编译。如果仍有问题，检查 Worker 内存是否 ≥ 2GB。
+Node 20 + Linux 环境下 sharp/libvips 会正确编译。如果仍有问题，检查 Worker 内存是否 ≥ 2GB，不够时会自动降级为静音。
 
 **Q: Supabase Realtime 没有更新**
-确认 `demos` 表已开启 Replication，且 Supabase anon key 有 `postgres_changes` 权限。
+执行 `alter publication supabase_realtime add table demos;` 确认 demos 表已加入 publication。
 
-**Q: Redis 连接失败**
-Vercel 需要使用 Railway Redis 的**公网 URL**，Worker 使用**内网 URL**（`railway.internal`）。
+**Q: Vercel 无法连接 Redis**
+确认 VPS 防火墙已开放 6379 端口，且 `REDIS_URL` 使用的是 VPS 公网 IP 而非内网地址。建议为 Redis 设置密码。
+
+**Q: Clerk Webhook 不触发，用户注册后 users 表没有数据**
+确认 Clerk Webhook URL 正确，且 `CLERK_WEBHOOK_SECRET` 环境变量已在 Vercel 配置。Vercel 部署完成后才能配置 Webhook。

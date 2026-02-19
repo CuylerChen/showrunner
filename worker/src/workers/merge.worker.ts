@@ -1,9 +1,11 @@
 import { Worker, Job } from 'bullmq'
 import { connection } from '../utils/redis'
-import { supabase } from '../utils/supabase'
+import { db, demos, steps, jobs } from '../utils/db'
+import { eq } from 'drizzle-orm'
 import { mergeDemo } from '../services/merger'
 import { Paths } from '../utils/paths'
 import fs from 'fs'
+import path from 'path'
 
 export interface MergeJobData {
   demoId: string
@@ -13,19 +15,22 @@ export interface MergeJobData {
   totalDuration: number
 }
 
+const VIDEO_DIR = process.env.VIDEO_DIR ?? '/data/videos'
+
 async function process(job: Job<MergeJobData>) {
   const { demoId, videoPath, audioPaths, stepTimestamps } = job.data
   console.log(`[merge] 开始合成 demo=${demoId}`)
 
   // 1. 更新状态为 processing
-  await supabase
-    .from('demos')
-    .update({ status: 'processing' })
-    .eq('id', demoId)
+  await db.update(demos).set({ status: 'processing' }).where(eq(demos.id, demoId))
 
-  await supabase
-    .from('jobs')
-    .insert({ demo_id: demoId, type: 'merge', status: 'running', started_at: new Date().toISOString() })
+  await db.insert(jobs).values({
+    id:         crypto.randomUUID(),
+    demo_id:    demoId,
+    type:       'merge',
+    status:     'running',
+    started_at: new Date(),
+  })
 
   // 2. 合并视频 + 音频
   const { outputPath, duration } = await mergeDemo(
@@ -34,50 +39,33 @@ async function process(job: Job<MergeJobData>) {
     Paths.finalDir(demoId)
   )
 
-  // 3. 上传到 Supabase Storage
-  const fileBuffer = fs.readFileSync(outputPath)
-  const storagePath = `${demoId}/final.mp4`
+  // 3. 将视频文件复制到持久化存储目录
+  const destDir  = path.join(VIDEO_DIR, demoId)
+  const destPath = path.join(destDir, 'final.mp4')
+  fs.mkdirSync(destDir, { recursive: true })
+  fs.copyFileSync(outputPath, destPath)
 
-  const { error: uploadError } = await supabase.storage
-    .from('videos')
-    .upload(storagePath, fileBuffer, {
-      contentType: 'video/mp4',
-      upsert: true,
-    })
+  // 4. video_url 存储为相对路径（Nginx 提供静态文件）
+  const videoUrl = `/videos/${demoId}/final.mp4`
 
-  if (uploadError) throw new Error(`上传视频失败: ${uploadError.message}`)
-
-  // 4. 获取公开访问 URL
-  const { data: urlData } = supabase.storage
-    .from('videos')
-    .getPublicUrl(storagePath)
-
-  const videoUrl = urlData.publicUrl
-
-  // 5. 更新步骤时间戳（用于分享页导航）
+  // 5. 更新步骤时间戳
   for (const ts of stepTimestamps) {
-    await supabase
-      .from('steps')
-      .update({ timestamp_start: ts.start, timestamp_end: ts.end })
-      .eq('id', ts.stepId)
+    await db
+      .update(steps)
+      .set({ timestamp_start: ts.start, timestamp_end: ts.end })
+      .where(eq(steps.id, ts.stepId))
   }
 
   // 6. 更新 demo 为 completed
-  await supabase
-    .from('demos')
-    .update({
-      status: 'completed',
-      video_url: videoUrl,
-      duration,
-      error_message: null,
-    })
-    .eq('id', demoId)
+  await db
+    .update(demos)
+    .set({ status: 'completed', video_url: videoUrl, duration, error_message: null })
+    .where(eq(demos.id, demoId))
 
-  await supabase
-    .from('jobs')
-    .update({ status: 'completed', completed_at: new Date().toISOString() })
-    .eq('demo_id', demoId)
-    .eq('type', 'merge')
+  await db
+    .update(jobs)
+    .set({ status: 'completed', completed_at: new Date() })
+    .where(eq(jobs.demo_id, demoId))
 
   // 7. 清理本地临时文件
   Paths.cleanup(demoId)
@@ -90,18 +78,16 @@ async function onFailed(job: Job<MergeJobData> | undefined, err: Error) {
   const { demoId } = job.data
   console.error(`[merge] 失败 demo=${demoId}:`, err.message)
 
-  await supabase
-    .from('demos')
-    .update({ status: 'failed', error_message: `视频合成失败: ${err.message}` })
-    .eq('id', demoId)
+  await db
+    .update(demos)
+    .set({ status: 'failed', error_message: `视频合成失败: ${err.message}` })
+    .where(eq(demos.id, demoId))
 
-  await supabase
-    .from('jobs')
-    .update({ status: 'failed', error_message: err.message, completed_at: new Date().toISOString() })
-    .eq('demo_id', demoId)
-    .eq('type', 'merge')
+  await db
+    .update(jobs)
+    .set({ status: 'failed', error_message: err.message, completed_at: new Date() })
+    .where(eq(jobs.demo_id, demoId))
 
-  // 失败也清理临时文件，避免磁盘占用
   Paths.cleanup(demoId)
 }
 

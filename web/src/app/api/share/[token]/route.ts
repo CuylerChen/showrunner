@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/server'
+import { db, schema } from '@/lib/db'
+import { eq, and, asc } from 'drizzle-orm'
 import { ok, err } from '@/lib/api'
 
 type Params = { params: Promise<{ token: string }> }
@@ -7,33 +8,43 @@ type Params = { params: Promise<{ token: string }> }
 // GET /api/share/[token] — 公开分享页数据（无需鉴权）
 export async function GET(_req: NextRequest, { params }: Params) {
   const { token } = await params
-  const supabase = createAdminClient()
 
-  const { data: demo, error } = await supabase
-    .from('demos')
-    .select(`
-      title, video_url, duration,
-      steps (
-        position, title, timestamp_start, timestamp_end
-      )
-    `)
-    .eq('share_token', token)
-    .eq('status', 'completed')
-    .order('position', { referencedTable: 'steps', ascending: true })
-    .single()
+  const demo = await db
+    .select({
+      title:     schema.demos.title,
+      video_url: schema.demos.video_url,
+      duration:  schema.demos.duration,
+    })
+    .from(schema.demos)
+    .where(and(eq(schema.demos.share_token, token), eq(schema.demos.status, 'completed')))
+    .then(rows => rows[0] ?? null)
 
-  if (error || !demo) return err('NOT_FOUND', '分享页不存在或 Demo 尚未生成完成')
+  if (!demo) return err('NOT_FOUND', '分享页不存在或 Demo 尚未生成完成')
 
-  // 只返回展示所需字段，不暴露 selector/value 等内部数据
+  // 获取 Demo ID 用于查询 steps（通过 share_token 找 demo id）
+  const demoRow = await db
+    .select({ id: schema.demos.id })
+    .from(schema.demos)
+    .where(eq(schema.demos.share_token, token))
+    .then(rows => rows[0])
+
+  const steps = demoRow
+    ? await db
+        .select({
+          position:        schema.steps.position,
+          title:           schema.steps.title,
+          timestamp_start: schema.steps.timestamp_start,
+          timestamp_end:   schema.steps.timestamp_end,
+        })
+        .from(schema.steps)
+        .where(eq(schema.steps.demo_id, demoRow.id))
+        .orderBy(asc(schema.steps.position))
+    : []
+
   return ok({
     title:     demo.title,
     video_url: demo.video_url,
     duration:  demo.duration,
-    steps:     (demo.steps ?? []).map((s: any) => ({
-      position:        s.position,
-      title:           s.title,
-      timestamp_start: s.timestamp_start,
-      timestamp_end:   s.timestamp_end,
-    })),
+    steps,
   })
 }
