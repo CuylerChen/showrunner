@@ -1,117 +1,172 @@
 @import "tailwindcss";
 
-/* ── 设计系统 tokens ──────────────────────────────────── */
+/* ── 设计系统 Tokens ────────────────────────────────────── */
 :root {
-  --bg-base:     #070B14;
-  --bg-surface:  #0D1117;
-  --bg-elevated: #141B2D;
-  --bg-card:     #0F1620;
+  /* 背景层级 */
+  --bg-base:     #050911;
+  --bg-surface:  #0A1020;
+  --bg-elevated: #0F1828;
+  --bg-card:     #0C1422;
 
+  /* 品牌色（靛蓝） */
   --brand:       #6366F1;
   --brand-light: #818CF8;
-  --brand-dim:   rgba(99,102,241,0.15);
-  --brand-glow:  rgba(99,102,241,0.35);
+  --brand-dim:   rgba(99,102,241,0.12);
+  --brand-glow:  rgba(99,102,241,0.28);
 
-  --accent:      #06B6D4;
-  --accent-dim:  rgba(6,182,212,0.12);
+  /* 主操作色（绿色） */
+  --cta:         #22C55E;
+  --cta-hover:   #16A34A;
+  --cta-dim:     rgba(34,197,94,0.1);
+  --cta-glow:    rgba(34,197,94,0.28);
 
-  --text-primary:   #F1F5F9;
+  /* 文本 */
+  --text-primary:   #F8FAFC;
   --text-secondary: #94A3B8;
-  --text-muted:     #475569;
+  --text-muted:     #64748B;
 
-  --border:        rgba(255,255,255,0.07);
-  --border-bright: rgba(255,255,255,0.12);
+  /* 边框 */
+  --border:        rgba(255,255,255,0.06);
+  --border-bright: rgba(255,255,255,0.1);
+  --border-brand:  rgba(99,102,241,0.25);
 }
 
 @theme inline {
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-dm-sans), system-ui, sans-serif;
+  --font-heading: var(--font-space-grotesk), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
-/* ── 全局基础 ─────────────────────────────────────────── */
+/* ── 全局基础 ───────────────────────────────────────────── */
 body {
   background-color: var(--bg-base);
   color: var(--text-primary);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  letter-spacing: -0.02em;
 }
 
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
 
-/* ── 状态颜色 ─────────────────────────────────────────── */
-.status-pending    { background: rgba(71,85,105,0.2);   color: #94A3B8; border: 1px solid rgba(71,85,105,0.3); }
-.status-parsing    { background: rgba(99,102,241,0.15); color: #818CF8; border: 1px solid rgba(99,102,241,0.3); }
-.status-review     { background: rgba(234,179,8,0.12);  color: #FCD34D; border: 1px solid rgba(234,179,8,0.25); }
-.status-recording  { background: rgba(99,102,241,0.15); color: #818CF8; border: 1px solid rgba(99,102,241,0.3); }
-.status-paused     { background: rgba(239,68,68,0.12);  color: #FCA5A5; border: 1px solid rgba(239,68,68,0.25); }
-.status-processing { background: rgba(139,92,246,0.15); color: #C4B5FD; border: 1px solid rgba(139,92,246,0.3); }
-.status-completed  { background: rgba(34,197,94,0.12);  color: #86EFAC; border: 1px solid rgba(34,197,94,0.25); }
-.status-failed     { background: rgba(239,68,68,0.12);  color: #FCA5A5; border: 1px solid rgba(239,68,68,0.25); }
+/* ── 状态标签 ───────────────────────────────────────────── */
+.status-pending    { background: rgba(71,85,105,0.16);   color: #94A3B8; border: 1px solid rgba(71,85,105,0.22); }
+.status-parsing    { background: rgba(99,102,241,0.12);  color: #818CF8; border: 1px solid rgba(99,102,241,0.22); }
+.status-review     { background: rgba(234,179,8,0.1);    color: #FCD34D; border: 1px solid rgba(234,179,8,0.2); }
+.status-recording  { background: rgba(99,102,241,0.12);  color: #818CF8; border: 1px solid rgba(99,102,241,0.22); }
+.status-paused     { background: rgba(239,68,68,0.1);    color: #FCA5A5; border: 1px solid rgba(239,68,68,0.2); }
+.status-processing { background: rgba(139,92,246,0.12);  color: #C4B5FD; border: 1px solid rgba(139,92,246,0.22); }
+.status-completed  { background: rgba(34,197,94,0.1);    color: #86EFAC; border: 1px solid rgba(34,197,94,0.2); }
+.status-failed     { background: rgba(239,68,68,0.1);    color: #FCA5A5; border: 1px solid rgba(239,68,68,0.2); }
 
-/* ── 动画 ─────────────────────────────────────────────── */
+/* ── 动画 ───────────────────────────────────────────────── */
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
-  50%       { opacity: 0.3; }
+  50%       { opacity: 0.2; }
 }
-.animate-pulse-dot { animation: pulse-dot 1.4s ease-in-out infinite; }
+.animate-pulse-dot { animation: pulse-dot 1.5s ease-in-out infinite; }
 
 @keyframes shimmer-text {
   0%   { background-position: -200% center; }
   100% { background-position: 200% center; }
 }
 .animate-shimmer {
-  background: linear-gradient(90deg, #6366F1 0%, #818CF8 35%, #A5B4FC 55%, #6366F1 100%);
+  background: linear-gradient(90deg, #6366F1 0%, #818CF8 30%, #22D3EE 55%, #818CF8 75%, #6366F1 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: shimmer-text 4s linear infinite;
+  animation: shimmer-text 5s linear infinite;
 }
 
-/* ── 工具类 ───────────────────────────────────────────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up { animation: fade-up 0.45s ease-out forwards; }
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 0.9; }
+}
+
+/* ── 卡片 ───────────────────────────────────────────────── */
 .glass-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
 }
 .glass-card-hover {
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
 }
 .glass-card-hover:hover {
   border-color: var(--border-bright);
-  box-shadow: 0 4px 32px rgba(0,0,0,0.5);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06);
+  transform: translateY(-1px);
 }
 
+/* ── 按钮 ───────────────────────────────────────────────── */
+/* 主按钮（绿色） */
 .btn-brand {
-  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+  background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
   color: white;
-  transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
-  box-shadow: 0 0 24px rgba(99,102,241,0.4);
+  font-weight: 600;
+  transition: opacity 0.2s, transform 0.12s, box-shadow 0.2s;
+  box-shadow: 0 0 20px rgba(34,197,94,0.25), inset 0 1px 0 rgba(255,255,255,0.15);
+  cursor: pointer;
 }
 .btn-brand:hover:not(:disabled) {
-  opacity: 0.9;
-  box-shadow: 0 0 36px rgba(99,102,241,0.5);
+  opacity: 0.93;
+  box-shadow: 0 0 32px rgba(34,197,94,0.38), inset 0 1px 0 rgba(255,255,255,0.15);
 }
 .btn-brand:active:not(:disabled) { transform: scale(0.98); }
-.btn-brand:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+.btn-brand:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
 
+/* 次级按钮（轮廓） */
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border-bright);
+  color: var(--text-secondary);
+  font-weight: 500;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  cursor: pointer;
+}
+.btn-outline:hover:not(:disabled) {
+  border-color: rgba(255,255,255,0.18);
+  color: var(--text-primary);
+  background: rgba(255,255,255,0.04);
+}
+.btn-outline:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ── 输入框 ─────────────────────────────────────────────── */
 .input-dark {
   background: rgba(255,255,255,0.04);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-bright);
   color: var(--text-primary);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .input-dark::placeholder { color: var(--text-muted); }
 .input-dark:focus {
   outline: none;
-  border-color: #6366F1;
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.14);
 }
 
+/* ── 背景纹理 ────────────────────────────────────────────── */
 .bg-grid {
   background-image:
-    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-  background-size: 48px 48px;
+    linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+  background-size: 52px 52px;
+}
+
+.bg-dots {
+  background-image: radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
+  background-size: 28px 28px;
 }

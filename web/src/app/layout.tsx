@@ -1,8 +1,18 @@
 import type { Metadata } from 'next'
-import { Geist } from 'next/font/google'
+import { Space_Grotesk, DM_Sans } from 'next/font/google'
 import './globals.css'
 
-const geist = Geist({ subsets: ['latin'], variable: '--font-geist-sans' })
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-space-grotesk',
+  weight: ['400', '500', '600', '700'],
+})
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  variable: '--font-dm-sans',
+  weight: ['400', '500', '600', '700'],
+})
 
 export const metadata: Metadata = {
   title: 'Showrunner — Demo Copilot',
@@ -11,8 +21,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={geist.variable}>
-      <body className="min-h-screen bg-white antialiased">{children}</body>
+    <html lang="en" className={`${spaceGrotesk.variable} ${dmSans.variable}`}>
+      <body className="min-h-screen antialiased">{children}</body>
     </html>
   )
 }

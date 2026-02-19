@@ -23,21 +23,27 @@ export function DemoCard(props: DemoCardProps) {
     catch { return props.product_url }
   })()
 
+  const initial = hostname.charAt(0).toUpperCase()
+
   const date = new Date(props.created_at as string).toLocaleDateString('zh-CN', {
     month: 'short', day: 'numeric',
   })
 
   return (
-    <div className="glass-card glass-card-hover group rounded-xl p-4 flex items-center justify-between gap-4">
-      {/* 左侧：图标 + 信息 */}
+    <div className="glass-card glass-card-hover group rounded-xl px-4 py-3.5 flex items-center gap-4">
+      {/* 左侧：站点首字母图标 + 信息 */}
       <div className="flex items-center gap-3 min-w-0 flex-1">
-        {/* 站点图标占位 */}
-        <div className="h-9 w-9 flex-shrink-0 rounded-lg flex items-center justify-center text-xs font-bold"
-          style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)', color: '#818CF8' }}>
-          {hostname.charAt(0).toUpperCase()}
+        <div
+          className="h-9 w-9 flex-shrink-0 rounded-lg flex items-center justify-center text-xs font-bold select-none"
+          style={{
+            background: 'linear-gradient(135deg, rgba(99,102,241,0.18) 0%, rgba(139,92,246,0.12) 100%)',
+            border: '1px solid rgba(99,102,241,0.18)',
+            color: '#818CF8',
+          }}>
+          {initial}
         </div>
 
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
             {props.title ?? hostname}
           </p>
@@ -47,10 +53,10 @@ export function DemoCard(props: DemoCardProps) {
         </div>
       </div>
 
-      {/* 右侧：状态 + 时间 + 操作 */}
-      <div className="flex flex-shrink-0 items-center gap-3">
+      {/* 右侧：时长 + 状态 + 日期 + 操作按钮 */}
+      <div className="flex flex-shrink-0 items-center gap-2.5">
         {props.duration && status === 'completed' && (
-          <span className="hidden sm:block text-xs" style={{ color: 'var(--text-muted)' }}>
+          <span className="hidden sm:block text-xs tabular-nums" style={{ color: 'var(--text-muted)' }}>
             {props.duration}s
           </span>
         )}
@@ -61,39 +67,54 @@ export function DemoCard(props: DemoCardProps) {
           {date}
         </span>
 
+        {/* 已完成：查看 */}
         {status === 'completed' && (
           <Link href={`/share/${props.share_token}`} target="_blank"
-            className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all"
+            className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer"
             style={{
-              background: 'rgba(99,102,241,0.12)',
-              border: '1px solid rgba(99,102,241,0.25)',
-              color: '#818CF8',
+              background: 'rgba(34,197,94,0.1)',
+              border: '1px solid rgba(34,197,94,0.2)',
+              color: '#86EFAC',
             }}>
-            查看 →
+            查看
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8"
+              strokeLinecap="round" strokeLinejoin="round" className="w-2.5 h-2.5 inline ml-1 -mt-0.5">
+              <path d="M2 6h8M6 2l4 4-4 4" />
+            </svg>
           </Link>
         )}
 
+        {/* 待确认：确认步骤 */}
         {status === 'review' && (
           <Link href={`/demo/${props.id}`}
-            className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all"
+            className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer"
             style={{
               background: 'rgba(234,179,8,0.1)',
-              border: '1px solid rgba(234,179,8,0.25)',
+              border: '1px solid rgba(234,179,8,0.2)',
               color: '#FCD34D',
             }}>
-            确认步骤 →
+            确认步骤
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8"
+              strokeLinecap="round" strokeLinejoin="round" className="w-2.5 h-2.5 inline ml-1 -mt-0.5">
+              <path d="M2 6h8M6 2l4 4-4 4" />
+            </svg>
           </Link>
         )}
 
+        {/* 已中断：处理 */}
         {status === 'paused' && (
           <Link href={`/demo/${props.id}`}
-            className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all"
+            className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer"
             style={{
               background: 'rgba(239,68,68,0.1)',
-              border: '1px solid rgba(239,68,68,0.25)',
+              border: '1px solid rgba(239,68,68,0.2)',
               color: '#FCA5A5',
             }}>
-            处理 →
+            处理
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8"
+              strokeLinecap="round" strokeLinejoin="round" className="w-2.5 h-2.5 inline ml-1 -mt-0.5">
+              <path d="M2 6h8M6 2l4 4-4 4" />
+            </svg>
           </Link>
         )}
       </div>
