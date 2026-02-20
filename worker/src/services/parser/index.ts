@@ -1,7 +1,8 @@
+import { chromium } from 'playwright'
 import { Step } from '../../types'
 
 const SYSTEM_PROMPT = `You are a browser automation expert using Playwright.
-Given a product URL, the page's visible text content, and a user description, generate a precise list of browser automation steps.
+Given a product URL, the page's visible text, interactive elements (with their real attributes), and a user description, generate a precise list of browser automation steps.
 
 Return ONLY a valid JSON array. No explanation, no markdown, no extra text.
 Each step must follow this schema:
@@ -16,37 +17,112 @@ Each step must follow this schema:
 
 Rules:
 - First step is always navigate to the product URL (action_type: "navigate", value: the URL, selector: null)
-- Use the provided page text content to pick selectors that match REAL elements on the page
-- Selectors must be valid Playwright locator strings:
-  - Text match (best for buttons/links): text="Exact Button Text"
-  - Has-text with tag: button:has-text("Submit"), a:has-text("Login")
-  - CSS attributes: [data-testid="foo"], [aria-label="Close"], input[type="email"]
-  - NEVER use jQuery selectors like :contains(), :eq() — they are INVALID
+- Use the INTERACTIVE ELEMENTS list to pick selectors from REAL elements on the page
+- Selector priority (best to worst):
+  1. [data-testid="..."] if available
+  2. input[placeholder="exact text"] for inputs
+  3. button:has-text("exact text") for buttons
+  4. a:has-text("exact text") for links (Next.js Link = <a> tag)
+  5. [aria-label="..."] for icon buttons
+  6. input[type="email"], input[type="password"] for auth forms
 - For "navigate" steps, put the URL in "value" and set "selector" to null
 - For "wait" steps, put milliseconds in "value" (e.g. "2000"), selector: null
 - narration must be natural spoken English, present tense
-- Maximum 8 steps`
+- Maximum 8 steps
+- NEVER use jQuery selectors like :contains(), :eq() — they are INVALID in Playwright`
 
-// 抓取页面可见文字（截断到 3000 字符避免超出 token 限制）
-async function fetchPageText(url: string): Promise<string> {
+interface PageData {
+  text: string
+  elements: string
+}
+
+// 用 Playwright 加载页面，提取真实 DOM 元素和文字
+async function fetchPageData(url: string): Promise<PageData> {
+  let browser
   try {
-    const resp = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ShowrunnerBot/1.0)' },
-      signal: AbortSignal.timeout(8000),
+    browser = await chromium.launch({
+      headless: true,
+      executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ?? '/usr/bin/chromium',
     })
-    if (!resp.ok) return ''
-    const html = await resp.text()
-    // 提取纯文本：去掉 script/style 标签，再去掉所有 HTML 标签
-    const text = html
-      .replace(/<script[\s\S]*?<\/script>/gi, '')
-      .replace(/<style[\s\S]*?<\/style>/gi, '')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 3000)
-    return text
-  } catch {
-    return ''
+    const page = await browser.newPage()
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 })
+    // 等待动态内容渲染（React hydration 等）
+    await page.waitForTimeout(2000)
+
+    // 提取页面可见文字
+    const text = await page.evaluate(() =>
+      (document.body.innerText ?? '').replace(/\s+/g, ' ').trim().slice(0, 2000)
+    )
+
+    // 提取可交互元素（按钮、输入框、链接）及其真实属性
+    const elements = await page.evaluate(() => {
+      const items: string[] = []
+
+      // ── 按钮 & role=button ───────────────────────────────
+      document.querySelectorAll<HTMLElement>('button, [role="button"]').forEach(el => {
+        const txt = el.innerText?.trim().replace(/\s+/g, ' ').slice(0, 60)
+        const testId = el.getAttribute('data-testid')
+        const ariaLabel = el.getAttribute('aria-label')
+        const id = el.id
+        const type = (el as HTMLButtonElement).type
+        const parts: string[] = []
+        if (txt)       parts.push(`text="${txt}"`)
+        if (testId)    parts.push(`data-testid="${testId}"`)
+        if (ariaLabel) parts.push(`aria-label="${ariaLabel}"`)
+        if (id)        parts.push(`id="${id}"`)
+        if (type && type !== 'submit') parts.push(`type="${type}"`)
+        if (parts.length) items.push(`BUTTON: ${parts.join(', ')}`)
+      })
+
+      // ── 输入框 & 文本域 ──────────────────────────────────
+      document.querySelectorAll<HTMLInputElement>('input, textarea').forEach(el => {
+        const parts: string[] = []
+        if (el.type && el.type !== 'text') parts.push(`type="${el.type}"`)
+        if (el.placeholder)  parts.push(`placeholder="${el.placeholder}"`)
+        if (el.name)         parts.push(`name="${el.name}"`)
+        if (el.id)           parts.push(`id="${el.id}"`)
+        const testId = el.getAttribute('data-testid')
+        if (testId)          parts.push(`data-testid="${testId}"`)
+        const ariaLabel = el.getAttribute('aria-label')
+        if (ariaLabel)       parts.push(`aria-label="${ariaLabel}"`)
+        items.push(`INPUT: ${parts.join(', ') || '(no attributes)'}`)
+      })
+
+      // ── 链接 ─────────────────────────────────────────────
+      document.querySelectorAll<HTMLAnchorElement>('a[href]').forEach(el => {
+        const href = el.getAttribute('href') ?? ''
+        if (href.startsWith('#') || href.startsWith('javascript')) return
+        const txt = el.innerText?.trim().replace(/\s+/g, ' ').slice(0, 60)
+        if (!txt) return
+        items.push(`LINK: text="${txt}" href="${href}"`)
+      })
+
+      return items.slice(0, 50).join('\n')
+    })
+
+    return { text, elements }
+  } catch (err) {
+    console.warn('[parser] Playwright 抓取失败，回退到 HTTP:', (err as Error).message.slice(0, 100))
+    // Fallback：直接 HTTP fetch 纯文字
+    try {
+      const resp = await fetch(url, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ShowrunnerBot/1.0)' },
+        signal: AbortSignal.timeout(8000),
+      })
+      const html = await resp.text()
+      const text = html
+        .replace(/<script[\s\S]*?<\/script>/gi, '')
+        .replace(/<style[\s\S]*?<\/style>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 2000)
+      return { text, elements: '' }
+    } catch {
+      return { text: '', elements: '' }
+    }
+  } finally {
+    await browser?.close()
   }
 }
 
@@ -57,18 +133,14 @@ export async function parseSteps(
   const apiKey = process.env.DEEPSEEK_API_KEY
   if (!apiKey) throw new Error('DEEPSEEK_API_KEY 未配置')
 
-  // 先抓取页面内容，让 AI 根据真实 DOM 文字生成选择器
-  console.log('[parser] 抓取页面内容...')
-  const pageText = await fetchPageText(productUrl)
-  if (pageText) {
-    console.log(`[parser] 页面文字已获取 (${pageText.length} 字符)`)
-  } else {
-    console.warn('[parser] 无法获取页面内容，将凭 URL 猜测步骤')
-  }
+  console.log('[parser] 抓取页面内容（Playwright）...')
+  const { text, elements } = await fetchPageData(productUrl)
+  console.log(`[parser] 页面文字 ${text.length} 字符，可交互元素 ${elements.split('\n').filter(Boolean).length} 个`)
 
   const userMessage = [
     `Product URL: ${productUrl}`,
-    pageText ? `Page text content:\n${pageText}` : '',
+    text     ? `Page visible text:\n${text}` : '',
+    elements ? `INTERACTIVE ELEMENTS ON THE PAGE (use these for accurate selectors):\n${elements}` : '',
     description
       ? `Demo description: ${description}`
       : 'Generate a sensible onboarding demo flow for this product.',
@@ -94,8 +166,8 @@ export async function parseSteps(
   })
 
   if (!resp.ok) {
-    const err = await resp.text()
-    throw new Error(`DeepSeek API 错误 ${resp.status}: ${err.slice(0, 200)}`)
+    const errText = await resp.text()
+    throw new Error(`DeepSeek API 错误 ${resp.status}: ${errText.slice(0, 200)}`)
   }
 
   const data = (await resp.json()) as {
