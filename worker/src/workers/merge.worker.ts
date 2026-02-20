@@ -4,6 +4,7 @@ import { db, demos, steps, jobs } from '../utils/db'
 import { eq } from 'drizzle-orm'
 import { mergeDemo } from '../services/merger'
 import { Paths } from '../utils/paths'
+import { uploadToR2 } from '../utils/r2'
 import fs from 'fs'
 import path from 'path'
 
@@ -39,14 +40,21 @@ async function processJob(job: Job<MergeJobData>) {
     Paths.finalDir(demoId)
   )
 
-  // 3. 将视频文件复制到持久化存储目录
-  const destDir  = path.join(VIDEO_DIR, demoId)
-  const destPath = path.join(destDir, 'final.mp4')
-  fs.mkdirSync(destDir, { recursive: true })
-  fs.copyFileSync(outputPath, destPath)
+  // 3. 优先上传到 R2；未配置时回退到本地持久化存储
+  let videoUrl: string
+  const r2Url = await uploadToR2(outputPath, demoId)
 
-  // 4. video_url 存储为相对路径（Nginx 提供静态文件）
-  const videoUrl = `/videos/${demoId}/final.mp4`
+  if (r2Url) {
+    // R2 模式：使用云端公开 URL
+    videoUrl = r2Url
+  } else {
+    // 本地模式（降级）：复制到持久化目录，Nginx 提供静态文件
+    const destDir  = path.join(VIDEO_DIR, demoId)
+    const destPath = path.join(destDir, 'final.mp4')
+    fs.mkdirSync(destDir, { recursive: true })
+    fs.copyFileSync(outputPath, destPath)
+    videoUrl = `/videos/${demoId}/final.mp4`
+  }
 
   // 5. 更新步骤时间戳
   for (const ts of stepTimestamps) {
