@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { StatusBadge } from './status-badge'
 import { useDemoRealtime } from '@/hooks/use-demo-realtime'
+import { useTranslation } from '@/lib/i18n'
 import type { DemoStatus } from '@/types'
 
 interface DemoCardProps {
@@ -17,6 +18,8 @@ interface DemoCardProps {
 
 export function DemoCard(props: DemoCardProps) {
   const { status } = useDemoRealtime(props.id, props.status)
+  const { t, locale } = useTranslation()
+  const dc = t.demoCard
 
   const hostname = (() => {
     try { return new URL(props.product_url).hostname }
@@ -25,9 +28,10 @@ export function DemoCard(props: DemoCardProps) {
 
   const initial = hostname.charAt(0).toUpperCase()
 
-  const date = new Date(props.created_at as string).toLocaleDateString('zh-CN', {
-    month: 'short', day: 'numeric',
-  })
+  const date = new Date(props.created_at as string).toLocaleDateString(
+    locale === 'zh' ? 'zh-CN' : 'en-US',
+    { month: 'short', day: 'numeric' },
+  )
 
   return (
     <div className="glass-card glass-card-hover rounded-xl px-4 py-3.5 flex items-center gap-4">
@@ -67,7 +71,7 @@ export function DemoCard(props: DemoCardProps) {
           <Link href={`/share/${props.share_token}`} target="_blank"
             className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer hover:opacity-80"
             style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#15803D' }}>
-            查看
+            {dc.view}
             <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8"
               strokeLinecap="round" strokeLinejoin="round" className="w-2.5 h-2.5 inline ml-1 -mt-0.5">
               <path d="M2 6h8M6 2l4 4-4 4" />
@@ -80,7 +84,7 @@ export function DemoCard(props: DemoCardProps) {
           <Link href={`/demo/${props.id}`}
             className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer hover:opacity-80"
             style={{ background: '#FFFBEB', border: '1px solid #FDE68A', color: '#B45309' }}>
-            确认步骤
+            {dc.reviewSteps}
             <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8"
               strokeLinecap="round" strokeLinejoin="round" className="w-2.5 h-2.5 inline ml-1 -mt-0.5">
               <path d="M2 6h8M6 2l4 4-4 4" />
@@ -93,7 +97,7 @@ export function DemoCard(props: DemoCardProps) {
           <Link href={`/demo/${props.id}`}
             className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer hover:opacity-80"
             style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C' }}>
-            处理
+            {dc.handle}
             <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8"
               strokeLinecap="round" strokeLinejoin="round" className="w-2.5 h-2.5 inline ml-1 -mt-0.5">
               <path d="M2 6h8M6 2l4 4-4 4" />

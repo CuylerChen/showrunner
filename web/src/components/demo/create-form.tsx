@@ -2,9 +2,13 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslation } from '@/lib/i18n'
 
 export function CreateForm() {
   const router = useRouter()
+  const { t } = useTranslation()
+  const cf = t.createForm
+
   const [url, setUrl]         = useState('')
   const [desc, setDesc]       = useState('')
   const [loading, setLoading] = useState(false)
@@ -21,12 +25,12 @@ export function CreateForm() {
         body:    JSON.stringify({ product_url: url, description: desc || null }),
       })
       const data = await res.json()
-      if (!data.success) { setError(data.error?.message ?? '创建失败，请重试'); return }
+      if (!data.success) { setError(data.error?.message ?? cf.errorDefault); return }
       setUrl('')
       setDesc('')
       router.refresh()
     } catch {
-      setError('网络错误，请重试')
+      setError(cf.errorNetwork)
     } finally {
       setLoading(false)
     }
@@ -38,20 +42,20 @@ export function CreateForm() {
         <span className="flex h-2 w-2 rounded-full"
           style={{ background: '#16A34A', boxShadow: '0 0 0 3px rgba(22,163,74,0.15)' }} />
         <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-          生成新的 Demo
+          {cf.title}
         </h2>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-            产品 URL
+            {cf.urlLabel}
             <span className="ml-1" style={{ color: '#DC2626' }}>*</span>
           </label>
           <input
             type="url"
             required
-            placeholder="https://app.yourproduct.com"
+            placeholder={cf.urlPlaceholder}
             value={url}
             onChange={e => setUrl(e.target.value)}
             className="input-dark w-full rounded-lg px-3.5 py-2.5 text-sm"
@@ -60,12 +64,12 @@ export function CreateForm() {
 
         <div>
           <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-            演示内容
-            <span className="ml-1.5 font-normal" style={{ color: 'var(--text-muted)' }}>（可选）</span>
+            {cf.descLabel}
+            <span className="ml-1.5 font-normal" style={{ color: 'var(--text-muted)' }}>{cf.descOptional}</span>
           </label>
           <input
             type="text"
-            placeholder="例：用户注册 → 创建项目 → 导出报告"
+            placeholder={cf.descPlaceholder}
             value={desc}
             onChange={e => setDesc(e.target.value)}
             className="input-dark w-full rounded-lg px-3.5 py-2.5 text-sm"
@@ -88,7 +92,7 @@ export function CreateForm() {
 
       <div className="mt-4 flex items-center justify-between gap-4">
         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          AI 将自动解析页面并规划操作步骤
+          {cf.hint}
         </p>
         <button
           type="submit"
@@ -98,11 +102,11 @@ export function CreateForm() {
           {loading ? (
             <>
               <span className="h-3.5 w-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-              AI 解析中...
+              {cf.loadingBtn}
             </>
           ) : (
             <>
-              生成 Demo
+              {cf.submitBtn}
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"
                 strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
                 <path d="M3 8h10M9 4l4 4-4 4" />

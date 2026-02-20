@@ -4,15 +4,8 @@ import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ShowrunnerLogo } from '@/components/logo'
-
-/* ── OAuth 错误映射 ─────────────────────────────────────────────── */
-const OAUTH_ERRORS: Record<string, string> = {
-  oauth_denied:         '授权被取消，请重试',
-  oauth_state_mismatch: '安全验证失败，请重试',
-  oauth_token_failed:   'OAuth 令牌获取失败，请重试',
-  oauth_profile_failed: '获取账号信息失败，请重试',
-  oauth_no_email:       '无法获取邮箱地址，请确保已授权邮箱访问',
-}
+import { LangToggle } from '@/components/lang-toggle'
+import { useTranslation } from '@/lib/i18n'
 
 /* ── Google Logo ──────────────────────────────────────────────────── */
 function GoogleIcon() {
@@ -54,12 +47,16 @@ function ErrorAlert({ message }: { message: string }) {
 export default function SignInPage() {
   const router       = useRouter()
   const searchParams = useSearchParams()
+  const { t } = useTranslation()
+  const si = t.auth.signIn
+
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
   const [error,    setError]    = useState<string | null>(null)
   const [loading,  setLoading]  = useState(false)
 
-  const oauthError = OAUTH_ERRORS[searchParams.get('error') ?? ''] ?? null
+  const oauthErrorKey = searchParams.get('error') as keyof typeof t.auth.oauthErrors | null
+  const oauthError = oauthErrorKey ? (t.auth.oauthErrors[oauthErrorKey] ?? null) : null
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -72,11 +69,11 @@ export default function SignInPage() {
         body:    JSON.stringify({ email, password }),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error?.message ?? '登录失败'); return }
+      if (!res.ok) { setError(data.error?.message ?? si.errorDefault); return }
       router.push('/dashboard')
       router.refresh()
     } catch {
-      setError('网络错误，请重试')
+      setError(si.errorNetwork)
     } finally {
       setLoading(false)
     }
@@ -86,8 +83,9 @@ export default function SignInPage() {
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-surface)' }}>
       {/* 顶部导航 */}
       <header style={{ background: 'white', borderBottom: '1px solid var(--border)' }}>
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center">
+        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <Link href="/"><ShowrunnerLogo size={26} /></Link>
+          <LangToggle />
         </div>
       </header>
 
@@ -96,10 +94,10 @@ export default function SignInPage() {
         <div className="w-full max-w-[380px]">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-              欢迎回来
+              {si.title}
             </h1>
             <p className="mt-1.5 text-sm" style={{ color: 'var(--text-muted)' }}>
-              登录你的 Showrunner 账号
+              {si.subtitle}
             </p>
           </div>
 
@@ -127,7 +125,7 @@ export default function SignInPage() {
               onMouseLeave={e => (e.currentTarget.style.background = 'white')}
             >
               <GoogleIcon />
-              使用 Google 账号登录
+              {si.google}
             </a>
 
             <a
@@ -142,13 +140,13 @@ export default function SignInPage() {
               onMouseLeave={e => (e.currentTarget.style.background = '#24292F')}
             >
               <GitHubIcon />
-              使用 GitHub 账号登录
+              {si.github}
             </a>
 
             {/* ── 分隔线 ── */}
             <div className="flex items-center gap-3">
               <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>或使用邮箱登录</span>
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{si.orEmail}</span>
               <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
             </div>
 
@@ -157,7 +155,7 @@ export default function SignInPage() {
               <div>
                 <label className="block text-sm font-medium mb-1.5"
                   style={{ color: 'var(--text-secondary)' }}>
-                  邮箱地址
+                  {si.emailLabel}
                 </label>
                 <input
                   type="email"
@@ -172,14 +170,14 @@ export default function SignInPage() {
               <div>
                 <label className="block text-sm font-medium mb-1.5"
                   style={{ color: 'var(--text-secondary)' }}>
-                  密码
+                  {si.passLabel}
                 </label>
                 <input
                   type="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
-                  placeholder="••••••••"
+                  placeholder={si.passPh}
                   className="input-dark w-full rounded-lg px-3.5 py-2.5 text-sm"
                 />
               </div>
@@ -194,18 +192,18 @@ export default function SignInPage() {
                 {loading ? (
                   <>
                     <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-                    登录中...
+                    {si.loadingBtn}
                   </>
-                ) : '登录'}
+                ) : si.submitBtn}
               </button>
             </form>
           </div>
 
           <p className="mt-5 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
-            没有账号？{' '}
+            {si.noAccount}{' '}
             <Link href="/sign-up" className="font-semibold hover:underline"
               style={{ color: '#16A34A' }}>
-              免费注册
+              {si.signUpLink}
             </Link>
           </p>
         </div>

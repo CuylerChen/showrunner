@@ -3,9 +3,12 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ShowrunnerLogo } from '@/components/logo'
+import { LangToggle } from '@/components/lang-toggle'
+import { useTranslation } from '@/lib/i18n'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const { t } = useTranslation()
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' })
@@ -22,12 +25,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <Link href="/dashboard" className="cursor-pointer">
             <ShowrunnerLogo size={26} />
           </Link>
-          <button
-            onClick={handleLogout}
-            className="btn-outline rounded-lg px-3.5 py-1.5 text-sm cursor-pointer"
-          >
-            退出登录
-          </button>
+          <div className="flex items-center gap-2">
+            <LangToggle />
+            <button
+              onClick={handleLogout}
+              className="btn-outline rounded-lg px-3.5 py-1.5 text-sm cursor-pointer"
+            >
+              {t.nav.logout}
+            </button>
+          </div>
         </div>
       </header>
 

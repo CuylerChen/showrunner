@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ShowrunnerLogo } from '@/components/logo'
+import { LangToggle } from '@/components/lang-toggle'
+import { useTranslation } from '@/lib/i18n'
 
 /* ── Google Logo ──────────────────────────────────────────────────── */
 function GoogleIcon() {
@@ -44,6 +46,9 @@ function ErrorAlert({ message }: { message: string }) {
 
 export default function SignUpPage() {
   const router = useRouter()
+  const { t } = useTranslation()
+  const su = t.auth.signUp
+
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
   const [error,    setError]    = useState<string | null>(null)
@@ -60,11 +65,11 @@ export default function SignUpPage() {
         body:    JSON.stringify({ email, password }),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error?.message ?? '注册失败'); return }
+      if (!res.ok) { setError(data.error?.message ?? su.errorDefault); return }
       router.push('/dashboard')
       router.refresh()
     } catch {
-      setError('网络错误，请重试')
+      setError(su.errorNetwork)
     } finally {
       setLoading(false)
     }
@@ -74,8 +79,9 @@ export default function SignUpPage() {
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-surface)' }}>
       {/* 顶部导航 */}
       <header style={{ background: 'white', borderBottom: '1px solid var(--border)' }}>
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center">
+        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <Link href="/"><ShowrunnerLogo size={26} /></Link>
+          <LangToggle />
         </div>
       </header>
 
@@ -84,10 +90,10 @@ export default function SignUpPage() {
         <div className="w-full max-w-[380px]">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-              创建账号
+              {su.title}
             </h1>
             <p className="mt-1.5 text-sm" style={{ color: 'var(--text-muted)' }}>
-              免费开始 · 无需信用卡
+              {su.subtitle}
             </p>
           </div>
 
@@ -108,7 +114,7 @@ export default function SignUpPage() {
               onMouseLeave={e => (e.currentTarget.style.background = 'white')}
             >
               <GoogleIcon />
-              使用 Google 账号注册
+              {su.google}
             </a>
 
             <a
@@ -123,13 +129,13 @@ export default function SignUpPage() {
               onMouseLeave={e => (e.currentTarget.style.background = '#24292F')}
             >
               <GitHubIcon />
-              使用 GitHub 账号注册
+              {su.github}
             </a>
 
             {/* ── 分隔线 ── */}
             <div className="flex items-center gap-3">
               <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>或使用邮箱注册</span>
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{su.orEmail}</span>
               <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
             </div>
 
@@ -138,7 +144,7 @@ export default function SignUpPage() {
               <div>
                 <label className="block text-sm font-medium mb-1.5"
                   style={{ color: 'var(--text-secondary)' }}>
-                  邮箱地址
+                  {su.emailLabel}
                 </label>
                 <input
                   type="email"
@@ -153,7 +159,7 @@ export default function SignUpPage() {
               <div>
                 <label className="block text-sm font-medium mb-1.5"
                   style={{ color: 'var(--text-secondary)' }}>
-                  密码
+                  {su.passLabel}
                 </label>
                 <input
                   type="password"
@@ -161,7 +167,7 @@ export default function SignUpPage() {
                   onChange={e => setPassword(e.target.value)}
                   required
                   minLength={8}
-                  placeholder="至少 8 位"
+                  placeholder={su.passPh}
                   className="input-dark w-full rounded-lg px-3.5 py-2.5 text-sm"
                 />
               </div>
@@ -176,11 +182,11 @@ export default function SignUpPage() {
                 {loading ? (
                   <>
                     <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-                    注册中...
+                    {su.loadingBtn}
                   </>
                 ) : (
                   <>
-                    创建账号
+                    {su.submitBtn}
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"
                       strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
                       <path d="M3 8h10M9 4l4 4-4 4" />
@@ -191,15 +197,15 @@ export default function SignUpPage() {
             </form>
 
             <p className="text-center text-xs" style={{ color: 'var(--text-muted)' }}>
-              注册即同意 Showrunner 使用条款
+              {su.terms}
             </p>
           </div>
 
           <p className="mt-5 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
-            已有账号？{' '}
+            {su.hasAccount}{' '}
             <Link href="/sign-in" className="font-semibold hover:underline"
               style={{ color: '#16A34A' }}>
-              登录
+              {su.signInLink}
             </Link>
           </p>
         </div>

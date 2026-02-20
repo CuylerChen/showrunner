@@ -4,6 +4,7 @@ import { db, schema } from '@/lib/db'
 import { eq, desc } from 'drizzle-orm'
 import { CreateForm } from '@/components/demo/create-form'
 import { DemoCard } from '@/components/demo/demo-card'
+import { getT } from '@/lib/i18n-server'
 
 async function getDemos(userId: string) {
   return db
@@ -41,7 +42,8 @@ export default async function DashboardPage() {
   const userId = headersList.get('x-user-id')
   if (!userId) redirect('/sign-in')
 
-  const demos = await getDemos(userId)
+  const [demos, { t }] = await Promise.all([getDemos(userId), getT()])
+  const d = t.dashboard
 
   return (
     <div className="space-y-8">
@@ -49,17 +51,17 @@ export default async function DashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-            Demo 工作台
+            {d.title}
           </h1>
           <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
-            粘贴产品 URL，AI 自动生成可分享的演示视频
+            {d.subtitle}
           </p>
         </div>
 
         {demos.length > 0 && (
           <span className="text-xs font-medium rounded-full px-3 py-1.5"
             style={{ background: '#EEF2FF', color: '#4338CA', border: '1px solid #C7D2FE' }}>
-            {demos.length} 个 Demo
+            {d.demosCount(demos.length)}
           </span>
         )}
       </div>
@@ -71,7 +73,7 @@ export default async function DashboardPage() {
       <div>
         <h2 className="text-xs font-semibold uppercase tracking-widest mb-3"
           style={{ color: 'var(--text-muted)' }}>
-          我的 Demo
+          {d.myDemos}
         </h2>
 
         {demos.length === 0 ? (
@@ -80,10 +82,10 @@ export default async function DashboardPage() {
               <IconFilmSlate />
             </div>
             <p className="mt-4 text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
-              还没有 Demo
+              {d.noDemo}
             </p>
             <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
-              在上方输入产品 URL 开始生成第一个演示视频
+              {d.noDemoSub}
             </p>
           </div>
         ) : (
