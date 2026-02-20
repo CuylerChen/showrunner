@@ -31,7 +31,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   const { id } = await params
   const body = await req.json().catch(() => ({}))
   const parsed = BodySchema.safeParse(body)
-  if (!parsed.success) return err('VALIDATION_ERROR', '参数错误：' + parsed.error.errors[0]?.message)
+  if (!parsed.success) return err('VALIDATION_ERROR', '参数错误：请提供正确的 Cookie 数组')
 
   // 确认 demo 归属当前用户
   const demo = await db
