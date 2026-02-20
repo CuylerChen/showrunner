@@ -40,15 +40,18 @@ async function processJob(job: Job<MergeJobData>) {
     Paths.finalDir(demoId)
   )
 
-  // 3. 优先上传到 R2；未配置时回退到本地持久化存储
+  // 3. 优先上传到 R2；失败或未配置时回退到本地持久化存储
   let videoUrl: string
-  const r2Url = await uploadToR2(outputPath, demoId)
+  let r2Url: string | null = null
+  try {
+    r2Url = await uploadToR2(outputPath, demoId)
+  } catch (r2Err: any) {
+    console.warn(`[merge] R2 上传失败，回退本地存储: ${r2Err.message}`)
+  }
 
   if (r2Url) {
-    // R2 模式：使用云端公开 URL
     videoUrl = r2Url
   } else {
-    // 本地模式（降级）：复制到持久化目录，Nginx 提供静态文件
     const destDir  = path.join(VIDEO_DIR, demoId)
     const destPath = path.join(destDir, 'final.mp4')
     fs.mkdirSync(destDir, { recursive: true })
@@ -84,19 +87,26 @@ async function processJob(job: Job<MergeJobData>) {
 async function onFailed(job: Job<MergeJobData> | undefined, err: Error) {
   if (!job) return
   const { demoId } = job.data
-  console.error(`[merge] 失败 demo=${demoId}:`, err.message)
+  const totalAttempts = job.opts.attempts ?? 1
+  const isFinal = job.attemptsMade >= totalAttempts
 
-  await db
-    .update(demos)
-    .set({ status: 'failed', error_message: `视频合成失败: ${err.message}` })
-    .where(eq(demos.id, demoId))
+  console.error(`[merge] 失败 demo=${demoId} [${job.attemptsMade}/${totalAttempts}]:`, err.message)
 
-  await db
-    .update(jobs)
-    .set({ status: 'failed', error_message: err.message, completed_at: new Date() })
-    .where(eq(jobs.demo_id, demoId))
+  if (isFinal) {
+    // 最终失败：标记状态并清理临时文件
+    await db
+      .update(demos)
+      .set({ status: 'failed', error_message: `视频合成失败: ${err.message}` })
+      .where(eq(demos.id, demoId))
 
-  Paths.cleanup(demoId)
+    await db
+      .update(jobs)
+      .set({ status: 'failed', error_message: err.message, completed_at: new Date() })
+      .where(eq(jobs.demo_id, demoId))
+
+    Paths.cleanup(demoId)
+  }
+  // 非最终失败：保留临时文件（音频等），供下次重试使用
 }
 
 export function startMergeWorker() {
