@@ -15,6 +15,9 @@ async function getDemos(userId: string) {
       status:      schema.demos.status,
       duration:    schema.demos.duration,
       share_token: schema.demos.share_token,
+      view_count:  schema.demos.view_count,
+      cta_url:     schema.demos.cta_url,
+      cta_text:    schema.demos.cta_text,
       created_at:  schema.demos.created_at,
     })
     .from(schema.demos)

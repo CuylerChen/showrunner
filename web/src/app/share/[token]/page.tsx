@@ -16,6 +16,8 @@ interface ShareData {
   title: string | null
   video_url: string
   duration: number
+  cta_url: string | null
+  cta_text: string | null
   steps: ShareStep[]
 }
 
@@ -48,6 +50,15 @@ function IconFilm() {
       <circle cx="24" cy="33" r="4" stroke="currentColor" strokeWidth="2" />
       <path d="M22.5 33l2.5 1.5-2.5 1.5" stroke="currentColor" strokeWidth="1.8"
         strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function IconArrow() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+      <path d="M3 8h10M9 4l4 4-4 4" />
     </svg>
   )
 }
@@ -89,7 +100,7 @@ function NotFoundScreen() {
             分享页不存在
           </h2>
           <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>
-            Demo 可能尚未生成完成，或链接已失效
+            演示视频可能尚未生成完成，或链接已失效
           </p>
           <Link href="/"
             className="mt-6 inline-block btn-outline rounded-lg px-5 py-2 text-sm">
@@ -109,12 +120,16 @@ export default function SharePage() {
   const [loading, setLoading]       = useState(true)
   const [notFound, setNotFound]     = useState(false)
   const [activeStep, setActiveStep] = useState(0)
+  const [showCta, setShowCta]       = useState(false)
 
   useEffect(() => {
     fetch(`/api/share/${token}`)
       .then(r => r.json())
       .then(d => { if (d.success) setData(d.data); else setNotFound(true) })
       .finally(() => setLoading(false))
+
+    // 记录一次观看（fire-and-forget）
+    fetch(`/api/share/${token}/view`, { method: 'POST' }).catch(() => {})
   }, [token])
 
   function handleTimeUpdate() {
@@ -126,16 +141,22 @@ export default function SharePage() {
     if (idx >= 0) setActiveStep(idx)
   }
 
+  function handleVideoEnded() {
+    if (data?.cta_url) setShowCta(true)
+  }
+
   function seekToStep(step: ShareStep) {
     if (!videoRef.current || step.timestamp_start == null) return
     videoRef.current.currentTime = step.timestamp_start
     videoRef.current.play()
+    setShowCta(false)
   }
 
   if (loading) return <LoadingScreen />
   if (notFound || !data) return <NotFoundScreen />
 
   const hasSteps = data.steps.length > 0
+  const hasCta   = !!data.cta_url
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-surface)' }}>
@@ -144,7 +165,6 @@ export default function SharePage() {
       <header className="sticky top-0 z-20"
         style={{ background: 'white', borderBottom: '1px solid var(--border)' }}>
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-          {/* 左：Logo + 分隔线 + 标题 */}
           <div className="flex items-center gap-3 min-w-0">
             <Link href="/" className="flex-shrink-0 cursor-pointer">
               <ShowrunnerLogo size={26} />
@@ -157,7 +177,6 @@ export default function SharePage() {
             </h1>
           </div>
 
-          {/* 右：时长 */}
           <div className="flex items-center gap-1.5 flex-shrink-0 rounded-full px-3 py-1.5"
             style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#15803D' }}>
             <IconClock />
@@ -179,7 +198,7 @@ export default function SharePage() {
 
           {/* ── 视频播放器 ──────────────────────────────── */}
           <div className="flex-1 min-w-0">
-            <div className="overflow-hidden rounded-2xl"
+            <div className="relative overflow-hidden rounded-2xl"
               style={{
                 background: '#000',
                 border: '1px solid var(--border)',
@@ -190,9 +209,38 @@ export default function SharePage() {
                 src={data.video_url}
                 controls
                 onTimeUpdate={handleTimeUpdate}
+                onEnded={handleVideoEnded}
                 className="w-full block"
                 playsInline
               />
+
+              {/* ── CTA 结尾浮层 ──────────────────────── */}
+              {hasCta && showCta && (
+                <div
+                  className="absolute inset-0 flex flex-col items-center justify-center gap-4"
+                  style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)' }}
+                >
+                  <p className="text-white text-lg font-semibold px-6 text-center">
+                    {data.title ?? '感谢观看'}
+                  </p>
+                  <a
+                    href={data.cta_url!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-xl px-7 py-3 text-sm font-semibold transition-opacity hover:opacity-90"
+                    style={{ background: '#6366F1', color: 'white' }}
+                  >
+                    {data.cta_text || '立即体验'}
+                    <IconArrow />
+                  </a>
+                  <button
+                    onClick={() => { setShowCta(false); if (videoRef.current) { videoRef.current.currentTime = 0; videoRef.current.play() } }}
+                    className="text-xs text-white/60 hover:text-white/90 transition-colors cursor-pointer"
+                  >
+                    重新播放
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* 视频下方信息栏 */}
@@ -210,7 +258,6 @@ export default function SharePage() {
           {hasSteps && (
             <div className="w-full lg:w-56 flex-shrink-0">
               <div className="glass-card rounded-2xl overflow-hidden">
-                {/* 列表标题 */}
                 <div className="flex items-center gap-2 px-4 py-3"
                   style={{ borderBottom: '1px solid var(--border)' }}>
                   <IconPlay />
@@ -220,7 +267,6 @@ export default function SharePage() {
                   </span>
                 </div>
 
-                {/* 步骤列表 */}
                 <div className="p-2 space-y-0.5">
                   {data.steps.map((step, idx) => {
                     const isActive = idx === activeStep
@@ -242,7 +288,6 @@ export default function SharePage() {
                             (e.currentTarget as HTMLElement).style.background = 'transparent'
                         }}
                       >
-                        {/* 序号圆圈 */}
                         <span
                           className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-xs font-semibold"
                           style={{
@@ -252,7 +297,6 @@ export default function SharePage() {
                           {step.position}
                         </span>
 
-                        {/* 步骤文字 */}
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-medium leading-snug truncate"
                             style={{ color: isActive ? '#3730A3' : 'var(--text-secondary)' }}>
@@ -269,6 +313,22 @@ export default function SharePage() {
                     )
                   })}
                 </div>
+
+                {/* CTA 按钮 — 章节列表底部 */}
+                {hasCta && (
+                  <div className="px-3 pb-3">
+                    <a
+                      href={data.cta_url!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-semibold transition-opacity hover:opacity-90"
+                      style={{ background: '#6366F1', color: 'white' }}
+                    >
+                      {data.cta_text || '立即体验'}
+                      <IconArrow />
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           )}

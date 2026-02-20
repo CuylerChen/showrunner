@@ -35,27 +35,37 @@ export async function GET(_req: NextRequest, { params }: Params) {
   return ok({ ...demo, steps })
 }
 
-// PATCH /api/demos/[id] — 更新 Demo 标题
+// PATCH /api/demos/[id] — 更新 Demo 标题 / CTA 设置
 export async function PATCH(req: NextRequest, { params }: Params) {
   const { user, response } = await getCurrentUser()
   if (!user) return response!
 
   const { id } = await params
   const body = await req.json().catch(() => ({}))
-  const schema2 = z.object({ title: z.string().min(1).max(100) })
+  const schema2 = z.object({
+    title:    z.string().min(1).max(100).optional(),
+    cta_url:  z.string().url().max(2048).nullable().optional(),
+    cta_text: z.string().max(100).nullable().optional(),
+  }).refine(d => Object.keys(d).length > 0, { message: '至少提供一个更新字段' })
+
   const parsed = schema2.safeParse(body)
-  if (!parsed.success) return err('VALIDATION_ERROR', '标题不能为空且不超过 100 字符')
+  if (!parsed.success) return err('VALIDATION_ERROR', parsed.error.errors[0]?.message ?? '参数错误')
+
+  const updates: Record<string, unknown> = {}
+  if (parsed.data.title    !== undefined) updates.title    = parsed.data.title
+  if (parsed.data.cta_url  !== undefined) updates.cta_url  = parsed.data.cta_url
+  if (parsed.data.cta_text !== undefined) updates.cta_text = parsed.data.cta_text
 
   const updated = await db
     .update(schema.demos)
-    .set({ title: parsed.data.title })
+    .set(updates)
     .where(and(eq(schema.demos.id, id), eq(schema.demos.user_id, user.id)))
 
   if (!updated[0] || (updated[0] as any).affectedRows === 0) {
     return err('NOT_FOUND', 'Demo 不存在或无权访问')
   }
 
-  return ok({ id, title: parsed.data.title })
+  return ok({ id, ...updates })
 }
 
 // DELETE /api/demos/[id] — 删除 Demo 及视频文件

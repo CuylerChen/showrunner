@@ -14,6 +14,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
       title:     schema.demos.title,
       video_url: schema.demos.video_url,
       duration:  schema.demos.duration,
+      cta_url:   schema.demos.cta_url,
+      cta_text:  schema.demos.cta_text,
     })
     .from(schema.demos)
     .where(and(eq(schema.demos.share_token, token), eq(schema.demos.status, 'completed')))
@@ -45,6 +47,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
     title:     demo.title,
     video_url: demo.video_url,
     duration:  demo.duration,
+    cta_url:   demo.cta_url,
+    cta_text:  demo.cta_text,
     steps,
   })
 }
