@@ -29,11 +29,18 @@ async function processJob(job: Job<RecordJobData>) {
 
   Paths.ensureAll(demoId)
 
+  // 获取 session cookies（用于需要登录的产品）
+  const demoRow = await db
+    .select({ session_cookies: demos.session_cookies })
+    .from(demos)
+    .where(eq(demos.id, demoId))
+    .then(rows => rows[0] ?? null)
+
   let videoPath: string
   let stepTimestamps: { stepId: string; start: number; end: number }[]
 
   try {
-    const result = await recordDemo(jobSteps, Paths.videoDir(demoId))
+    const result = await recordDemo(jobSteps, Paths.videoDir(demoId), demoRow?.session_cookies)
     videoPath = result.videoPath
     stepTimestamps = result.stepTimestamps
   } catch (err) {

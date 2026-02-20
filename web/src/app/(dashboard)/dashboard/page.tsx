@@ -7,23 +7,30 @@ import { DemoCard } from '@/components/demo/demo-card'
 import { getT } from '@/lib/i18n-server'
 
 async function getDemos(userId: string) {
-  return db
+  const rows = await db
     .select({
-      id:          schema.demos.id,
-      title:       schema.demos.title,
-      product_url: schema.demos.product_url,
-      status:      schema.demos.status,
-      duration:    schema.demos.duration,
-      share_token: schema.demos.share_token,
-      view_count:  schema.demos.view_count,
-      cta_url:     schema.demos.cta_url,
-      cta_text:    schema.demos.cta_text,
-      created_at:  schema.demos.created_at,
+      id:              schema.demos.id,
+      title:           schema.demos.title,
+      product_url:     schema.demos.product_url,
+      status:          schema.demos.status,
+      duration:        schema.demos.duration,
+      share_token:     schema.demos.share_token,
+      view_count:      schema.demos.view_count,
+      cta_url:         schema.demos.cta_url,
+      cta_text:        schema.demos.cta_text,
+      session_cookies: schema.demos.session_cookies,
+      created_at:      schema.demos.created_at,
     })
     .from(schema.demos)
     .where(eq(schema.demos.user_id, userId))
     .orderBy(desc(schema.demos.created_at))
     .limit(50)
+
+  // 不暴露 cookie 原始内容给客户端，只传布尔值
+  return rows.map(({ session_cookies, ...rest }) => ({
+    ...rest,
+    has_session: !!session_cookies,
+  }))
 }
 
 function IconFilmSlate() {

@@ -1,4 +1,4 @@
-import { chromium, Page } from 'playwright'
+import { chromium, Page, Cookie } from 'playwright'
 import path from 'path'
 import fs from 'fs'
 import { Step, RecordResult } from '../../types'
@@ -39,7 +39,8 @@ async function executeStep(page: Page, step: Step): Promise<void> {
 
 export async function recordDemo(
   steps: Step[],
-  outputDir: string
+  outputDir: string,
+  sessionCookiesJson?: string | null
 ): Promise<RecordResult> {
   fs.mkdirSync(outputDir, { recursive: true })
 
@@ -54,6 +55,17 @@ export async function recordDemo(
       size: VIEWPORT,
     },
   })
+
+  // 注入登录 Session Cookies（如果已配置）
+  if (sessionCookiesJson) {
+    try {
+      const cookies: Cookie[] = JSON.parse(sessionCookiesJson)
+      await context.addCookies(cookies)
+      console.log(`[recorder] 已加载 ${cookies.length} 个 Session Cookie`)
+    } catch (e) {
+      console.warn('[recorder] Session Cookie 解析失败，跳过:', (e as Error).message)
+    }
+  }
 
   const page = await context.newPage()
   const stepTimestamps: RecordResult['stepTimestamps'] = []

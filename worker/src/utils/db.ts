@@ -14,10 +14,11 @@ export const demos = mysqlTable('demos', {
   id:            varchar('id', { length: 36 }).primaryKey(),
   user_id:       varchar('user_id', { length: 36 }).notNull(),
   status:        mysqlEnum('status', ['pending', 'parsing', 'review', 'recording', 'paused', 'processing', 'completed', 'failed']).default('pending').notNull(),
-  error_message: text('error_message'),
-  video_url:     text('video_url'),
-  duration:      int('duration'),
-  updated_at:    timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
+  error_message:   text('error_message'),
+  video_url:       text('video_url'),
+  duration:        int('duration'),
+  session_cookies: text('session_cookies'),
+  updated_at:      timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 })
 
 export const steps = mysqlTable('steps', {
