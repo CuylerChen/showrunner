@@ -9,11 +9,13 @@ import {
 } from 'drizzle-orm/mysql-core'
 
 export const users = mysqlTable('users', {
-  id:            varchar('id', { length: 36 }).primaryKey(),
-  email:         varchar('email', { length: 255 }).notNull().unique(),
-  password_hash: varchar('password_hash', { length: 255 }).notNull(),
-  created_at:    timestamp('created_at').defaultNow().notNull(),
-  updated_at:    timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
+  id:             varchar('id', { length: 36 }).primaryKey(),
+  email:          varchar('email', { length: 255 }).notNull().unique(),
+  password_hash:  varchar('password_hash', { length: 255 }),          // OAuth 用户为 null
+  oauth_provider: varchar('oauth_provider', { length: 50 }),          // 'google' | 'github'
+  oauth_id:       varchar('oauth_id', { length: 255 }),               // provider 侧用户 ID
+  created_at:     timestamp('created_at').defaultNow().notNull(),
+  updated_at:     timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 })
 
 export const subscriptions = mysqlTable('subscriptions', {

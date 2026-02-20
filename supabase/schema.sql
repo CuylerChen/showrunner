@@ -5,11 +5,14 @@
 
 -- 用户表
 CREATE TABLE IF NOT EXISTS users (
-  id            VARCHAR(36)  NOT NULL PRIMARY KEY,
-  email         VARCHAR(255) NOT NULL UNIQUE,
-  password_hash VARCHAR(255) NOT NULL,
-  created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  id             VARCHAR(36)  NOT NULL PRIMARY KEY,
+  email          VARCHAR(255) NOT NULL UNIQUE,
+  password_hash  VARCHAR(255) NULL,                          -- OAuth 用户为 NULL
+  oauth_provider VARCHAR(50)  NULL,                          -- 'google' | 'github'
+  oauth_id       VARCHAR(255) NULL,                          -- provider 侧用户 ID
+  created_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_oauth (oauth_provider, oauth_id)             -- 防止 OAuth 账号重复
 );
 
 -- 订阅表

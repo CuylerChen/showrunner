@@ -29,6 +29,12 @@ export async function POST(req: NextRequest) {
 
   if (!user) return err('UNAUTHORIZED', '邮箱或密码错误')
 
+  // OAuth 用户没有密码
+  if (!user.password_hash) {
+    const provider = user.oauth_provider === 'github' ? 'GitHub' : 'Google'
+    return err('UNAUTHORIZED', `该账号通过 ${provider} 登录，请点击"${provider} 登录"按钮`)
+  }
+
   const valid = await bcrypt.compare(password, user.password_hash)
   if (!valid) return err('UNAUTHORIZED', '邮箱或密码错误')
 
