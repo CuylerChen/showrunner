@@ -5,7 +5,14 @@ import fs from 'fs'
 import { execSync } from 'child_process'
 import { MergeResult } from '../../types'
 
-ffmpeg.setFfmpegPath(ffmpegInstaller.path)
+// 优先使用系统 FFmpeg（apt 安装，功能完整）；找不到时回退到打包版
+function resolveFFmpegPath(): string {
+  for (const p of ['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg']) {
+    if (fs.existsSync(p)) return p
+  }
+  return ffmpegInstaller.path
+}
+ffmpeg.setFfmpegPath(resolveFFmpegPath())
 
 // 拼接多段音频为单个文件
 function concatAudio(audioPaths: string[], outputPath: string): Promise<void> {
@@ -17,6 +24,15 @@ function concatAudio(audioPaths: string[], outputPath: string): Promise<void> {
 
     // 生成 FFmpeg concat 列表文件
     const listPath = outputPath.replace('.wav', '_list.txt')
+
+    // 校验音频文件是否存在，提前报错避免 FFmpeg 给出模糊信息
+    const missing = audioPaths.filter(p => !fs.existsSync(p))
+    if (missing.length > 0) {
+      reject(new Error(`音频文件缺失: ${missing.join(', ')}`))
+      return
+    }
+
+    fs.mkdirSync(path.dirname(listPath), { recursive: true })
     const listContent = audioPaths.map(p => `file '${p}'`).join('\n')
     fs.writeFileSync(listPath, listContent)
 
