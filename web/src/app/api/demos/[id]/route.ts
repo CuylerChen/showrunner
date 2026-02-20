@@ -49,7 +49,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }).refine(d => Object.keys(d).length > 0, { message: '至少提供一个更新字段' })
 
   const parsed = schema2.safeParse(body)
-  if (!parsed.success) return err('VALIDATION_ERROR', parsed.error.errors[0]?.message ?? '参数错误')
+  if (!parsed.success) return err('VALIDATION_ERROR', '参数错误')
 
   const updates: Record<string, unknown> = {}
   if (parsed.data.title    !== undefined) updates.title    = parsed.data.title
