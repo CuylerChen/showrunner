@@ -17,10 +17,22 @@ function isPublic(pathname: string): boolean {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-
-  if (isPublic(pathname)) return NextResponse.next()
-
   const token = request.cookies.get('token')?.value
+
+  if (isPublic(pathname)) {
+    // 公开页面：有 token 时仍注入用户信息，供首页判断登录状态
+    if (token) {
+      const payload = await verifyJwt(token)
+      if (payload) {
+        const requestHeaders = new Headers(request.headers)
+        requestHeaders.set('x-user-id', payload.sub)
+        requestHeaders.set('x-user-email', payload.email)
+        return NextResponse.next({ request: { headers: requestHeaders } })
+      }
+    }
+    return NextResponse.next()
+  }
+
   if (!token) {
     const loginUrl = new URL('/sign-in', request.url)
     loginUrl.searchParams.set('redirect', pathname)
