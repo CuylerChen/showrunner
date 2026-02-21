@@ -10,6 +10,11 @@ import {
 } from 'drizzle-orm/mysql-core'
 
 // 内联 Schema（避免 worker 依赖 web 目录）
+export const users = mysqlTable('users', {
+  id:    varchar('id', { length: 36 }).primaryKey(),
+  email: varchar('email', { length: 255 }).notNull(),
+})
+
 export const demos = mysqlTable('demos', {
   id:            varchar('id', { length: 36 }).primaryKey(),
   user_id:       varchar('user_id', { length: 36 }).notNull(),
@@ -56,4 +61,4 @@ const pool = mysql.createPool({
   connectionLimit: 5,
 })
 
-export const db = drizzle(pool, { schema: { demos, steps, jobs }, mode: 'default' })
+export const db = drizzle(pool, { schema: { users, demos, steps, jobs }, mode: 'default' })
