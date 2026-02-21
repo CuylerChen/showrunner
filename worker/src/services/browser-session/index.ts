@@ -75,8 +75,10 @@ export async function startSession(demoId: string, url: string): Promise<void> {
   sessions.set(demoId, session)
   resetTimer(session)
 
-  // 监听新标签/弹窗，自动切换到新页面
+  // 监听新标签/弹窗，强制统一 viewport 后切换到新页面
   context.on('page', (newPage) => {
+    // 弹窗（如 OAuth）默认会用小 viewport，统一设为 1280×720
+    newPage.setViewportSize(VIEWPORT).catch(() => {})
     newPage.waitForLoadState('domcontentloaded').then(() => {
       session.page = newPage
       console.log(`[browser-session] 切换到新页面 demo=${demoId}: ${newPage.url()}`)
