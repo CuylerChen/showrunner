@@ -48,23 +48,35 @@ export async function recordDemo(
     headless: true,
     executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ?? '/usr/bin/chromium',
   })
-  const context = await browser.newContext({
-    viewport: VIEWPORT,
-    recordVideo: {
-      dir: outputDir,
-      size: VIEWPORT,
-    },
-  })
+  // 解析已保存的登录状态（支持旧格式 Cookie[] 和新格式 StorageState）
+  let storageState: Parameters<typeof browser.newContext>[0]['storageState'] = undefined
+  let legacyCookies: Cookie[] | null = null
 
-  // 注入登录 Session Cookies（如果已配置）
   if (sessionCookiesJson) {
     try {
-      const cookies: Cookie[] = JSON.parse(sessionCookiesJson)
-      await context.addCookies(cookies)
-      console.log(`[recorder] 已加载 ${cookies.length} 个 Session Cookie`)
+      const parsed = JSON.parse(sessionCookiesJson)
+      if (Array.isArray(parsed)) {
+        // 旧格式：Cookie[]，兼容处理
+        legacyCookies = parsed
+        console.log(`[recorder] 使用旧格式 Cookie（${parsed.length} 条）`)
+      } else if (parsed && typeof parsed === 'object') {
+        // 新格式：Playwright StorageState（含 cookies + localStorage）
+        storageState = parsed
+        console.log(`[recorder] 使用 StorageState（cookies=${parsed.cookies?.length ?? 0}，origins=${parsed.origins?.length ?? 0}）`)
+      }
     } catch (e) {
-      console.warn('[recorder] Session Cookie 解析失败，跳过:', (e as Error).message)
+      console.warn('[recorder] 登录状态解析失败，跳过:', (e as Error).message)
     }
+  }
+
+  const context = await browser.newContext({
+    viewport: VIEWPORT,
+    recordVideo: { dir: outputDir, size: VIEWPORT },
+    ...(storageState ? { storageState } : {}),
+  })
+
+  if (legacyCookies) {
+    await context.addCookies(legacyCookies)
   }
 
   const page = await context.newPage()

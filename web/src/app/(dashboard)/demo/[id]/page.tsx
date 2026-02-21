@@ -5,9 +5,10 @@ import { useParams, useRouter } from 'next/navigation'
 import { StatusBadge } from '@/components/demo/status-badge'
 import { useDemoRealtime } from '@/hooks/use-demo-realtime'
 import { useTranslation } from '@/lib/i18n'
+import { LoginSessionModal } from '@/components/demo/login-session-modal'
 import type { Demo, Step } from '@/types'
 
-type DemoWithSteps = Demo & { steps: Step[] }
+type DemoWithSteps = Demo & { steps: Step[]; has_session?: boolean }
 
 export default function DemoDetailPage() {
   const { id }  = useParams<{ id: string }>()
@@ -19,6 +20,7 @@ export default function DemoDetailPage() {
   const [loading, setLoading] = useState(true)
   const [starting, setStarting] = useState(false)
   const [resolving, setResolving] = useState<string | null>(null)
+  const [showLoginModal, setShowLoginModal] = useState(false)
 
   const { status, errorMessage } = useDemoRealtime(id, demo?.status ?? 'pending')
 
@@ -235,20 +237,47 @@ export default function DemoDetailPage() {
         ))}
       </div>
 
-      {/* 开始录制按钮 */}
+      {/* 开始录制 + 配置登录 */}
       {isReview && (
-        <button
-          onClick={startRecording}
-          disabled={starting}
-          className="btn-brand w-full rounded-xl py-3.5 text-sm font-semibold"
-        >
-          {starting ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-              {dd.startingBtn}
-            </span>
-          ) : dd.startBtn}
-        </button>
+        <div className="space-y-2">
+          <button
+            onClick={startRecording}
+            disabled={starting}
+            className="btn-brand w-full rounded-xl py-3.5 text-sm font-semibold"
+          >
+            {starting ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                {dd.startingBtn}
+              </span>
+            ) : dd.startBtn}
+          </button>
+
+          {/* 登录配置按钮 */}
+          <button
+            onClick={() => setShowLoginModal(true)}
+            className="w-full rounded-xl py-2.5 text-sm transition-all cursor-pointer"
+            style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+          >
+            {demo?.has_session
+              ? '🔐 已配置登录状态（点击更新）'
+              : '🔐 配置登录状态（产品需要登录时）'}
+          </button>
+        </div>
+      )}
+
+      {/* 登录会话 Modal */}
+      {showLoginModal && demo && (
+        <LoginSessionModal
+          demoId={id}
+          productUrl={demo.product_url}
+          hasExistingSession={!!demo.has_session}
+          onSaved={() => {
+            setShowLoginModal(false)
+            setDemo(prev => prev ? { ...prev, has_session: true } : prev)
+          }}
+          onClose={() => setShowLoginModal(false)}
+        />
       )}
     </div>
   )

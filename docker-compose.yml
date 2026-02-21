@@ -53,6 +53,7 @@ services:
       REDIS_URL:         redis://redis:6379
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
       VIDEO_DIR:         /data/videos
+      WORKER_INTERNAL_URL: http://worker:3001
     volumes:
       - video_data:/data/videos
     expose:
@@ -79,6 +80,8 @@ services:
       REDIS_URL:         redis://redis:6379
       DEEPSEEK_API_KEY:   ${DEEPSEEK_API_KEY}
       VIDEO_DIR:         /data/videos
+    expose:
+      - "3001"   # 内网 HTTP API，供 web 服务代理，不对外暴露
     volumes:
       - video_data:/data/videos
 
