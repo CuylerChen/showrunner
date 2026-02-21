@@ -66,6 +66,19 @@ export async function startSession(demoId: string, url: string): Promise<void> {
     }).catch(() => {})
   })
 
+  // 页面崩溃时自动重建
+  page.on('crash', async () => {
+    console.error(`[browser-session] 页面崩溃，尝试重建 demo=${demoId}`)
+    try {
+      const newPage = await context.newPage()
+      session.page = newPage
+      await newPage.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {})
+      console.log(`[browser-session] 页面已重建 demo=${demoId}`)
+    } catch (e) {
+      console.error(`[browser-session] 重建失败 demo=${demoId}:`, (e as Error).message)
+    }
+  })
+
   console.log(`[browser-session] 会话已启动 demo=${demoId}`)
 }
 
@@ -99,32 +112,46 @@ export async function handleInput(demoId: string, event: InputEvent): Promise<vo
   if (!session) throw new Error('Session not found')
   resetTimer(session)
 
+  console.log(`[browser-session] input demo=${demoId} type=${event.type}`)
+
   switch (event.type) {
-    case 'click':
+    case 'click': {
+      // 在 click 之前注册 navigation 监听，正确捕获点击触发的页面跳转
+      const navPromise = session.page.waitForNavigation({
+        waitUntil: 'domcontentloaded',
+        timeout: 5000,
+      }).catch(() => null)
       await session.page.mouse.click(event.x, event.y)
-      // 等待可能触发的页面导航完成（最多 3 秒）
-      await session.page.waitForLoadState('domcontentloaded', { timeout: 3000 }).catch(() => {})
+      // 等待导航完成，或 1s 后超时（SPA 软导航无整页加载，直接等 1s 让 React 重渲染）
+      await Promise.race([navPromise, new Promise(r => setTimeout(r, 1000))])
       break
+    }
     case 'type':
       await session.page.keyboard.type(event.text)
       break
-    case 'key':
+    case 'key': {
       await session.page.keyboard.press(event.key)
-      // Enter 键可能触发表单提交/导航
       if (event.key === 'Enter') {
-        await session.page.waitForLoadState('domcontentloaded', { timeout: 3000 }).catch(() => {})
+        const navP = session.page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 5000 }).catch(() => null)
+        await Promise.race([navP, new Promise(r => setTimeout(r, 1000))])
       }
       break
+    }
     case 'navigate':
       await session.page.goto(event.url, { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {})
       break
     case 'scroll':
-      await session.page.mouse.move(event.x, event.y)
-      await session.page.mouse.wheel(0, event.deltaY)
+      // 用 try/catch 防止页面切换期间 scroll 报错污染日志
+      try {
+        await session.page.mouse.move(event.x, event.y)
+        await session.page.mouse.wheel(0, event.deltaY)
+      } catch {
+        // 页面正在导航，忽略
+      }
       break
   }
-  // 操作后短暂等待页面响应
-  await session.page.waitForTimeout(200).catch(() => {})
+  // 操作后短暂等待
+  await session.page.waitForTimeout(100).catch(() => {})
 }
 
 // ── 保存 storageState 并关闭会话 ─────────────────────────────────
