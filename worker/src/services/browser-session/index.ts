@@ -40,7 +40,24 @@ export async function startSession(demoId: string, url: string): Promise<void> {
   })
   // 隐藏自动化标记，避免被 bot 检测拦截
   await context.addInitScript(() => {
+    // 隐藏 webdriver 标记
     Object.defineProperty(navigator, 'webdriver', { get: () => false })
+    // 伪造 Chrome 特有属性（headless 下缺失）
+    ;(window as unknown as Record<string, unknown>).chrome = {
+      runtime: {},
+      loadTimes: () => ({}),
+      csi: () => ({}),
+    }
+    // 伪造插件列表（真实 Chrome 有插件）
+    Object.defineProperty(navigator, 'plugins', {
+      get: () => [
+        { name: 'Chrome PDF Plugin', filename: 'internal-pdf-viewer', description: 'Portable Document Format', length: 1 },
+        { name: 'Chrome PDF Viewer', filename: 'mhjfbmdgcfjbbpaeojofohoefgiehjai', description: '', length: 1 },
+        { name: 'Native Client', filename: 'internal-nacl-plugin', description: '', length: 2 },
+      ],
+    })
+    // 伪造语言
+    Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] })
   })
   const page = await context.newPage()
 
@@ -116,14 +133,29 @@ export async function handleInput(demoId: string, event: InputEvent): Promise<vo
 
   switch (event.type) {
     case 'click': {
+      const urlBefore = session.page.url()
+      console.log(`[browser-session] click x=${event.x} y=${event.y} url=${urlBefore}`)
+
+      // 先移到目标位置模拟 hover，再点击（更像人类操作）
+      await session.page.mouse.move(event.x, event.y)
+      await session.page.waitForTimeout(80)
+
       // 在 click 之前注册 navigation 监听，正确捕获点击触发的页面跳转
       const navPromise = session.page.waitForNavigation({
         waitUntil: 'domcontentloaded',
-        timeout: 5000,
+        timeout: 8000,
       }).catch(() => null)
+
       await session.page.mouse.click(event.x, event.y)
-      // 等待导航完成，或 1s 后超时（SPA 软导航无整页加载，直接等 1s 让 React 重渲染）
-      await Promise.race([navPromise, new Promise(r => setTimeout(r, 1000))])
+      // 等待导航完成，或 1.5s 后超时（SPA 软导航无整页加载，直接等待 React 重渲染）
+      await Promise.race([navPromise, new Promise(r => setTimeout(r, 1500))])
+
+      const urlAfter = session.page.url()
+      if (urlAfter !== urlBefore) {
+        console.log(`[browser-session] 导航成功: ${urlBefore} → ${urlAfter}`)
+      } else {
+        console.log(`[browser-session] 点击后 URL 未变，url=${urlAfter}`)
+      }
       break
     }
     case 'type':
