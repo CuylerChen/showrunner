@@ -129,81 +129,86 @@ export async function handleInput(demoId: string, event: InputEvent): Promise<vo
   if (!session) throw new Error('Session not found')
   resetTimer(session)
 
-  console.log(`[browser-session] input demo=${demoId} type=${event.type}`)
-
   switch (event.type) {
+
+    // ── scroll：直接发，不等待，不阻塞 ──────────────────────
+    case 'scroll':
+      try {
+        await session.page.mouse.move(event.x, event.y)
+        await session.page.mouse.wheel(0, event.deltaY)
+      } catch { /* 页面正在导航，忽略 */ }
+      return   // 直接 return，不走底部 waitForTimeout
+
+    // ── click：按元素类型选择策略 ────────────────────────────
     case 'click': {
       const urlBefore = session.page.url()
 
-      // 查询点击坐标处的元素信息
       const elInfo = await session.page.evaluate(([x, y]) => {
         const el = document.elementFromPoint(x as number, y as number)
         if (!el) return null
-        const link = el.closest('a')
-        const btn  = el.closest('button, [role="button"]')
+        const link  = el.closest('a')
+        const input = el.closest('input, textarea, select, [contenteditable="true"]')
         return {
-          tag:  el.tagName,
-          href: link?.href ?? '',
-          text: (el.textContent ?? '').slice(0, 80).trim(),
-          isBtn: !!btn,
+          tag:     el.tagName,
+          href:    link?.href ?? '',
+          isInput: !!input,
         }
       }, [event.x, event.y]).catch(() => null)
 
-      console.log(`[browser-session] click x=${event.x} y=${event.y} url=${urlBefore} el=${JSON.stringify(elInfo)}`)
+      console.log(`[browser-session] click x=${event.x} y=${event.y} el=${JSON.stringify(elInfo)}`)
 
-      // 如果是普通链接，直接 goto 绕过 bot 点击检测
-      if (elInfo?.href && elInfo.href !== urlBefore &&
+      // ① 普通链接：直接 goto，绕过 bot 点击检测
+      if (elInfo?.href &&
+          elInfo.href !== urlBefore &&
           !elInfo.href.startsWith('javascript') &&
           !elInfo.href.startsWith('mailto')) {
-        console.log(`[browser-session] 检测到链接，直接导航: ${elInfo.href}`)
+        console.log(`[browser-session] 链接导航: ${elInfo.href}`)
         await session.page.goto(elInfo.href, { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {})
         break
       }
 
-      // 非链接元素：先 hover 再点击，注册 navigation 监听
+      // ② 输入框：只点击，立即返回，不等导航
+      if (elInfo?.isInput) {
+        await session.page.mouse.click(event.x, event.y)
+        break
+      }
+
+      // ③ 按钮/其他：点击，等待导航或 600ms 超时
       await session.page.mouse.move(event.x, event.y)
-      await session.page.waitForTimeout(80)
       const navPromise = session.page.waitForNavigation({
         waitUntil: 'domcontentloaded',
         timeout: 8000,
       }).catch(() => null)
       await session.page.mouse.click(event.x, event.y)
-      await Promise.race([navPromise, new Promise(r => setTimeout(r, 1500))])
+      await Promise.race([navPromise, new Promise(r => setTimeout(r, 600))])
 
       const urlAfter = session.page.url()
       if (urlAfter !== urlBefore) {
-        console.log(`[browser-session] 导航成功: ${urlBefore} → ${urlAfter}`)
-      } else {
-        console.log(`[browser-session] 点击后 URL 未变，url=${urlAfter}`)
+        console.log(`[browser-session] 导航: ${urlBefore} → ${urlAfter}`)
       }
       break
     }
+
     case 'type':
       await session.page.keyboard.type(event.text)
       break
+
     case 'key': {
       await session.page.keyboard.press(event.key)
       if (event.key === 'Enter') {
         const navP = session.page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 5000 }).catch(() => null)
-        await Promise.race([navP, new Promise(r => setTimeout(r, 1000))])
+        await Promise.race([navP, new Promise(r => setTimeout(r, 800))])
       }
       break
     }
+
     case 'navigate':
       await session.page.goto(event.url, { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {})
       break
-    case 'scroll':
-      // 用 try/catch 防止页面切换期间 scroll 报错污染日志
-      try {
-        await session.page.mouse.move(event.x, event.y)
-        await session.page.mouse.wheel(0, event.deltaY)
-      } catch {
-        // 页面正在导航，忽略
-      }
-      break
   }
-  // 操作后短暂等待
-  await session.page.waitForTimeout(100).catch(() => {})
+
+  // 非 scroll 操作后短暂等待，让页面稳定
+  await session.page.waitForTimeout(80).catch(() => {})
 }
 
 // ── 保存 storageState 并关闭会话 ─────────────────────────────────

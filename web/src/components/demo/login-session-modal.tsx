@@ -23,10 +23,13 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
   const [tick, setTick]         = useState(0)          // 驱动截图轮询
   const [clickPos, setClickPos] = useState<{ x: number; y: number } | null>(null)
 
-  const containerRef = useRef<HTMLDivElement>(null)
-  const imgRef       = useRef<HTMLImageElement>(null)
+  const containerRef    = useRef<HTMLDivElement>(null)
+  const imgRef          = useRef<HTMLImageElement>(null)
   // 用 ref 持有最新 sendInput，避免 useEffect 依赖导致的 stale closure
-  const sendInputRef = useRef<(e: object) => void>(() => {})
+  const sendInputRef    = useRef<(e: object) => void>(() => {})
+  // scroll 节流：避免高频 wheel 事件堆积请求
+  const scrollThrottle  = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pendingScroll   = useRef<{ x: number; y: number; deltaY: number } | null>(null)
 
   /* ── 截图轮询（400ms） ──────────────────────────────────── */
   useEffect(() => {
@@ -35,7 +38,7 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
     return () => clearInterval(id)
   }, [phase])
 
-  /* ── 非 passive 滚轮监听（React onWheel 默认 passive，无法 preventDefault） */
+  /* ── 非 passive 滚轮监听（含节流，防止高频请求堆积） ──── */
   useEffect(() => {
     const el = imgRef.current
     if (!el || phase !== 'active') return
@@ -43,12 +46,29 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
       e.preventDefault()
       const rect = el.getBoundingClientRect()
       if (!rect.width || !rect.height) return
-      const x = Math.round((e.clientX - rect.left) * (1280 / rect.width))
-      const y = Math.round((e.clientY - rect.top)  * (720  / rect.height))
-      sendInputRef.current({ type: 'scroll', x, y, deltaY: e.deltaY })
+      const x      = Math.round((e.clientX - rect.left) * (1280 / rect.width))
+      const y      = Math.round((e.clientY - rect.top)  * (720  / rect.height))
+      // 累加 deltaY，节流 80ms 发一次（合并快速滚动）
+      if (pendingScroll.current) {
+        pendingScroll.current.deltaY += e.deltaY
+      } else {
+        pendingScroll.current = { x, y, deltaY: e.deltaY }
+      }
+      if (!scrollThrottle.current) {
+        scrollThrottle.current = setTimeout(() => {
+          if (pendingScroll.current) {
+            sendInputRef.current({ type: 'scroll', ...pendingScroll.current })
+            pendingScroll.current = null
+          }
+          scrollThrottle.current = null
+        }, 80)
+      }
     }
     el.addEventListener('wheel', onWheel, { passive: false })
-    return () => el.removeEventListener('wheel', onWheel)
+    return () => {
+      el.removeEventListener('wheel', onWheel)
+      if (scrollThrottle.current) clearTimeout(scrollThrottle.current)
+    }
   }, [phase])
 
   /* ── 启动远程浏览器 ─────────────────────────────────────── */
@@ -98,7 +118,6 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
 
   /* ── 发送输入事件到 Worker ──────────────────────────────── */
   async function sendInput(event: object) {
-    sendInputRef.current = sendInput  // 保持 ref 最新（供 wheel useEffect 使用）
     setError(null)
     try {
       const res = await fetch(`/api/demos/${demoId}/login-session/input`, {
@@ -145,6 +164,9 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
     sendInput({ type: 'click', x, y })
     containerRef.current?.focus()
   }
+
+  // 每次渲染都将 ref 同步到最新 sendInput 闭包（确保 wheel useEffect 始终可用）
+  sendInputRef.current = sendInput
 
   /* ── 键盘 ───────────────────────────────────────────────── */
   function handleKeyDown(e: React.KeyboardEvent) {
