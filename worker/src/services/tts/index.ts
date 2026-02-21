@@ -3,6 +3,37 @@ import fs from 'fs'
 import { execSync } from 'child_process'
 import { Step, TtsResult } from '../../types'
 
+// 使用系统 ffprobe 测量音频文件的实际时长（秒）
+function getAudioDuration(filePath: string): number {
+  const probePaths = ['/usr/bin/ffprobe', '/usr/local/bin/ffprobe']
+  for (const probePath of probePaths) {
+    if (!fs.existsSync(probePath)) continue
+    try {
+      const out = execSync(
+        `"${probePath}" -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${filePath}"`,
+        { stdio: ['pipe', 'pipe', 'pipe'] }
+      )
+      const dur = parseFloat(out.toString().trim())
+      if (!isNaN(dur) && dur > 0) return dur
+    } catch {}
+  }
+  // fallback：用 @ffmpeg-installer 附带的 ffprobe（与 ffmpeg 同目录）
+  try {
+    const ffmpegPath: string = require('@ffmpeg-installer/ffmpeg').path
+    const ffprobePath = ffmpegPath.replace(/ffmpeg$/, 'ffprobe')
+    if (fs.existsSync(ffprobePath)) {
+      const out = execSync(
+        `"${ffprobePath}" -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${filePath}"`,
+        { stdio: ['pipe', 'pipe', 'pipe'] }
+      )
+      const dur = parseFloat(out.toString().trim())
+      if (!isNaN(dur) && dur > 0) return dur
+    }
+  } catch {}
+  // 最终兜底：使用估算值
+  return 3
+}
+
 // Kokoro TTS 懒加载，避免启动时就加载大模型
 let kokoro: any = null
 
@@ -58,29 +89,36 @@ export async function generateNarration(
   fs.mkdirSync(outputDir, { recursive: true })
 
   const audioPaths: string[] = []
+  const stepDurations: number[] = []
   let totalDuration = 0
 
   for (const step of steps) {
     const narration = step.narration?.trim() || step.title
     const outputPath = path.join(outputDir, `step_${step.position}.wav`)
-    const duration = estimateDuration(narration)
+    const estimatedDuration = estimateDuration(narration)
 
     console.log(`[tts] Step ${step.position}: "${narration}"`)
 
     const success = await generateWithKokoro(narration, outputPath)
 
+    let finalPath: string
     if (!success) {
       // Kokoro 不可用时生成静音占位
       const mp3Path = outputPath.replace('.wav', '.mp3')
-      generateSilence(duration, mp3Path)
-      audioPaths.push(mp3Path)
+      generateSilence(estimatedDuration, mp3Path)
+      finalPath = mp3Path
     } else {
-      audioPaths.push(outputPath)
+      finalPath = outputPath
     }
 
-    totalDuration += duration
+    audioPaths.push(finalPath)
+
+    // 优先使用 ffprobe 测量实际音频时长，保证时间戳精准
+    const actualDuration = getAudioDuration(finalPath)
+    stepDurations.push(actualDuration)
+    totalDuration += actualDuration
   }
 
-  console.log(`[tts] 旁白生成完成，共 ${steps.length} 段，总时长约 ${totalDuration}s`)
-  return { audioPaths, totalDuration }
+  console.log(`[tts] 旁白生成完成，共 ${steps.length} 段，总时长约 ${totalDuration.toFixed(1)}s`)
+  return { audioPaths, stepDurations, totalDuration }
 }

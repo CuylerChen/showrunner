@@ -15,7 +15,7 @@ export interface TtsJobData {
 }
 
 async function processJob(job: Job<TtsJobData>) {
-  const { demoId, steps, videoPath, stepTimestamps } = job.data
+  const { demoId, steps, videoPath } = job.data
   console.log(`[tts] 开始生成旁白 demo=${demoId}`)
 
   await db.insert(jobs).values({
@@ -26,7 +26,17 @@ async function processJob(job: Job<TtsJobData>) {
     started_at: new Date(),
   })
 
-  const { audioPaths, totalDuration } = await generateNarration(steps, Paths.ttsDir(demoId))
+  const { audioPaths, stepDurations, totalDuration } = await generateNarration(steps, Paths.ttsDir(demoId))
+
+  // 用 TTS 音频实际时长计算章节时间戳（替换录制时间轴，避免超时等待造成偏差）
+  const ttsStepTimestamps: { stepId: string; start: number; end: number }[] = []
+  let cumulative = 0
+  for (let i = 0; i < steps.length; i++) {
+    const start = Math.round(cumulative * 10) / 10   // 保留 1 位小数
+    cumulative += stepDurations[i] ?? 3
+    const end = Math.round(cumulative * 10) / 10
+    ttsStepTimestamps.push({ stepId: steps[i].id, start, end })
+  }
 
   await db
     .update(jobs)
@@ -37,7 +47,7 @@ async function processJob(job: Job<TtsJobData>) {
     demoId,
     videoPath,
     audioPaths,
-    stepTimestamps,
+    stepTimestamps: ttsStepTimestamps,   // 使用 TTS 时间轴时间戳
     totalDuration,
   }, {
     attempts: 3,

@@ -25,6 +25,7 @@ export interface RecordResult {
 
 export interface TtsResult {
   audioPaths: string[]       // 每个步骤对应的音频文件路径（顺序与 steps 一致）
+  stepDurations: number[]    // 每个步骤的实际音频时长（秒，与 audioPaths 一一对应）
   totalDuration: number      // 旁白总时长（秒）
 }
 

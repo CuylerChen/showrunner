@@ -14,6 +14,27 @@ function resolveFFmpegPath(): string {
 }
 ffmpeg.setFfmpegPath(resolveFFmpegPath())
 
+// 用 ffprobe 获取媒体文件时长（秒）
+function getMediaDuration(filePath: string): number {
+  const ffmpegBin = resolveFFmpegPath()
+  // ffprobe 与 ffmpeg 同目录
+  const ffprobeBin = ffmpegBin.replace(/ffmpeg$/, 'ffprobe')
+  const probePaths = ['/usr/bin/ffprobe', '/usr/local/bin/ffprobe', ffprobeBin]
+
+  for (const probePath of probePaths) {
+    if (!fs.existsSync(probePath)) continue
+    try {
+      const out = execSync(
+        `"${probePath}" -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${filePath}"`,
+        { stdio: ['pipe', 'pipe', 'pipe'] }
+      )
+      const dur = parseFloat(out.toString().trim())
+      if (!isNaN(dur) && dur > 0) return dur
+    } catch {}
+  }
+  return 0
+}
+
 // 拼接多段音频为单个文件
 function concatAudio(audioPaths: string[], outputPath: string): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -51,33 +72,32 @@ function concatAudio(audioPaths: string[], outputPath: string): Promise<void> {
 }
 
 // 将 .webm 视频与音频合并为 .mp4
+// audioDuration：合并后输出时长（秒）= TTS 音频实际时长，保证所有章节时间戳落在视频内
 function mergeVideoWithAudio(
   videoPath: string,
   audioPath: string,
-  outputPath: string
+  outputPath: string,
+  audioDuration: number
 ): Promise<number> {
   return new Promise((resolve, reject) => {
-    let duration = 0
+    const opts = [
+      '-c:v libx264',
+      '-c:a aac',
+      '-movflags +faststart',  // 支持流式播放
+      '-pix_fmt yuv420p',      // 兼容性最广的像素格式
+    ]
+
+    // 用 -t 精确控制输出时长为 TTS 音频时长，避免 -shortest 误截断或视频尾部无声
+    if (audioDuration > 0) {
+      opts.push(`-t ${audioDuration}`)
+    }
 
     ffmpeg()
       .input(videoPath)
       .input(audioPath)
-      .outputOptions([
-        '-c:v libx264',   // 视频编码
-        '-c:a aac',       // 音频编码
-        '-shortest',      // 以较短的流为准
-        '-movflags +faststart', // 支持流式播放
-        '-pix_fmt yuv420p',     // 兼容性最广的像素格式
-      ])
+      .outputOptions(opts)
       .output(outputPath)
-      .on('codecData', (data) => {
-        // 解析视频时长
-        const parts = data.duration?.split(':') ?? []
-        if (parts.length === 3) {
-          duration = parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseFloat(parts[2])
-        }
-      })
-      .on('end', () => resolve(Math.round(duration)))
+      .on('end', () => resolve(audioDuration > 0 ? Math.round(audioDuration) : 0))
       .on('error', reject)
       .run()
   })
@@ -96,8 +116,12 @@ export async function mergeDemo(
   console.log('[merger] 拼接旁白音频...')
   await concatAudio(audioPaths, concatAudioPath)
 
+  // 测量合并后音频的实际时长，用于精确控制输出视频时长
+  const audioDuration = getMediaDuration(concatAudioPath)
+  console.log(`[merger] 旁白总时长: ${audioDuration.toFixed(1)}s`)
+
   console.log('[merger] 合并视频与旁白...')
-  const duration = await mergeVideoWithAudio(videoPath, concatAudioPath, outputPath)
+  const duration = await mergeVideoWithAudio(videoPath, concatAudioPath, outputPath, audioDuration)
 
   // 清理中间文件
   fs.unlinkSync(concatAudioPath)
