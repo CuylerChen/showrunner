@@ -24,12 +24,31 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
   const [clickPos, setClickPos] = useState<{ x: number; y: number } | null>(null)
 
   const containerRef = useRef<HTMLDivElement>(null)
+  const imgRef       = useRef<HTMLImageElement>(null)
+  // 用 ref 持有最新 sendInput，避免 useEffect 依赖导致的 stale closure
+  const sendInputRef = useRef<(e: object) => void>(() => {})
 
   /* ── 截图轮询（400ms） ──────────────────────────────────── */
   useEffect(() => {
     if (phase !== 'active') return
     const id = setInterval(() => setTick(n => n + 1), 400)
     return () => clearInterval(id)
+  }, [phase])
+
+  /* ── 非 passive 滚轮监听（React onWheel 默认 passive，无法 preventDefault） */
+  useEffect(() => {
+    const el = imgRef.current
+    if (!el || phase !== 'active') return
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      const rect = el.getBoundingClientRect()
+      if (!rect.width || !rect.height) return
+      const x = Math.round((e.clientX - rect.left) * (1280 / rect.width))
+      const y = Math.round((e.clientY - rect.top)  * (720  / rect.height))
+      sendInputRef.current({ type: 'scroll', x, y, deltaY: e.deltaY })
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
   }, [phase])
 
   /* ── 启动远程浏览器 ─────────────────────────────────────── */
@@ -79,6 +98,7 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
 
   /* ── 发送输入事件到 Worker ──────────────────────────────── */
   async function sendInput(event: object) {
+    sendInputRef.current = sendInput  // 保持 ref 最新（供 wheel useEffect 使用）
     setError(null)
     try {
       const res = await fetch(`/api/demos/${demoId}/login-session/input`, {
@@ -124,17 +144,6 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
     setTimeout(() => setClickPos(null), 600)
     sendInput({ type: 'click', x, y })
     containerRef.current?.focus()
-  }
-
-  /* ── 滚轮 ───────────────────────────────────────────────── */
-  function handleWheel(e: React.WheelEvent<HTMLImageElement>) {
-    e.preventDefault()
-    const img  = e.currentTarget
-    const rect = img.getBoundingClientRect()
-    if (rect.width === 0 || rect.height === 0) return
-    const x    = Math.round((e.clientX - rect.left) * (1280 / rect.width))
-    const y    = Math.round((e.clientY - rect.top)  * (720  / rect.height))
-    sendInput({ type: 'scroll', x, y, deltaY: e.deltaY })
   }
 
   /* ── 键盘 ───────────────────────────────────────────────── */
@@ -290,10 +299,10 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
+                  ref={imgRef}
                   src={`/api/demos/${demoId}/login-session/screenshot?t=${tick}`}
                   alt={ls.imgAlt}
                   onClick={handleImgClick}
-                  onWheel={handleWheel}
                   style={{ width: '100%', display: 'block' }}
                   draggable={false}
                 />
