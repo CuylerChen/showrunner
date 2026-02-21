@@ -83,6 +83,16 @@ export async function startSession(demoId: string, url: string): Promise<void> {
       session.page = newPage
       console.log(`[browser-session] 切换到新页面 demo=${demoId}: ${newPage.url()}`)
     }).catch(() => {})
+
+    // 弹窗关闭时，切回 context 中最后一个存活页面（通常是主页面）
+    newPage.on('close', () => {
+      const remaining = context.pages()
+      if (remaining.length > 0) {
+        const target = remaining[remaining.length - 1]
+        session.page = target
+        console.log(`[browser-session] 弹窗关闭，切回主页面 demo=${demoId}: ${target.url()}`)
+      }
+    })
   })
 
   // 页面崩溃时自动重建
@@ -106,6 +116,8 @@ export async function getScreenshot(demoId: string): Promise<Buffer | null> {
   if (!session) return null
   resetTimer(session)
   try {
+    // 等待页面基本加载完成，避免截到黑屏/空白中间态
+    await session.page.waitForLoadState('domcontentloaded', { timeout: 1000 }).catch(() => {})
     return await session.page.screenshot({ type: 'jpeg', quality: 75 })
   } catch {
     return null
@@ -219,6 +231,9 @@ export async function handleInput(demoId: string, event: InputEvent): Promise<vo
 export async function saveState(demoId: string): Promise<string> {
   const session = sessions.get(demoId)
   if (!session) throw new Error('Session not found')
+
+  // 等待页面导航稳定后再保存，确保 OAuth 回调 cookie 已写入
+  await session.page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {})
 
   const state = await session.context.storageState()
   await closeSession(demoId)
