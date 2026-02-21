@@ -209,8 +209,10 @@ export async function handleInput(demoId: string, event: InputEvent): Promise<vo
       break
   }
 
-  // 非 scroll 操作后短暂等待，让页面稳定
-  await session.page.waitForTimeout(80).catch(() => {})
+  // click / navigate 后短暂等待，让页面稳定；type/key/scroll 无需等待
+  if (event.type === 'click' || event.type === 'navigate') {
+    await session.page.waitForTimeout(80).catch(() => {})
+  }
 }
 
 // ── 保存 storageState 并关闭会话 ─────────────────────────────────

@@ -30,6 +30,9 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
   // scroll 节流：避免高频 wheel 事件堆积请求
   const scrollThrottle  = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingScroll   = useRef<{ x: number; y: number; deltaY: number } | null>(null)
+  // 键盘输入缓冲：50ms 内的连续字符合并成一次请求
+  const keyBuffer       = useRef('')
+  const keyBatchTimer   = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   /* ── 截图轮询（400ms） ──────────────────────────────────── */
   useEffect(() => {
@@ -129,10 +132,10 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
         const data = await res.json().catch(() => ({}))
         throw new Error(data.error ?? `HTTP ${res.status}`)
       }
-      // 操作后立即刷新截图
-      setTick(n => n + 1)
-      // 点击/导航后延迟同步地址栏 URL（页面跳转需要时间）
+      // type 事件不触发截图刷新（由 400ms 轮询处理，避免卡顿）
       const type = (event as Record<string, unknown>).type
+      if (type !== 'type') setTick(n => n + 1)
+      // 点击/导航后延迟同步地址栏 URL（页面跳转需要时间）
       if (type === 'click' || type === 'navigate' || type === 'key') {
         setTimeout(async () => {
           try {
@@ -169,13 +172,26 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
   sendInputRef.current = sendInput
 
   /* ── 键盘 ───────────────────────────────────────────────── */
+  function flushKeyBuffer() {
+    if (keyBatchTimer.current) { clearTimeout(keyBatchTimer.current); keyBatchTimer.current = null }
+    if (keyBuffer.current) { sendInput({ type: 'type', text: keyBuffer.current }); keyBuffer.current = '' }
+  }
+
   function handleKeyDown(e: React.KeyboardEvent) {
     // 忽略导航栏的输入框（它有自己的 handler）
     if ((e.target as HTMLElement).tagName === 'INPUT') return
     e.preventDefault()
     if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
-      sendInput({ type: 'type', text: e.key })
+      // 普通字符：缓冲 50ms 合并成一次请求，减少高频 API 调用
+      keyBuffer.current += e.key
+      if (keyBatchTimer.current) clearTimeout(keyBatchTimer.current)
+      keyBatchTimer.current = setTimeout(() => {
+        keyBatchTimer.current = null
+        if (keyBuffer.current) { sendInput({ type: 'type', text: keyBuffer.current }); keyBuffer.current = '' }
+      }, 50)
     } else {
+      // 特殊键（Enter/Backspace 等）：先刷新缓冲，再发 key 事件
+      flushKeyBuffer()
       sendInput({ type: 'key', key: e.key })
     }
   }
