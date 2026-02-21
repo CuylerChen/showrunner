@@ -57,6 +57,15 @@ export async function startSession(demoId: string, url: string): Promise<void> {
   }
   sessions.set(demoId, session)
   resetTimer(session)
+
+  // 监听新标签/弹窗，自动切换到新页面
+  context.on('page', (newPage) => {
+    newPage.waitForLoadState('domcontentloaded').then(() => {
+      session.page = newPage
+      console.log(`[browser-session] 切换到新页面 demo=${demoId}: ${newPage.url()}`)
+    }).catch(() => {})
+  })
+
   console.log(`[browser-session] 会话已启动 demo=${demoId}`)
 }
 
@@ -93,12 +102,18 @@ export async function handleInput(demoId: string, event: InputEvent): Promise<vo
   switch (event.type) {
     case 'click':
       await session.page.mouse.click(event.x, event.y)
+      // 等待可能触发的页面导航完成（最多 3 秒）
+      await session.page.waitForLoadState('domcontentloaded', { timeout: 3000 }).catch(() => {})
       break
     case 'type':
       await session.page.keyboard.type(event.text)
       break
     case 'key':
       await session.page.keyboard.press(event.key)
+      // Enter 键可能触发表单提交/导航
+      if (event.key === 'Enter') {
+        await session.page.waitForLoadState('domcontentloaded', { timeout: 3000 }).catch(() => {})
+      }
       break
     case 'navigate':
       await session.page.goto(event.url, { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {})
@@ -109,7 +124,7 @@ export async function handleInput(demoId: string, event: InputEvent): Promise<vo
       break
   }
   // 操作后短暂等待页面响应
-  await session.page.waitForTimeout(300).catch(() => {})
+  await session.page.waitForTimeout(200).catch(() => {})
 }
 
 // ── 保存 storageState 并关闭会话 ─────────────────────────────────

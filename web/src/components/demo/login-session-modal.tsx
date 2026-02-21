@@ -90,8 +90,20 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
         const data = await res.json().catch(() => ({}))
         throw new Error(data.error ?? `HTTP ${res.status}`)
       }
-      // 点击/键盘后立即刷新截图
+      // 操作后立即刷新截图
       setTick(n => n + 1)
+      // 点击/导航后延迟同步地址栏 URL（页面跳转需要时间）
+      const type = (event as Record<string, unknown>).type
+      if (type === 'click' || type === 'navigate' || type === 'key') {
+        setTimeout(async () => {
+          try {
+            const r = await fetch(`/api/demos/${demoId}/login-session`)
+            const d = await r.json()
+            if (d.url) setNavUrl(d.url)
+            setTick(n => n + 1)  // 再刷新一次截图
+          } catch {}
+        }, 1200)
+      }
     } catch (e) {
       setError((e as Error).message)
     }
