@@ -134,20 +134,40 @@ export async function handleInput(demoId: string, event: InputEvent): Promise<vo
   switch (event.type) {
     case 'click': {
       const urlBefore = session.page.url()
-      console.log(`[browser-session] click x=${event.x} y=${event.y} url=${urlBefore}`)
 
-      // 先移到目标位置模拟 hover，再点击（更像人类操作）
+      // 查询点击坐标处的元素信息
+      const elInfo = await session.page.evaluate(([x, y]) => {
+        const el = document.elementFromPoint(x as number, y as number)
+        if (!el) return null
+        const link = el.closest('a')
+        const btn  = el.closest('button, [role="button"]')
+        return {
+          tag:  el.tagName,
+          href: link?.href ?? '',
+          text: (el.textContent ?? '').slice(0, 80).trim(),
+          isBtn: !!btn,
+        }
+      }, [event.x, event.y]).catch(() => null)
+
+      console.log(`[browser-session] click x=${event.x} y=${event.y} url=${urlBefore} el=${JSON.stringify(elInfo)}`)
+
+      // 如果是普通链接，直接 goto 绕过 bot 点击检测
+      if (elInfo?.href && elInfo.href !== urlBefore &&
+          !elInfo.href.startsWith('javascript') &&
+          !elInfo.href.startsWith('mailto')) {
+        console.log(`[browser-session] 检测到链接，直接导航: ${elInfo.href}`)
+        await session.page.goto(elInfo.href, { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {})
+        break
+      }
+
+      // 非链接元素：先 hover 再点击，注册 navigation 监听
       await session.page.mouse.move(event.x, event.y)
       await session.page.waitForTimeout(80)
-
-      // 在 click 之前注册 navigation 监听，正确捕获点击触发的页面跳转
       const navPromise = session.page.waitForNavigation({
         waitUntil: 'domcontentloaded',
         timeout: 8000,
       }).catch(() => null)
-
       await session.page.mouse.click(event.x, event.y)
-      // 等待导航完成，或 1.5s 后超时（SPA 软导航无整页加载，直接等待 React 重渲染）
       await Promise.race([navPromise, new Promise(r => setTimeout(r, 1500))])
 
       const urlAfter = session.page.url()
