@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { StatusBadge } from '@/components/demo/status-badge'
 import { useDemoRealtime } from '@/hooks/use-demo-realtime'
+import { useTranslation } from '@/lib/i18n'
 import type { Demo, Step } from '@/types'
 
 type DemoWithSteps = Demo & { steps: Step[] }
@@ -11,6 +12,8 @@ type DemoWithSteps = Demo & { steps: Step[] }
 export default function DemoDetailPage() {
   const { id }  = useParams<{ id: string }>()
   const router  = useRouter()
+  const { t }   = useTranslation()
+  const dd      = t.demoDetail
   const [demo, setDemo]       = useState<DemoWithSteps | null>(null)
   const [steps, setSteps]     = useState<Step[]>([])
   const [loading, setLoading] = useState(true)
@@ -64,14 +67,14 @@ export default function DemoDetailPage() {
     <div className="flex items-center justify-center py-32">
       <div className="flex items-center gap-3">
         <div className="h-4 w-4 rounded-full border-2 border-indigo-400/30 border-t-indigo-400 animate-spin" />
-        <span className="text-sm" style={{ color: 'var(--text-muted)' }}>加载中...</span>
+        <span className="text-sm" style={{ color: 'var(--text-muted)' }}>{dd.loading}</span>
       </div>
     </div>
   )
 
   if (!demo) return (
     <div className="flex items-center justify-center py-32">
-      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Demo 不存在</p>
+      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{dd.notFound}</p>
     </div>
   )
 
@@ -98,7 +101,7 @@ export default function DemoDetailPage() {
       {isPaused && errorMessage && (
         <div className="rounded-xl px-4 py-3.5"
           style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-          <p className="text-sm font-semibold" style={{ color: '#FCA5A5' }}>⚠ 录制中断</p>
+          <p className="text-sm font-semibold" style={{ color: '#FCA5A5' }}>{dd.errorTitle}</p>
           <p className="mt-1 text-xs leading-relaxed" style={{ color: 'rgba(252,165,165,0.7)' }}>
             {errorMessage}
           </p>
@@ -111,9 +114,9 @@ export default function DemoDetailPage() {
           style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}>
           <div className="h-3.5 w-3.5 flex-shrink-0 rounded-full border-2 border-indigo-400/30 border-t-indigo-400 animate-spin" />
           <p className="text-sm" style={{ color: '#818CF8' }}>
-            {status === 'parsing'    && 'AI 正在解析页面并规划步骤...'}
-            {status === 'recording'  && '正在录制浏览器操作，完成后自动跳转...'}
-            {status === 'processing' && '正在合成视频，即将完成...'}
+            {status === 'parsing'    && dd.statusParsing}
+            {status === 'recording'  && dd.statusRecording}
+            {status === 'processing' && dd.statusProcessing}
           </p>
         </div>
       )}
@@ -122,7 +125,7 @@ export default function DemoDetailPage() {
       <div className="space-y-2">
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
-            步骤 ({steps.length})
+            {dd.stepsHeader(steps.length)}
           </h2>
           {isReview && (
             <button onClick={saveSteps}
@@ -130,7 +133,7 @@ export default function DemoDetailPage() {
               style={{ color: 'var(--text-muted)' }}
               onMouseEnter={e => (e.target as HTMLElement).style.color = '#818CF8'}
               onMouseLeave={e => (e.target as HTMLElement).style.color = 'var(--text-muted)'}>
-              保存修改
+              {dd.saveEdits}
             </button>
           )}
         </div>
@@ -196,7 +199,7 @@ export default function DemoDetailPage() {
                     value={step.narration ?? ''}
                     onChange={e => updateStep(step.id, 'narration', e.target.value)}
                     rows={2}
-                    placeholder="旁白文案（英文朗读）"
+                    placeholder={dd.narrationPlaceholder}
                     className="input-dark mt-2 w-full rounded-lg px-2.5 py-1.5 text-xs resize-none"
                   />
                 ) : (
@@ -216,14 +219,14 @@ export default function DemoDetailPage() {
                     onClick={() => resolveStep(step.id, 'retry')}
                     className="btn-brand rounded-lg px-3 py-1.5 text-xs font-medium"
                     style={{ boxShadow: 'none' }}>
-                    {resolving === step.id ? '...' : '重试'}
+                    {resolving === step.id ? '...' : dd.retry}
                   </button>
                   <button
                     disabled={!!resolving}
                     onClick={() => resolveStep(step.id, 'skip')}
                     className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all"
                     style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-                    跳过
+                    {dd.skip}
                   </button>
                 </div>
               )}
@@ -242,9 +245,9 @@ export default function DemoDetailPage() {
           {starting ? (
             <span className="flex items-center justify-center gap-2">
               <span className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-              正在触发录制...
+              {dd.startingBtn}
             </span>
-          ) : '▶  确认步骤，开始录制'}
+          ) : dd.startBtn}
         </button>
       )}
     </div>
