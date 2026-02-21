@@ -12,7 +12,8 @@ Each step must follow this schema:
   "action_type": "navigate" | "click" | "fill" | "wait" | "assert",
   "selector": string | null,
   "value": string | null,
-  "narration": string
+  "narration": string,
+  "wait_for_selector": string | null
 }
 
 Rules:
@@ -29,7 +30,13 @@ Rules:
 - For "wait" steps, put milliseconds in "value" (e.g. "2000"), selector: null
 - narration must be natural spoken English, present tense
 - Maximum 8 steps
-- NEVER use jQuery selectors like :contains(), :eq() — they are INVALID in Playwright`
+- NEVER use jQuery selectors like :contains(), :eq() — they are INVALID in Playwright
+- wait_for_selector: CSS selector for an element that proves the step result is fully loaded on screen.
+  - For "navigate" steps: use the main content container selector (e.g. "main", ".dashboard", "[data-testid='home']", "nav"). Pick something that only appears AFTER the page fully loads, NOT a skeleton/placeholder.
+  - For "click" steps that open new content: use a selector for the resulting page/panel/modal content.
+  - For "fill" and "wait" steps: set to null.
+  - Use simple, robust selectors: tag names, IDs, data-testid, or short class names. Avoid overly specific selectors.
+  - If unsure, set to null (visual stability detection will be used as fallback).`
 
 interface PageData {
   text: string

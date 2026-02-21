@@ -31,15 +31,16 @@ async function processJob(job: Job<ParseJobData>) {
 
   // 4. 批量写入 steps 表
   const stepsToInsert = rawSteps.map(s => ({
-    id:          crypto.randomUUID(),
-    demo_id:     demoId,
-    position:    s.position,
-    title:       s.title,
-    action_type: s.action_type as 'navigate' | 'click' | 'fill' | 'wait' | 'assert',
-    selector:    s.selector ?? null,
-    value:       s.value ?? null,
-    narration:   s.narration ?? null,
-    status:      'pending' as const,
+    id:                crypto.randomUUID(),
+    demo_id:           demoId,
+    position:          s.position,
+    title:             s.title,
+    action_type:       s.action_type as 'navigate' | 'click' | 'fill' | 'wait' | 'assert',
+    selector:          s.selector ?? null,
+    value:             s.value ?? null,
+    narration:         s.narration ?? null,
+    wait_for_selector: (s as { wait_for_selector?: string | null }).wait_for_selector ?? null,
+    status:            'pending' as const,
   }))
 
   await db.insert(steps).values(stepsToInsert)

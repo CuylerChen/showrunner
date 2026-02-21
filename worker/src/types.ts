@@ -10,6 +10,7 @@ export interface Step {
   selector: string | null
   value: string | null
   narration: string | null
+  wait_for_selector: string | null  // 步骤完成的标志元素（方案C）
   timestamp_start?: number
   timestamp_end?: number
 }

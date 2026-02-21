@@ -40,6 +40,7 @@ export interface Step {
   selector: string | null
   value: string | null
   narration: string | null
+  wait_for_selector: string | null
   timestamp_start: number | null
   timestamp_end: number | null
   status: StepStatus
