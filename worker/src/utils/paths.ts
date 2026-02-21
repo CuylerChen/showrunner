@@ -1,9 +1,10 @@
 import path from 'path'
 import fs from 'fs'
-import os from 'os'
 
-// 所有临时文件统一放在系统临时目录下，Railway 重启后自动清理
-const ROOT = path.join(os.tmpdir(), 'showrunner')
+// 使用持久化 volume 目录，避免容器重启后临时文件丢失导致 merge 失败
+// /data/videos 是 docker-compose 中挂载的 named volume
+const VIDEO_BASE = process.env.VIDEO_DIR ?? '/data/videos'
+const ROOT = path.join(VIDEO_BASE, '_tmp')
 
 export const Paths = {
   videoDir:  (demoId: string) => path.join(ROOT, demoId, 'video'),
