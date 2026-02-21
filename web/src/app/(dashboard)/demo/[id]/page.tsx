@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { StatusBadge } from '@/components/demo/status-badge'
 import { useDemoRealtime } from '@/hooks/use-demo-realtime'
@@ -23,13 +23,25 @@ export default function DemoDetailPage() {
   const [showLoginModal, setShowLoginModal] = useState(false)
 
   const { status, errorMessage } = useDemoRealtime(id, demo?.status ?? 'pending')
+  const prevStatusRef = useRef<string>('')
 
+  // 初始加载
   useEffect(() => {
     fetch(`/api/demos/${id}`)
       .then(r => r.json())
       .then(d => { if (d.success) { setDemo(d.data); setSteps(d.data.steps ?? []) } })
       .finally(() => setLoading(false))
   }, [id])
+
+  // status 变为 review 时（包括重新解析完成），刷新步骤列表
+  useEffect(() => {
+    if (prevStatusRef.current !== '' && prevStatusRef.current !== 'review' && status === 'review') {
+      fetch(`/api/demos/${id}`)
+        .then(r => r.json())
+        .then(d => { if (d.success) { setDemo(d.data); setSteps(d.data.steps ?? []) } })
+    }
+    prevStatusRef.current = status
+  }, [status, id])
 
   useEffect(() => {
     if (status === 'completed' && demo?.share_token) {
@@ -274,7 +286,10 @@ export default function DemoDetailPage() {
           hasExistingSession={!!demo.has_session}
           onSaved={() => {
             setShowLoginModal(false)
-            setDemo(prev => prev ? { ...prev, has_session: true } : prev)
+            // 登录后自动重新解析，刷新 demo 数据（旧步骤已清空，status 回到 pending/parsing）
+            fetch(`/api/demos/${id}`)
+              .then(r => r.json())
+              .then(d => { if (d.success) { setDemo(d.data); setSteps(d.data.steps ?? []) } })
           }}
           onClose={() => setShowLoginModal(false)}
         />

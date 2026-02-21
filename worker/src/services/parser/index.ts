@@ -44,17 +44,41 @@ interface PageData {
 }
 
 // 用 Playwright 加载页面，提取真实 DOM 元素和文字
-async function fetchPageData(url: string): Promise<PageData> {
+// sessionStateJson: 已登录的 storageState（JSON 字符串），传入后以登录态加载页面
+async function fetchPageData(url: string, sessionStateJson?: string | null): Promise<PageData> {
   let browser
   try {
     browser = await chromium.launch({
       headless: true,
       executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ?? '/usr/bin/chromium',
+      args: ['--no-sandbox', '--disable-dev-shm-usage'],
     })
-    const page = await browser.newPage()
+
+    // 解析 session 状态（支持新格式 StorageState 和旧格式 Cookie[]）
+    let storageState: Parameters<typeof browser.newContext>[0]['storageState'] = undefined
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let legacyCookies: any[] | null = null
+    if (sessionStateJson) {
+      try {
+        const parsed = JSON.parse(sessionStateJson)
+        if (Array.isArray(parsed)) {
+          legacyCookies = parsed
+        } else if (parsed && typeof parsed === 'object') {
+          storageState = parsed
+        }
+      } catch {}
+    }
+
+    const context = await browser.newContext({
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+      ...(storageState ? { storageState } : {}),
+    })
+    if (legacyCookies) await context.addCookies(legacyCookies)
+
+    const page = await context.newPage()
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 })
-    // 等待动态内容渲染（React hydration 等）
-    await page.waitForTimeout(2000)
+    // 等待动态内容渲染（React hydration 等），登录态页面需要更长时间
+    await page.waitForTimeout(sessionStateJson ? 4000 : 2000)
 
     // 提取页面可见文字
     const text = await page.evaluate(() =>
@@ -135,13 +159,15 @@ async function fetchPageData(url: string): Promise<PageData> {
 
 export async function parseSteps(
   productUrl: string,
-  description: string | null
+  description: string | null,
+  sessionStateJson?: string | null
 ): Promise<Omit<Step, 'id' | 'demo_id' | 'status' | 'timestamp_start' | 'timestamp_end'>[]> {
   const apiKey = process.env.DEEPSEEK_API_KEY
   if (!apiKey) throw new Error('DEEPSEEK_API_KEY 未配置')
 
-  console.log('[parser] 抓取页面内容（Playwright）...')
-  const { text, elements } = await fetchPageData(productUrl)
+  const loginHint = sessionStateJson ? '（已登录态）' : '（公开页面）'
+  console.log(`[parser] 抓取页面内容 ${loginHint}...`)
+  const { text, elements } = await fetchPageData(productUrl, sessionStateJson)
   console.log(`[parser] 页面文字 ${text.length} 字符，可交互元素 ${elements.split('\n').filter(Boolean).length} 个`)
 
   const userMessage = [

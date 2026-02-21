@@ -8,11 +8,12 @@ export interface ParseJobData {
   demoId: string
   productUrl: string
   description: string | null
+  isReparse?: boolean   // true 时：用登录态重新解析（删除旧步骤，用 session_cookies 加载页面）
 }
 
 async function processJob(job: Job<ParseJobData>) {
-  const { demoId, productUrl, description } = job.data
-  console.log(`[parse] 开始解析 demo=${demoId}`)
+  const { demoId, productUrl, description, isReparse } = job.data
+  console.log(`[parse] 开始解析 demo=${demoId}${isReparse ? '（重新解析）' : ''}`)
 
   // 1. 更新状态为 parsing
   await db.update(demos).set({ status: 'parsing' }).where(eq(demos.id, demoId))
@@ -26,10 +27,23 @@ async function processJob(job: Job<ParseJobData>) {
     started_at: new Date(),
   })
 
-  // 3. 调用 OpenRouter 解析步骤
-  const rawSteps = await parseSteps(productUrl, description)
+  // 3. 重新解析时：读取 session_cookies + 删除旧步骤
+  let sessionStateJson: string | null = null
+  if (isReparse) {
+    const demoRow = await db
+      .select({ session_cookies: demos.session_cookies })
+      .from(demos)
+      .where(eq(demos.id, demoId))
+      .then(rows => rows[0] ?? null)
+    sessionStateJson = demoRow?.session_cookies ?? null
+    console.log(`[parse] 重新解析，session=${sessionStateJson ? '有' : '无'}，删除旧步骤...`)
+    await db.delete(steps).where(eq(steps.demo_id, demoId))
+  }
 
-  // 4. 批量写入 steps 表
+  // 4. 调用 AI 解析步骤（isReparse 时传入登录态）
+  const rawSteps = await parseSteps(productUrl, description, sessionStateJson)
+
+  // 5. 批量写入 steps 表
   const stepsToInsert = rawSteps.map(s => ({
     id:                crypto.randomUUID(),
     demo_id:           demoId,
