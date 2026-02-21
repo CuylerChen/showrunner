@@ -1,12 +1,14 @@
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { db, schema } from '@/lib/db'
-import { eq, desc } from 'drizzle-orm'
+import { eq, desc, count } from 'drizzle-orm'
 import { CreateForm } from '@/components/demo/create-form'
 import { DemoCard } from '@/components/demo/demo-card'
 import { getT } from '@/lib/i18n-server'
+import Link from 'next/link'
 
-async function getDemos(userId: string) {
+// 最近 3 条导览（首页快速预览）
+async function getRecentDemos(userId: string) {
   const rows = await db
     .select({
       id:              schema.demos.id,
@@ -24,27 +26,20 @@ async function getDemos(userId: string) {
     .from(schema.demos)
     .where(eq(schema.demos.user_id, userId))
     .orderBy(desc(schema.demos.created_at))
-    .limit(50)
+    .limit(3)
 
-  // 不暴露 cookie 原始内容给客户端，只传布尔值
   return rows.map(({ session_cookies, ...rest }) => ({
     ...rest,
     has_session: !!session_cookies,
   }))
 }
 
-function IconFilmSlate() {
-  return (
-    <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10 mx-auto">
-      <rect x="4" y="14" width="40" height="26" rx="3"
-        stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <path d="M4 22h40" stroke="currentColor" strokeWidth="2" />
-      <path d="M4 14l8-8M17 14l8-8M30 14l8-8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="24" cy="33" r="4" stroke="currentColor" strokeWidth="2" />
-      <path d="M22.5 33l2.5 1.5-2.5 1.5" stroke="currentColor" strokeWidth="1.8"
-        strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
+async function getTotalCount(userId: string) {
+  const [row] = await db
+    .select({ total: count() })
+    .from(schema.demos)
+    .where(eq(schema.demos.user_id, userId))
+  return row?.total ?? 0
 }
 
 export default async function DashboardPage() {
@@ -52,60 +47,59 @@ export default async function DashboardPage() {
   const userId = headersList.get('x-user-id')
   if (!userId) redirect('/sign-in')
 
-  const [demos, { t }] = await Promise.all([getDemos(userId), getT()])
+  const [recentDemos, total, { t }] = await Promise.all([
+    getRecentDemos(userId),
+    getTotalCount(userId),
+    getT(),
+  ])
   const d = t.dashboard
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       {/* ── 页头 ──────────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-            {d.title}
-          </h1>
-          <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
-            {d.subtitle}
-          </p>
-        </div>
-
-        {demos.length > 0 && (
-          <span className="text-xs font-medium rounded-full px-3 py-1.5"
-            style={{ background: '#EEF2FF', color: '#4338CA', border: '1px solid #C7D2FE' }}>
-            {d.demosCount(demos.length)}
-          </span>
-        )}
+      <div>
+        <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+          {d.title}
+        </h1>
+        <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
+          {d.subtitle}
+        </p>
       </div>
 
       {/* ── 创建表单 ──────────────────────────────────────── */}
       <CreateForm />
 
-      {/* ── Demo 列表 ─────────────────────────────────────── */}
-      <div>
-        <h2 className="text-xs font-semibold uppercase tracking-widest mb-3"
-          style={{ color: 'var(--text-muted)' }}>
-          {d.myDemos}
-        </h2>
-
-        {demos.length === 0 ? (
-          <div className="glass-card rounded-2xl py-16 text-center">
-            <div style={{ color: 'var(--text-muted)' }}>
-              <IconFilmSlate />
-            </div>
-            <p className="mt-4 text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
-              {d.noDemo}
-            </p>
-            <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
-              {d.noDemoSub}
-            </p>
+      {/* ── 最近导览（最多 3 条）──────────────────────────── */}
+      {recentDemos.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xs font-semibold uppercase tracking-widest"
+              style={{ color: 'var(--text-muted)' }}>
+              {d.myDemos}
+            </h2>
+            {total > 3 && (
+              <Link href="/dashboard/tours"
+                className="text-xs font-medium hover:underline"
+                style={{ color: '#6366F1' }}>
+                {d.viewAllTours} ({total}) →
+              </Link>
+            )}
           </div>
-        ) : (
           <div className="space-y-2">
-            {demos.map(demo => (
+            {recentDemos.map(demo => (
               <DemoCard key={demo.id} {...demo} />
             ))}
           </div>
-        )}
-      </div>
+          {total > 3 && (
+            <div className="mt-4 text-center">
+              <Link href="/dashboard/tours"
+                className="btn-outline rounded-lg px-5 py-2 text-sm inline-block">
+                {d.viewAllTours} ({total}) →
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
