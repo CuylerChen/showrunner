@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ShowrunnerLogo } from '@/components/logo'
@@ -60,6 +60,118 @@ function IconArrow() {
       strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
       <path d="M3 8h10M9 4l4 4-4 4" />
     </svg>
+  )
+}
+
+function IconX() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  )
+}
+
+function IconLinkedIn() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
+      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+    </svg>
+  )
+}
+
+function IconLink() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8"
+      strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+      <path d="M6.5 9.5a3.5 3.5 0 005 0l2-2a3.5 3.5 0 00-5-5L7 4" />
+      <path d="M9.5 6.5a3.5 3.5 0 00-5 0l-2 2a3.5 3.5 0 005 5L9 12" />
+    </svg>
+  )
+}
+
+function IconDownload() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8"
+      strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+      <path d="M8 2v8M5 7l3 3 3-3" />
+      <path d="M2 12h12" />
+    </svg>
+  )
+}
+
+function IconCheck() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+      <path d="M3 8l3.5 3.5L13 4" />
+    </svg>
+  )
+}
+
+/* ── 分享栏 ─────────────────────────────────────────────── */
+function ShareBar({ title, videoUrl }: { title: string | null; videoUrl: string }) {
+  const [copied, setCopied] = React.useState(false)
+
+  const shareUrl  = typeof window !== 'undefined' ? window.location.href : ''
+  const shareText = title
+    ? `${title} — 用 Showrunner 生成的产品导览视频`
+    : '用 Showrunner 生成的产品导览视频'
+
+  function handleCopy() {
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  function openX() {
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
+  function openLinkedIn() {
+    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
+  const btnBase = 'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer'
+
+  return (
+    <div className="mt-3 flex items-center gap-2 flex-wrap">
+      <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-muted)' }}>分享：</span>
+
+      {/* 复制链接 */}
+      <button onClick={handleCopy}
+        className={btnBase}
+        style={{ background: copied ? '#F0FDF4' : 'var(--bg-elevated)', border: `1px solid ${copied ? '#BBF7D0' : 'var(--border)'}`, color: copied ? '#15803D' : 'var(--text-secondary)' }}>
+        {copied ? <IconCheck /> : <IconLink />}
+        {copied ? '已复制' : '复制链接'}
+      </button>
+
+      {/* X / Twitter */}
+      <button onClick={openX}
+        className={btnBase}
+        style={{ background: '#000', border: '1px solid #000', color: '#fff' }}>
+        <IconX />
+        X
+      </button>
+
+      {/* LinkedIn */}
+      <button onClick={openLinkedIn}
+        className={btnBase}
+        style={{ background: '#0A66C2', border: '1px solid #0A66C2', color: '#fff' }}>
+        <IconLinkedIn />
+        LinkedIn
+      </button>
+
+      {/* 下载视频 */}
+      <a href={videoUrl} download="product-tour.mp4"
+        className={btnBase}
+        style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+        <IconDownload />
+        下载视频
+      </a>
+    </div>
   )
 }
 
@@ -246,12 +358,15 @@ export default function SharePage() {
             {/* 视频下方信息栏 */}
             <div className="mt-3 flex items-center justify-between px-1">
               <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                {data.title ?? 'Product Demo'}
+                {data.title ?? 'Product Tour'}
               </p>
               <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                 {hasSteps ? `${data.steps.length} 个步骤` : ''}
               </span>
             </div>
+
+            {/* 分享栏 */}
+            <ShareBar title={data.title} videoUrl={data.video_url} />
           </div>
 
           {/* ── 章节列表 ─────────────────────────────────── */}
