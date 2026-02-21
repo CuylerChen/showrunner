@@ -84,13 +84,25 @@ export async function startSession(demoId: string, url: string): Promise<void> {
       console.log(`[browser-session] 切换到新页面 demo=${demoId}: ${newPage.url()}`)
     }).catch(() => {})
 
-    // 弹窗关闭时，切回 context 中最后一个存活页面（通常是主页面）
-    newPage.on('close', () => {
+    // 弹窗关闭时，切回父页面并等待 figma 的 OAuth 跳转
+    newPage.on('close', async () => {
       const remaining = context.pages()
-      if (remaining.length > 0) {
-        const target = remaining[remaining.length - 1]
-        session.page = target
-        console.log(`[browser-session] 弹窗关闭，切回主页面 demo=${demoId}: ${target.url()}`)
+      if (remaining.length === 0) return
+      const target = remaining[remaining.length - 1]
+      session.page = target
+
+      // 等 figma 通过 postMessage 处理 OAuth 并跳转（最多 3s）
+      const didNav = await target.waitForNavigation({
+        waitUntil: 'domcontentloaded', timeout: 3000,
+      }).then(() => true).catch(() => false)
+
+      if (didNav) {
+        console.log(`[browser-session] OAuth 完成，父页面跳转到 demo=${demoId}: ${target.url()}`)
+      } else {
+        // figma 未自动跳转，reload 让浏览器重新检测 cookie
+        console.log(`[browser-session] 弹窗关闭未导航，reload 父页面 demo=${demoId}`)
+        await target.reload({ waitUntil: 'domcontentloaded', timeout: 8000 }).catch(() => {})
+        console.log(`[browser-session] reload 后 demo=${demoId}: ${target.url()}`)
       }
     })
   })
