@@ -260,8 +260,8 @@ export default function DemoDetailPage() {
             style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
           >
             {demo?.has_session
-              ? '🔐 已配置登录状态（点击更新）'
-              : '🔐 配置登录状态（产品需要登录时）'}
+              ? dd.loginConfigured
+              : dd.loginNotConfigured}
           </button>
         </div>
       )}

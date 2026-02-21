@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from '@/lib/i18n'
 
 interface Props {
   demoId: string
@@ -11,12 +12,16 @@ interface Props {
 }
 
 export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSaved, onClose }: Props) {
+  const { t } = useTranslation()
+  const ls = t.loginSession
+
   const [phase, setPhase]       = useState<'idle' | 'active'>('idle')
   const [starting, setStarting] = useState(false)
   const [saving, setSaving]     = useState(false)
   const [error, setError]       = useState<string | null>(null)
   const [navUrl, setNavUrl]     = useState(productUrl)
   const [tick, setTick]         = useState(0)          // 驱动截图轮询
+  const [clickPos, setClickPos] = useState<{ x: number; y: number } | null>(null)
 
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -72,20 +77,49 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
     onClose()
   }
 
+  /* ── 发送输入事件到 Worker ──────────────────────────────── */
+  async function sendInput(event: object) {
+    setError(null)
+    try {
+      const res = await fetch(`/api/demos/${demoId}/login-session/input`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(event),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error ?? `HTTP ${res.status}`)
+      }
+      // 点击/键盘后立即刷新截图
+      setTick(n => n + 1)
+    } catch (e) {
+      setError((e as Error).message)
+    }
+  }
+
   /* ── 点击截图 → 转换坐标发给 Worker ───────────────────── */
   function handleImgClick(e: React.MouseEvent<HTMLImageElement>) {
+    e.preventDefault()
     const img  = e.currentTarget
     const rect = img.getBoundingClientRect()
-    const x    = Math.round((e.clientX - rect.left) * (1280 / rect.width))
-    const y    = Math.round((e.clientY - rect.top)  * (720  / rect.height))
+    if (rect.width === 0 || rect.height === 0) return
+    const dx   = e.clientX - rect.left
+    const dy   = e.clientY - rect.top
+    const x    = Math.round(dx * (1280 / rect.width))
+    const y    = Math.round(dy * (720  / rect.height))
+    // 显示点击涟漪效果
+    setClickPos({ x: dx, y: dy })
+    setTimeout(() => setClickPos(null), 600)
     sendInput({ type: 'click', x, y })
     containerRef.current?.focus()
   }
 
   /* ── 滚轮 ───────────────────────────────────────────────── */
   function handleWheel(e: React.WheelEvent<HTMLImageElement>) {
+    e.preventDefault()
     const img  = e.currentTarget
     const rect = img.getBoundingClientRect()
+    if (rect.width === 0 || rect.height === 0) return
     const x    = Math.round((e.clientX - rect.left) * (1280 / rect.width))
     const y    = Math.round((e.clientY - rect.top)  * (720  / rect.height))
     sendInput({ type: 'scroll', x, y, deltaY: e.deltaY })
@@ -111,14 +145,6 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
     sendInput({ type: 'navigate', url })
   }
 
-  function sendInput(event: object) {
-    fetch(`/api/demos/${demoId}/login-session/input`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(event),
-    }).catch(() => {})
-  }
-
   /* ── 渲染 ───────────────────────────────────────────────── */
   return (
     <div style={{
@@ -133,6 +159,7 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
         borderRadius: '1rem',
         width: '100%',
         maxWidth: phase === 'active' ? '920px' : '480px',
+        maxHeight: 'calc(100vh - 2rem)',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
@@ -144,11 +171,12 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
           padding: '1rem 1.25rem',
           borderBottom: '1px solid var(--border)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexShrink: 0,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
             <span style={{ fontSize: '1.1rem' }}>🔐</span>
             <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9375rem' }}>
-              配置登录状态
+              {ls.title}
             </span>
           </div>
           <button
@@ -159,13 +187,13 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
           </button>
         </div>
 
-        <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto', flex: 1 }}>
 
           {/* ── 初始状态（未启动会话） ── */}
           {phase === 'idle' && (
             <>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
-                录制需要登录的产品时，需要先在远程浏览器中完成登录，系统将保存登录状态供后续录制使用。
+                {ls.description}
               </p>
 
               {hasExistingSession && (
@@ -174,8 +202,8 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
                   background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)',
                   display: 'flex', alignItems: 'center', gap: '0.5rem',
                 }}>
-                  <span style={{ color: '#86EFAC', fontSize: '0.875rem' }}>✓ 已有保存的登录状态</span>
-                  <span style={{ color: 'rgba(134,239,172,0.6)', fontSize: '0.75rem' }}>（可重新启动浏览器更新）</span>
+                  <span style={{ color: '#86EFAC', fontSize: '0.875rem' }}>{ls.hasSession}</span>
+                  <span style={{ color: 'rgba(134,239,172,0.6)', fontSize: '0.75rem' }}>{ls.hasSessionNote}</span>
                 </div>
               )}
 
@@ -191,13 +219,13 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
                 {starting
                   ? <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                       <span className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                      正在启动远程浏览器...
+                      {ls.starting}
                     </span>
-                  : '🌐  启动远程浏览器'}
+                  : ls.startBtn}
               </button>
 
               <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'center' }}>
-                浏览器运行在服务器上，登录凭据不会被记录
+                {ls.privacyNote}
               </p>
             </>
           )}
@@ -206,11 +234,11 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
           {phase === 'active' && (
             <>
               {/* 地址栏 */}
-              <form onSubmit={handleNav} style={{ display: 'flex', gap: '0.5rem' }}>
+              <form onSubmit={handleNav} style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
                 <input
                   value={navUrl}
                   onChange={e => setNavUrl(e.target.value)}
-                  placeholder="https://..."
+                  placeholder={ls.navPlaceholder}
                   style={{
                     flex: 1, padding: '0.5rem 0.75rem',
                     borderRadius: '0.5rem',
@@ -227,7 +255,7 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
                   border: '1px solid rgba(99,102,241,0.3)',
                   color: '#818CF8', fontSize: '0.8125rem', cursor: 'pointer',
                 }}>
-                  跳转
+                  {ls.navBtn}
                 </button>
               </form>
 
@@ -244,29 +272,53 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
                   cursor: 'crosshair',
                   background: '#000',
                   lineHeight: 0,
+                  flexShrink: 0,
+                  position: 'relative',
                 }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={`/api/demos/${demoId}/login-session/screenshot?t=${tick}`}
-                  alt="远程浏览器"
+                  alt={ls.imgAlt}
                   onClick={handleImgClick}
                   onWheel={handleWheel}
                   style={{ width: '100%', display: 'block' }}
                   draggable={false}
                 />
+                {/* 点击涟漪反馈 */}
+                {clickPos && (
+                  <div style={{
+                    position: 'absolute',
+                    left: clickPos.x,
+                    top: clickPos.y,
+                    width: 24,
+                    height: 24,
+                    borderRadius: '50%',
+                    background: 'rgba(99,102,241,0.6)',
+                    border: '2px solid rgba(99,102,241,0.9)',
+                    transform: 'translate(-50%, -50%)',
+                    pointerEvents: 'none',
+                    animation: 'clickRipple 0.6s ease-out forwards',
+                  }} />
+                )}
               </div>
+              <style>{`
+                @keyframes clickRipple {
+                  0%   { transform: translate(-50%,-50%) scale(0.5); opacity: 1; }
+                  100% { transform: translate(-50%,-50%) scale(2.5); opacity: 0; }
+                }
+              `}</style>
 
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'center' }}>
-                点击图像操控浏览器 · 完成登录后点击「保存登录状态」
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'center', flexShrink: 0 }}>
+                {ls.hint}
               </p>
 
               {error && (
-                <p style={{ color: '#FCA5A5', fontSize: '0.875rem' }}>{error}</p>
+                <p style={{ color: '#FCA5A5', fontSize: '0.875rem', flexShrink: 0 }}>{error}</p>
               )}
 
               {/* 操作按钮 */}
-              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', flexShrink: 0 }}>
                 <button
                   onClick={handleClose}
                   style={{
@@ -276,7 +328,7 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
                     background: 'none',
                   }}
                 >
-                  取消
+                  {ls.cancel}
                 </button>
                 <button
                   onClick={saveState}
@@ -286,9 +338,9 @@ export function LoginSessionModal({ demoId, productUrl, hasExistingSession, onSa
                   {saving
                     ? <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <span className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                        保存中...
+                        {ls.saving}
                       </span>
-                    : '✓ 保存登录状态'}
+                    : ls.saveBtn}
                 </button>
               </div>
             </>

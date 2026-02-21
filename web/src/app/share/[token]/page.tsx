@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ShowrunnerLogo } from '@/components/logo'
+import { useTranslation } from '@/lib/i18n'
 
 interface ShareStep {
   position: number
@@ -110,12 +111,14 @@ function IconCheck() {
 
 /* ── 分享栏 ─────────────────────────────────────────────── */
 function ShareBar({ title, videoUrl }: { title: string | null; videoUrl: string }) {
+  const { t } = useTranslation()
+  const sp = t.sharePage
   const [copied, setCopied] = React.useState(false)
 
   const shareUrl  = typeof window !== 'undefined' ? window.location.href : ''
   const shareText = title
-    ? `${title} — 用 Showrunner 生成的产品导览视频`
-    : '用 Showrunner 生成的产品导览视频'
+    ? `${title} — ${sp.shareLabel}`
+    : sp.shareLabel
 
   function handleCopy() {
     navigator.clipboard.writeText(shareUrl).then(() => {
@@ -138,14 +141,14 @@ function ShareBar({ title, videoUrl }: { title: string | null; videoUrl: string 
 
   return (
     <div className="mt-3 flex items-center gap-2 flex-wrap">
-      <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-muted)' }}>分享：</span>
+      <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{sp.shareLabel}</span>
 
       {/* 复制链接 */}
       <button onClick={handleCopy}
         className={btnBase}
         style={{ background: copied ? '#F0FDF4' : 'var(--bg-elevated)', border: `1px solid ${copied ? '#BBF7D0' : 'var(--border)'}`, color: copied ? '#15803D' : 'var(--text-secondary)' }}>
         {copied ? <IconCheck /> : <IconLink />}
-        {copied ? '已复制' : '复制链接'}
+        {copied ? sp.copied : sp.copyLink}
       </button>
 
       {/* X / Twitter */}
@@ -169,7 +172,7 @@ function ShareBar({ title, videoUrl }: { title: string | null; videoUrl: string 
         className={btnBase}
         style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
         <IconDownload />
-        下载视频
+        {sp.downloadVideo}
       </a>
     </div>
   )
@@ -177,6 +180,7 @@ function ShareBar({ title, videoUrl }: { title: string | null; videoUrl: string 
 
 /* ── 加载状态 ──────────────────────────────────────────── */
 function LoadingScreen() {
+  const { t } = useTranslation()
   return (
     <div className="flex min-h-screen flex-col" style={{ background: 'var(--bg-base)' }}>
       <header style={{ background: 'white', borderBottom: '1px solid var(--border)' }}>
@@ -187,7 +191,7 @@ function LoadingScreen() {
       <div className="flex-1 flex items-center justify-center">
         <div className="flex items-center gap-3">
           <div className="h-5 w-5 rounded-full border-2 border-indigo-200 border-t-indigo-500 animate-spin" />
-          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>加载中...</span>
+          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>{t.sharePage.loading}</span>
         </div>
       </div>
     </div>
@@ -196,6 +200,8 @@ function LoadingScreen() {
 
 /* ── 404 状态 ──────────────────────────────────────────── */
 function NotFoundScreen() {
+  const { t } = useTranslation()
+  const sp = t.sharePage
   return (
     <div className="flex min-h-screen flex-col" style={{ background: 'var(--bg-surface)' }}>
       <header style={{ background: 'white', borderBottom: '1px solid var(--border)' }}>
@@ -209,14 +215,14 @@ function NotFoundScreen() {
             <IconFilm />
           </div>
           <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-            分享页不存在
+            {sp.notFound}
           </h2>
           <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>
-            演示视频可能尚未生成完成，或链接已失效
+            {sp.notFoundDesc}
           </p>
           <Link href="/"
             className="mt-6 inline-block btn-outline rounded-lg px-5 py-2 text-sm">
-            返回首页
+            {sp.backHome}
           </Link>
         </div>
       </div>
@@ -227,6 +233,8 @@ function NotFoundScreen() {
 /* ── 主页面 ────────────────────────────────────────────── */
 export default function SharePage() {
   const { token }   = useParams<{ token: string }>()
+  const { t } = useTranslation()
+  const sp = t.sharePage
   const videoRef    = useRef<HTMLVideoElement>(null)
   const [data, setData]             = useState<ShareData | null>(null)
   const [loading, setLoading]       = useState(true)
@@ -333,7 +341,7 @@ export default function SharePage() {
                   style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)' }}
                 >
                   <p className="text-white text-lg font-semibold px-6 text-center">
-                    {data.title ?? '感谢观看'}
+                    {data.title ?? sp.defaultTitle}
                   </p>
                   <a
                     href={data.cta_url!}
@@ -342,14 +350,14 @@ export default function SharePage() {
                     className="inline-flex items-center gap-2 rounded-xl px-7 py-3 text-sm font-semibold transition-opacity hover:opacity-90"
                     style={{ background: '#6366F1', color: 'white' }}
                   >
-                    {data.cta_text || '立即体验'}
+                    {data.cta_text || sp.ctaDefault}
                     <IconArrow />
                   </a>
                   <button
                     onClick={() => { setShowCta(false); if (videoRef.current) { videoRef.current.currentTime = 0; videoRef.current.play() } }}
                     className="text-xs text-white/60 hover:text-white/90 transition-colors cursor-pointer"
                   >
-                    重新播放
+                    {sp.replay}
                   </button>
                 </div>
               )}
@@ -361,7 +369,7 @@ export default function SharePage() {
                 {data.title ?? 'Product Tour'}
               </p>
               <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                {hasSteps ? `${data.steps.length} 个步骤` : ''}
+                {hasSteps ? sp.stepsCount(data.steps.length) : ''}
               </span>
             </div>
 
@@ -378,7 +386,7 @@ export default function SharePage() {
                   <IconPlay />
                   <span className="text-xs font-semibold uppercase tracking-wider"
                     style={{ color: 'var(--text-muted)' }}>
-                    章节导航
+                    {sp.chapters}
                   </span>
                 </div>
 
@@ -439,7 +447,7 @@ export default function SharePage() {
                       className="flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-semibold transition-opacity hover:opacity-90"
                       style={{ background: '#6366F1', color: 'white' }}
                     >
-                      {data.cta_text || '立即体验'}
+                      {data.cta_text || sp.ctaDefault}
                       <IconArrow />
                     </a>
                   </div>
@@ -453,11 +461,11 @@ export default function SharePage() {
       {/* ── 页脚 ─────────────────────────────────────────── */}
       <footer className="flex items-center justify-center gap-1.5 py-4 text-xs"
         style={{ color: 'var(--text-muted)', borderTop: '1px solid var(--border)' }}>
-        由
+        {sp.footerBefore}
         <Link href="/" className="font-medium hover:underline" style={{ color: '#6366F1' }}>
           Showrunner
         </Link>
-        生成
+        {sp.footerAfter}
       </footer>
     </div>
   )

@@ -52,14 +52,11 @@ const EXAMPLES = [
   { label: 'Figma',   url: 'https://figma.com' },
 ]
 
-/* ── 流程步骤 ───────────────────────────────────────────── */
-const STEPS_ZH = ['AI 解析页面', '自动录制操作', '合成 AI 旁白', '生成导览视频']
-const STEPS_EN = ['AI Page Analysis', 'Auto Recording', 'AI Narration', 'Export Video']
 
 /* ── 主组件 ─────────────────────────────────────────────── */
 export function CreateForm() {
   const router = useRouter()
-  const { t, locale } = useTranslation()
+  const { t } = useTranslation()
   const cf = t.createForm
 
   const [url, setUrl]           = useState('')
@@ -69,7 +66,7 @@ export function CreateForm() {
   const [success, setSuccess]   = useState(false)
   const [error, setError]       = useState<string | null>(null)
 
-  const steps = locale === 'zh' ? STEPS_ZH : STEPS_EN
+  const steps = cf.steps
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -165,7 +162,7 @@ export function CreateForm() {
               {success ? (
                 <>
                   <IconCheck />
-                  {locale === 'zh' ? '已创建' : 'Created'}
+                  {cf.created}
                 </>
               ) : loading ? (
                 <>
@@ -184,7 +181,7 @@ export function CreateForm() {
           {/* 示例 URL 快捷选择 */}
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs" style={{ color: '#94A3B8' }}>
-              {locale === 'zh' ? '试试：' : 'Try:'}
+              {cf.tryLabel}
             </span>
             {EXAMPLES.map(ex => (
               <button
@@ -253,7 +250,7 @@ export function CreateForm() {
               style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
               <IconCheck />
               <p className="text-sm font-medium" style={{ color: '#15803D' }}>
-                {locale === 'zh' ? '导览已开始生成，正跳转到列表...' : 'Tour created! Redirecting...'}
+                {cf.successMsg}
               </p>
             </div>
           )}

@@ -88,6 +88,9 @@ function CtaPanel({ id, initUrl, initText, onClose }: {
   initText: string | null
   onClose: (url: string | null, text: string | null) => void
 }) {
+  const { t } = useTranslation()
+  const cp = t.ctaPanel
+
   const [url, setUrl]   = useState(initUrl ?? '')
   const [text, setText] = useState(initText ?? '')
   const [saving, setSaving] = useState(false)
@@ -113,12 +116,12 @@ function CtaPanel({ id, initUrl, initText, onClose }: {
     <div className="px-4 pb-4 pt-2 space-y-3"
       style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
       <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-        视频结束时显示行动按钮（CTA）
+        {cp.description}
       </p>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <div>
           <label className="block text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>
-            跳转链接
+            {cp.urlLabel}
           </label>
           <input
             type="url"
@@ -130,13 +133,13 @@ function CtaPanel({ id, initUrl, initText, onClose }: {
         </div>
         <div>
           <label className="block text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>
-            按钮文字
+            {cp.textLabel}
           </label>
           <input
             type="text"
             value={text}
             onChange={e => setText(e.target.value)}
-            placeholder="立即体验（留空使用默认）"
+            placeholder={cp.textPlaceholder}
             maxLength={40}
             className="input-dark w-full rounded-lg px-3 py-2 text-xs"
           />
@@ -148,7 +151,7 @@ function CtaPanel({ id, initUrl, initText, onClose }: {
           className="rounded-lg px-3 py-1.5 text-xs cursor-pointer"
           style={{ color: 'var(--text-muted)' }}
         >
-          取消
+          {cp.cancel}
         </button>
         <button
           onClick={handleSave}
@@ -156,7 +159,7 @@ function CtaPanel({ id, initUrl, initText, onClose }: {
           className="btn-brand rounded-lg px-4 py-1.5 text-xs font-medium flex items-center gap-1.5"
         >
           {saving && <span className="h-3 w-3 rounded-full border border-white/40 border-t-white animate-spin" />}
-          保存
+          {cp.save}
         </button>
       </div>
     </div>
@@ -181,6 +184,9 @@ function SessionPanel({ id, initHasSession, onClose }: {
   initHasSession: boolean
   onClose: (hasSession: boolean) => void
 }) {
+  const { t } = useTranslation()
+  const sp = t.sessionPanel
+
   const [raw, setRaw]       = useState('')
   const [saving, setSaving] = useState(false)
   const [clearing, setClearing] = useState(false)
@@ -194,7 +200,7 @@ function SessionPanel({ id, initHasSession, onClose }: {
       cookies = JSON.parse(raw.trim())
       if (!Array.isArray(cookies) || cookies.length === 0) throw new Error()
     } catch {
-      setError('格式错误：请确保粘贴的是完整的 JSON 数组')
+      setError(sp.formatError)
       return
     }
 
@@ -209,7 +215,7 @@ function SessionPanel({ id, initHasSession, onClose }: {
       if (data.success) {
         onClose(true)
       } else {
-        setError(data.error?.message ?? '保存失败')
+        setError(data.error?.message ?? sp.saveError)
       }
     } finally {
       setSaving(false)
@@ -239,7 +245,7 @@ function SessionPanel({ id, initHasSession, onClose }: {
 
       {/* 说明标题 */}
       <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-        为需要登录的产品设置录制凭证
+        {sp.description}
       </p>
 
       {/* 当前状态 */}
@@ -247,7 +253,7 @@ function SessionPanel({ id, initHasSession, onClose }: {
         <div className="flex items-center gap-1.5 text-xs rounded-lg px-3 py-2"
           style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#15803D' }}>
           <IconCheck />
-          登录凭证已设置，录制时将自动使用
+          {sp.hasSession}
         </div>
       )}
 
@@ -257,7 +263,7 @@ function SessionPanel({ id, initHasSession, onClose }: {
           <span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white"
             style={{ background: '#6366F1' }}>1</span>
           <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            在您的浏览器中打开产品网站并完成登录
+            {sp.step1}
           </p>
         </div>
 
@@ -284,11 +290,11 @@ function SessionPanel({ id, initHasSession, onClose }: {
                 }}
               >
                 {copied ? <IconCheck /> : <IconCopy />}
-                {copied ? '已复制' : '复制'}
+                {copied ? sp.copied : sp.copyBtn}
               </button>
             </div>
             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              脚本会自动将 Cookie 复制到剪贴板并弹出确认提示。
+              {sp.step2note}
             </p>
           </div>
         </div>
@@ -298,7 +304,7 @@ function SessionPanel({ id, initHasSession, onClose }: {
             style={{ background: '#6366F1' }}>3</span>
           <div className="flex-1 space-y-2">
             <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-              将复制的内容粘贴到下方：
+              {sp.step3}
             </p>
             <textarea
               value={raw}
@@ -324,7 +330,7 @@ function SessionPanel({ id, initHasSession, onClose }: {
               className="text-xs cursor-pointer hover:underline"
               style={{ color: '#DC2626' }}
             >
-              {clearing ? '清除中...' : '清除凭证'}
+              {clearing ? sp.clearing : sp.clearBtn}
             </button>
           )}
         </div>
@@ -334,7 +340,7 @@ function SessionPanel({ id, initHasSession, onClose }: {
             className="rounded-lg px-3 py-1.5 text-xs cursor-pointer"
             style={{ color: 'var(--text-muted)' }}
           >
-            取消
+            {sp.cancel}
           </button>
           <button
             onClick={handleSave}
@@ -342,7 +348,7 @@ function SessionPanel({ id, initHasSession, onClose }: {
             className="btn-brand rounded-lg px-4 py-1.5 text-xs font-medium flex items-center gap-1.5"
           >
             {saving && <span className="h-3 w-3 rounded-full border border-white/40 border-t-white animate-spin" />}
-            保存凭证
+            {sp.saveBtn}
           </button>
         </div>
       </div>
