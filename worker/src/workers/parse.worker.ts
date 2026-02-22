@@ -1,6 +1,6 @@
 import { Worker, Job } from 'bullmq'
 import { connection } from '../utils/redis'
-import { db, users, demos, steps, jobs } from '../utils/db'
+import { db, demos, steps, jobs } from '../utils/db'
 import { eq } from 'drizzle-orm'
 import { parseSteps } from '../services/parser'
 
@@ -27,32 +27,22 @@ async function processJob(job: Job<ParseJobData>) {
     started_at: new Date(),
   })
 
-  // 3. 重新解析时：读取 session_cookies + user email + 删除旧步骤
+  // 3. 重新解析时：读取 session_cookies + 删除旧步骤
   let sessionStateJson: string | null = null
-  let userEmail: string | null = null
   if (isReparse) {
     const demoRow = await db
-      .select({ session_cookies: demos.session_cookies, user_id: demos.user_id })
+      .select({ session_cookies: demos.session_cookies })
       .from(demos)
       .where(eq(demos.id, demoId))
       .then(rows => rows[0] ?? null)
     sessionStateJson = demoRow?.session_cookies ?? null
 
-    // 读取用户邮箱（用于登录模拟步骤中填写 email 字段）
-    if (demoRow?.user_id) {
-      userEmail = await db
-        .select({ email: users.email })
-        .from(users)
-        .where(eq(users.id, demoRow.user_id))
-        .then(rows => rows[0]?.email ?? null)
-    }
-
-    console.log(`[parse] 重新解析，session=${sessionStateJson ? '有' : '无'}，email=${userEmail ?? '无'}，删除旧步骤...`)
+    console.log(`[parse] 重新解析，session=${sessionStateJson ? '有' : '无'}，删除旧步骤...`)
     await db.delete(steps).where(eq(steps.demo_id, demoId))
   }
 
-  // 4. 调用 AI 解析步骤（isReparse 时传入登录态 + 用户邮箱）
-  const rawSteps = await parseSteps(productUrl, description, sessionStateJson, userEmail)
+  // 4. 调用 AI 解析步骤（isReparse 时传入已登录 session，直接生成 dashboard 步骤）
+  const rawSteps = await parseSteps(productUrl, description, sessionStateJson)
 
   // 5. 批量写入 steps 表
   const stepsToInsert = rawSteps.map(s => ({
