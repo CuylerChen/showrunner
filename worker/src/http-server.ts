@@ -76,8 +76,8 @@ export function startHttpServer(port = 3001) {
 
       // POST /browser-sessions/:id/save  → 保存 storageState，关闭会话
       if (action === 'save' && req.method === 'POST') {
-        const state = await browserSession.saveState(demoId)
-        json(res, 200, { ok: true, state }); return
+        const { state, loginVideoPath } = await browserSession.saveState(demoId)
+        json(res, 200, { ok: true, state, loginVideoPath }); return
       }
 
       json(res, 404, { error: 'Not found' })

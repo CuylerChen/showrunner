@@ -33,11 +33,20 @@ async function processJob(job: Job<MergeJobData>) {
     started_at: new Date(),
   })
 
-  // 2. 合并视频 + 音频
-  const { outputPath, duration } = await mergeDemo(
+  // 读取登录视频路径（如果有）
+  const demoRow = await db
+    .select({ login_video_path: demos.login_video_path })
+    .from(demos)
+    .where(eq(demos.id, demoId))
+    .then(rows => rows[0] ?? null)
+  const loginVideoPath = demoRow?.login_video_path ?? null
+
+  // 2. 合并视频 + 音频（可选：前置登录视频）
+  const { outputPath, duration, loginDuration } = await mergeDemo(
     videoPath,
     audioPaths,
-    Paths.finalDir(demoId)
+    Paths.finalDir(demoId),
+    loginVideoPath
   )
 
   // 3. 优先上传到 R2；失败或未配置时回退到本地持久化存储
@@ -59,11 +68,14 @@ async function processJob(job: Job<MergeJobData>) {
     videoUrl = `/videos/${demoId}/final.mp4`
   }
 
-  // 5. 更新步骤时间戳
+  // 5. 更新步骤时间戳（若有登录视频前缀，所有时间戳需加上登录视频时长偏移）
   for (const ts of stepTimestamps) {
     await db
       .update(steps)
-      .set({ timestamp_start: ts.start, timestamp_end: ts.end })
+      .set({
+        timestamp_start: Math.round(ts.start + loginDuration),
+        timestamp_end:   Math.round(ts.end   + loginDuration),
+      })
       .where(eq(steps.id, ts.stepId))
   }
 

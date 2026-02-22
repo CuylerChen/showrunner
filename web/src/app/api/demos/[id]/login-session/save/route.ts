@@ -33,7 +33,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   // 将 storageState JSON 写入 session_cookies 字段，并重置 demo 状态为 pending（等待重新解析）
   await db.update(schema.demos)
-    .set({ session_cookies: data.state, status: 'pending' })
+    .set({
+      session_cookies:  data.state,
+      login_video_path: data.loginVideoPath ?? null,  // 登录录制视频路径
+      status:           'pending',
+    })
     .where(eq(schema.demos.id, id))
 
   // 触发重新解析：用登录态加载页面，生成针对已登录内容的步骤

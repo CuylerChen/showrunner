@@ -43,8 +43,9 @@ export const demos = mysqlTable('demos', {
   view_count:      int('view_count').default(0).notNull(),
   cta_url:         text('cta_url'),
   cta_text:        varchar('cta_text', { length: 100 }),
-  session_cookies: text('session_cookies'),               // Playwright Cookie[] JSON，用于需要登录的产品录制
-  error_message:   text('error_message'),
+  session_cookies:  text('session_cookies'),               // Playwright Cookie[] JSON，用于需要登录的产品录制
+  login_video_path: text('login_video_path'),              // 登录操作录制视频路径（用于拼接到 demo 开头）
+  error_message:    text('error_message'),
   created_at:    timestamp('created_at').defaultNow().notNull(),
   updated_at:    timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 })

@@ -7,10 +7,11 @@ const VIDEO_BASE = process.env.VIDEO_DIR ?? '/data/videos'
 const ROOT = path.join(VIDEO_BASE, '_tmp')
 
 export const Paths = {
-  videoDir:  (demoId: string) => path.join(ROOT, demoId, 'video'),
-  ttsDir:    (demoId: string) => path.join(ROOT, demoId, 'tts'),
-  finalDir:  (demoId: string) => path.join(ROOT, demoId, 'final'),
-  finalMp4:  (demoId: string) => path.join(ROOT, demoId, 'final', 'final.mp4'),
+  videoDir:      (demoId: string) => path.join(ROOT, demoId, 'video'),
+  ttsDir:        (demoId: string) => path.join(ROOT, demoId, 'tts'),
+  finalDir:      (demoId: string) => path.join(ROOT, demoId, 'final'),
+  finalMp4:      (demoId: string) => path.join(ROOT, demoId, 'final', 'final.mp4'),
+  loginVideoDir: (demoId: string) => path.join(ROOT, demoId, 'login'),
 
   ensureAll(demoId: string) {
     ;[this.videoDir(demoId), this.ttsDir(demoId), this.finalDir(demoId)]

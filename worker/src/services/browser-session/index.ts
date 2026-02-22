@@ -1,4 +1,7 @@
 import { chromium, Browser, BrowserContext, Page } from 'playwright'
+import path from 'path'
+import fs from 'fs'
+import { Paths } from '../../utils/paths'
 
 const VIEWPORT = { width: 1280, height: 720 }
 const SESSION_TIMEOUT_MS = 15 * 60 * 1000  // 15 分钟无操作自动关闭
@@ -25,6 +28,10 @@ export async function startSession(demoId: string, url: string): Promise<void> {
   // 如有旧会话先关闭
   await closeSession(demoId)
 
+  // 创建登录视频输出目录
+  const loginVideoDir = Paths.loginVideoDir(demoId)
+  fs.mkdirSync(loginVideoDir, { recursive: true })
+
   const browser = await chromium.launch({
     headless: true,
     executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ?? '/usr/bin/chromium',
@@ -36,6 +43,8 @@ export async function startSession(demoId: string, url: string): Promise<void> {
   })
   const context = await browser.newContext({
     viewport: VIEWPORT,
+    // 录制登录操作全程，用于拼接到 demo 视频开头
+    recordVideo: { dir: loginVideoDir, size: VIEWPORT },
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
   })
   // 隐藏自动化标记，避免被 bot 检测拦截
@@ -239,8 +248,8 @@ export async function handleInput(demoId: string, event: InputEvent): Promise<vo
   }
 }
 
-// ── 保存 storageState 并关闭会话 ─────────────────────────────────
-export async function saveState(demoId: string): Promise<string> {
+// ── 保存 storageState 并关闭会话，返回 cookies + 登录视频路径 ──────
+export async function saveState(demoId: string): Promise<{ state: string; loginVideoPath: string | null }> {
   const session = sessions.get(demoId)
   if (!session) throw new Error('Session not found')
 
@@ -248,9 +257,23 @@ export async function saveState(demoId: string): Promise<string> {
   await session.page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {})
 
   const state = await session.context.storageState()
+
+  // 关闭 context 触发 Playwright 写入 .webm 视频文件
   await closeSession(demoId)
   console.log(`[browser-session] storageState 已保存 demo=${demoId}`)
-  return JSON.stringify(state)
+
+  // 查找录制的登录视频（Playwright 自动命名为随机 uuid.webm）
+  let loginVideoPath: string | null = null
+  try {
+    const loginVideoDir = Paths.loginVideoDir(demoId)
+    const files = fs.readdirSync(loginVideoDir).filter(f => f.endsWith('.webm'))
+    if (files.length > 0) {
+      loginVideoPath = path.join(loginVideoDir, files[files.length - 1])
+      console.log(`[browser-session] 登录视频已录制: ${loginVideoPath}`)
+    }
+  } catch {}
+
+  return { state: JSON.stringify(state), loginVideoPath }
 }
 
 export async function closeSession(demoId: string): Promise<void> {

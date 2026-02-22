@@ -22,8 +22,9 @@ export const demos = mysqlTable('demos', {
   error_message:   text('error_message'),
   video_url:       text('video_url'),
   duration:        int('duration'),
-  session_cookies: text('session_cookies'),
-  updated_at:      timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
+  session_cookies:  text('session_cookies'),
+  login_video_path: text('login_video_path'),
+  updated_at:       timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 })
 
 export const steps = mysqlTable('steps', {

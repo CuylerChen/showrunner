@@ -31,6 +31,7 @@ export interface TtsResult {
 }
 
 export interface MergeResult {
-  outputPath: string         // 最终 .mp4 文件路径
-  duration: number           // 视频总时长（秒）
+  outputPath:    string  // 最终 .mp4 文件路径
+  duration:      number  // 视频总时长（秒）
+  loginDuration: number  // 登录片段时长（秒），无登录视频时为 0
 }
