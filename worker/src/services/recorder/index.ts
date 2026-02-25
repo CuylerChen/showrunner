@@ -112,6 +112,18 @@ async function executeStep(page: Page, step: Step): Promise<void> {
       const loc = page.locator(step.selector!).first()
       await loc.waitFor({ state: 'visible', timeout: ACTION_TIMEOUT })
       await loc.scrollIntoViewIfNeeded({ timeout: 5000 }).catch(() => {})
+
+      // 高亮目标元素
+      await highlightElement(page, step.selector!, 2000)
+      await page.waitForTimeout(300)
+
+      // 平滑移动鼠标到目标元素中心（让光标动画可见）
+      const box = await loc.boundingBox()
+      if (box) {
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 15 })
+        await page.waitForTimeout(200)
+      }
+
       await loc.click({ timeout: ACTION_TIMEOUT })
       // 点击后先等基础加载，再检测页面稳定
       await waitForPageLoad(page)
@@ -123,7 +135,17 @@ async function executeStep(page: Page, step: Step): Promise<void> {
     case 'fill': {
       const loc = page.locator(step.selector!).first()
       await loc.waitFor({ state: 'visible', timeout: ACTION_TIMEOUT })
-      await loc.fill(step.value ?? '', { timeout: ACTION_TIMEOUT })
+
+      // 高亮输入框
+      await highlightElement(page, step.selector!)
+      await loc.click({ timeout: ACTION_TIMEOUT })
+
+      // 逐字输入，模拟真人打字（每字 50-100ms 随机间隔）
+      const text = step.value ?? ''
+      for (const char of text) {
+        await page.keyboard.type(char, { delay: 0 })
+        await page.waitForTimeout(50 + Math.random() * 50)
+      }
       break
     }
 
@@ -139,6 +161,100 @@ async function executeStep(page: Page, step: Step): Promise<void> {
   // 每步结束后额外停顿，让视频画面稳定（给观众时间看清内容）
   await page.waitForTimeout(STEP_PAUSE_MS)
 }
+
+// ── 视觉引导：高亮目标元素 ──────────────────────────────────────
+async function highlightElement(page: Page, selector: string, durationMs: number = 1500): Promise<void> {
+  try {
+    await page.evaluate(({ sel, dur }) => {
+      const el = document.querySelector(sel) as HTMLElement | null
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+
+      const overlay = document.createElement('div')
+      overlay.className = 'showrunner-highlight'
+      overlay.style.cssText = `
+        position: fixed; z-index: 999998;
+        left: ${rect.left - 4}px; top: ${rect.top - 4}px;
+        width: ${rect.width + 8}px; height: ${rect.height + 8}px;
+        border: 2px solid #3b82f6;
+        border-radius: 6px;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+      `
+      document.body.appendChild(overlay)
+      setTimeout(() => {
+        overlay.style.opacity = '0'
+        setTimeout(() => overlay.remove(), 300)
+      }, dur)
+    }, { sel: selector, dur: durationMs })
+  } catch {
+    // 高亮失败不影响录制流程
+  }
+}
+
+// ── 视觉引导：注入虚拟光标 + 点击涟漪动画 ──────────────────────
+const CURSOR_INIT_SCRIPT = `
+  if (!document.getElementById('showrunner-cursor')) {
+    // 虚拟光标
+    const cursor = document.createElement('div')
+    cursor.id = 'showrunner-cursor'
+    cursor.style.cssText = \`
+      position: fixed; z-index: 999999;
+      width: 20px; height: 20px;
+      background: rgba(59, 130, 246, 0.4);
+      border: 2px solid #3b82f6;
+      border-radius: 50%;
+      pointer-events: none;
+      transition: left 0.15s ease, top 0.15s ease, transform 0.1s ease;
+      transform: translate(-50%, -50%);
+      display: none;
+    \`
+    document.body.appendChild(cursor)
+
+    // 跟踪鼠标
+    document.addEventListener('mousemove', (e) => {
+      cursor.style.display = 'block'
+      cursor.style.left = e.clientX + 'px'
+      cursor.style.top = e.clientY + 'px'
+    })
+
+    // 点击涟漪动画
+    document.addEventListener('mousedown', (e) => {
+      cursor.style.transform = 'translate(-50%, -50%) scale(0.7)'
+      cursor.style.background = 'rgba(59, 130, 246, 0.7)'
+
+      // 涟漪效果
+      const ripple = document.createElement('div')
+      ripple.style.cssText = \`
+        position: fixed; z-index: 999997;
+        left: \${e.clientX}px; top: \${e.clientY}px;
+        width: 40px; height: 40px;
+        border: 2px solid rgba(59, 130, 246, 0.6);
+        border-radius: 50%;
+        pointer-events: none;
+        transform: translate(-50%, -50%) scale(0.5);
+        animation: showrunner-ripple 0.6s ease-out forwards;
+      \`
+      document.body.appendChild(ripple)
+      setTimeout(() => ripple.remove(), 700)
+    })
+
+    document.addEventListener('mouseup', () => {
+      cursor.style.transform = 'translate(-50%, -50%) scale(1)'
+      cursor.style.background = 'rgba(59, 130, 246, 0.4)'
+    })
+
+    // 注入 ripple 动画 keyframes
+    const style = document.createElement('style')
+    style.textContent = \`
+      @keyframes showrunner-ripple {
+        to { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+      }
+    \`
+    document.head.appendChild(style)
+  }
+`
 
 export async function recordDemo(
   steps: Step[],
@@ -193,6 +309,9 @@ export async function recordDemo(
   await context.addInitScript(() => {
     Object.defineProperty(navigator, 'webdriver', { get: () => false })
   })
+
+  // 注入虚拟光标和点击涟漪动画
+  await context.addInitScript(CURSOR_INIT_SCRIPT)
 
   if (legacyCookies) {
     await context.addCookies(legacyCookies)

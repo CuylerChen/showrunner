@@ -48,6 +48,7 @@ async function processJob(job: Job<TtsJobData>) {
     videoPath,
     audioPaths,
     stepTimestamps: ttsStepTimestamps,   // 使用 TTS 时间轴时间戳
+    recordTimestamps: job.data.stepTimestamps,  // 录屏原始时间戳（用于视频切割）
     totalDuration,
   }, {
     attempts: 3,

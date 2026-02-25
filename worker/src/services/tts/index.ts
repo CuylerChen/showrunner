@@ -34,7 +34,48 @@ function getAudioDuration(filePath: string): number {
   return 3
 }
 
-// Kokoro TTS 懒加载，避免启动时就加载大模型
+// ── OpenAI TTS（主选方案，高质量自然语音）────────────────────────
+async function generateWithOpenAI(text: string, outputPath: string): Promise<boolean> {
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey) return false
+
+  try {
+    // 检测语言：含中文字符则用中文优化的 voice
+    const hasChinese = /[\u4e00-\u9fff]/.test(text)
+    const voice = hasChinese ? 'nova' : 'nova'  // nova 对中英文都表现好
+
+    const response = await fetch('https://api.openai.com/v1/audio/speech', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'tts-1-hd',
+        input: text,
+        voice,
+        response_format: 'mp3',
+        speed: 0.95,  // 稍慢一点，产品演示更清晰
+      }),
+    })
+
+    if (!response.ok) {
+      const errText = await response.text()
+      console.warn(`[tts] OpenAI TTS 失败 (${response.status}): ${errText.slice(0, 100)}`)
+      return false
+    }
+
+    const buffer = Buffer.from(await response.arrayBuffer())
+    fs.writeFileSync(outputPath, buffer)
+    console.log(`[tts] OpenAI TTS 成功: ${outputPath}`)
+    return true
+  } catch (err) {
+    console.warn(`[tts] OpenAI TTS 异常: ${(err as Error).message}`)
+    return false
+  }
+}
+
+// ── Kokoro TTS 懒加载（fallback 方案）───────────────────────────
 let kokoro: any = null
 
 async function getKokoro() {
@@ -42,11 +83,11 @@ async function getKokoro() {
     try {
       const { KokoroTTS } = await import('kokoro-js')
       kokoro = await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-ONNX', {
-        dtype: 'q8',   // 量化模型，内存更小
+        dtype: 'q8',
       })
       console.log('[tts] Kokoro 模型加载完成')
     } catch (err) {
-      console.warn('[tts] Kokoro 加载失败，将使用静音 fallback:', (err as Error).message)
+      console.warn('[tts] Kokoro 加载失败:', (err as Error).message)
       kokoro = null
     }
   }
@@ -67,7 +108,7 @@ async function generateWithKokoro(text: string, outputPath: string): Promise<boo
   }
 }
 
-// Fallback：用 FFmpeg 生成与旁白时长匹配的静音音频
+// Fallback：用 FFmpeg 生成静音音频
 function generateSilence(durationSec: number, outputPath: string): void {
   const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path
   execSync(
@@ -78,8 +119,11 @@ function generateSilence(durationSec: number, outputPath: string): void {
 
 // 估算文字朗读时长（约 150 词/分钟）
 function estimateDuration(text: string): number {
-  const words = text.trim().split(/\s+/).length
-  return Math.max(2, Math.ceil((words / 150) * 60))
+  // 中文按字数估算（约 4 字/秒），英文按词数（约 2.5 词/秒）
+  const chineseChars = (text.match(/[\u4e00-\u9fff]/g) || []).length
+  const englishWords = text.replace(/[\u4e00-\u9fff]/g, '').trim().split(/\s+/).filter(Boolean).length
+  const seconds = chineseChars / 4 + englishWords / 2.5
+  return Math.max(2, Math.ceil(seconds))
 }
 
 export async function generateNarration(
@@ -94,21 +138,26 @@ export async function generateNarration(
 
   for (const step of steps) {
     const narration = step.narration?.trim() || step.title
-    const outputPath = path.join(outputDir, `step_${step.position}.wav`)
+    const outputPathMp3 = path.join(outputDir, `step_${step.position}.mp3`)
+    const outputPathWav = path.join(outputDir, `step_${step.position}.wav`)
     const estimatedDuration = estimateDuration(narration)
 
     console.log(`[tts] Step ${step.position}: "${narration}"`)
 
-    const success = await generateWithKokoro(narration, outputPath)
-
+    // 优先使用 OpenAI TTS（高质量），fallback 到 Kokoro，最后静音
     let finalPath: string
-    if (!success) {
-      // Kokoro 不可用时生成静音占位
-      const mp3Path = outputPath.replace('.wav', '.mp3')
-      generateSilence(estimatedDuration, mp3Path)
-      finalPath = mp3Path
+    let success = await generateWithOpenAI(narration, outputPathMp3)
+    if (success) {
+      finalPath = outputPathMp3
     } else {
-      finalPath = outputPath
+      success = await generateWithKokoro(narration, outputPathWav)
+      if (success) {
+        finalPath = outputPathWav
+      } else {
+        // 全部失败，生成静音占位
+        generateSilence(estimatedDuration, outputPathMp3)
+        finalPath = outputPathMp3
+      }
     }
 
     audioPaths.push(finalPath)

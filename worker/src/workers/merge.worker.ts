@@ -13,13 +13,14 @@ export interface MergeJobData {
   videoPath: string
   audioPaths: string[]
   stepTimestamps: { stepId: string; start: number; end: number }[]
+  recordTimestamps?: { stepId: string; start: number; end: number }[]  // 录屏原始时间戳
   totalDuration: number
 }
 
 const VIDEO_DIR = process.env.VIDEO_DIR ?? '/data/videos'
 
 async function processJob(job: Job<MergeJobData>) {
-  const { demoId, videoPath, audioPaths, stepTimestamps } = job.data
+  const { demoId, videoPath, audioPaths, stepTimestamps, recordTimestamps } = job.data
   console.log(`[merge] 开始合成 demo=${demoId}`)
 
   // 1. 更新状态为 processing
@@ -42,11 +43,13 @@ async function processJob(job: Job<MergeJobData>) {
   const loginVideoPath = demoRow?.login_video_path ?? null
 
   // 2. 合并视频 + 音频（可选：前置登录视频）
+  // 传入录屏原始时间戳用于按步时间对齐
   const { outputPath, duration, loginDuration } = await mergeDemo(
     videoPath,
     audioPaths,
     Paths.finalDir(demoId),
-    loginVideoPath
+    loginVideoPath,
+    recordTimestamps   // 录屏时间戳，用于按步切割+变速对齐
   )
 
   // 3. 优先上传到 R2；失败或未配置时回退到本地持久化存储
