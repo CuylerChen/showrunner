@@ -144,20 +144,15 @@ export async function generateNarration(
 
     console.log(`[tts] Step ${step.position}: "${narration}"`)
 
-    // 优先使用 OpenAI TTS（高质量），fallback 到 Kokoro，最后静音
+    // 使用 Kokoro TTS（免费本地方案），fallback 到静音
     let finalPath: string
-    let success = await generateWithOpenAI(narration, outputPathMp3)
+    let success = await generateWithKokoro(narration, outputPathWav)
     if (success) {
-      finalPath = outputPathMp3
+      finalPath = outputPathWav
     } else {
-      success = await generateWithKokoro(narration, outputPathWav)
-      if (success) {
-        finalPath = outputPathWav
-      } else {
-        // 全部失败，生成静音占位
-        generateSilence(estimatedDuration, outputPathMp3)
-        finalPath = outputPathMp3
-      }
+      // Kokoro 失败，生成静音占位
+      generateSilence(estimatedDuration, outputPathMp3)
+      finalPath = outputPathMp3
     }
 
     audioPaths.push(finalPath)
