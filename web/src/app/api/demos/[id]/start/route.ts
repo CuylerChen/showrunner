@@ -1,13 +1,13 @@
 import { NextRequest } from 'next/server'
 import { db, schema } from '@/lib/db'
 import { eq, and, asc } from 'drizzle-orm'
-import { recordQueue } from '@/lib/queue'
+import { ttsQueue } from '@/lib/queue'
 import { getCurrentUser } from '@/lib/auth'
 import { ok, err } from '@/lib/api'
 
 type Params = { params: Promise<{ id: string }> }
 
-// POST /api/demos/[id]/start — 用户确认步骤后触发录制
+// POST /api/demos/[id]/start — 用户确认场景后触发推广视频生成
 export async function POST(_req: NextRequest, { params }: Params) {
   const { user, response } = await getCurrentUser()
   if (!user) return response!
@@ -23,7 +23,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
   if (!demo) return err('NOT_FOUND', 'Demo 不存在或无权访问')
 
   if (demo.status !== 'review') {
-    return err('DEMO_NOT_READY', `当前状态 "${demo.status}" 不允许触发录制，需要为 "review"`)
+    return err('DEMO_NOT_READY', `当前状态 "${demo.status}" 不允许生成视频，需要为 "review"`)
   }
 
   const steps = await db
@@ -33,18 +33,19 @@ export async function POST(_req: NextRequest, { params }: Params) {
     .orderBy(asc(schema.steps.position))
 
   if (!steps.length) {
-    return err('DEMO_NOT_READY', '没有可录制的步骤，请先等待 AI 解析完成')
+    return err('DEMO_NOT_READY', '没有可生成的视频场景，请先等待 AI 分析完成')
   }
 
   await db
     .update(schema.demos)
-    .set({ status: 'recording' })
+    .set({ status: 'processing' })
     .where(eq(schema.demos.id, id))
 
-  await recordQueue.add('record', { demoId: id, steps }, {
-    attempts: 1,
+  await ttsQueue.add('tts', { demoId: id, steps, renderMode: 'promotional' }, {
+    attempts: 3,
+    backoff: { type: 'exponential', delay: 2000 },
     removeOnComplete: true,
   })
 
-  return ok({ id, status: 'recording' })
+  return ok({ id, status: 'processing' })
 }

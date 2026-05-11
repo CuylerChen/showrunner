@@ -18,7 +18,7 @@ export function ShowrunnerIcon({ size = 36 }: { size?: number }) {
       <line x1="10" y1="15.5" x2="30" y2="15.5" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeOpacity="0.3" />
       {/* 播放三角 */}
       <path d="M14.5 21L27 27L14.5 33V21Z" fill="url(#sr-play)" />
-      {/* 录制圆点 */}
+      {/* 状态圆点 */}
       <circle cx="30" cy="11.5" r="2.5" fill="#FCA5A5" />
     </svg>
   )

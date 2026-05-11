@@ -3,24 +3,28 @@ import { connection } from '../utils/redis'
 import { db, demos, steps, jobs } from '../utils/db'
 import { eq } from 'drizzle-orm'
 import { mergeDemo } from '../services/merger'
+import { renderPromotionalVideo } from '../services/hyperframes'
 import { Paths } from '../utils/paths'
 import { uploadToR2 } from '../utils/r2'
 import fs from 'fs'
 import path from 'path'
+import { Step } from '../types'
 
 export interface MergeJobData {
   demoId: string
-  videoPath: string
+  videoPath?: string
   audioPaths: string[]
   stepTimestamps: { stepId: string; start: number; end: number }[]
   recordTimestamps?: { stepId: string; start: number; end: number }[]  // 录屏原始时间戳
   totalDuration: number
+  steps?: Step[]
+  renderMode?: 'recording' | 'promotional'
 }
 
 const VIDEO_DIR = process.env.VIDEO_DIR ?? '/data/videos'
 
 async function processJob(job: Job<MergeJobData>) {
-  const { demoId, videoPath, audioPaths, stepTimestamps, recordTimestamps } = job.data
+  const { demoId, videoPath, audioPaths, stepTimestamps, recordTimestamps, steps: demoSteps, renderMode } = job.data
   console.log(`[merge] 开始合成 demo=${demoId}`)
 
   // 1. 更新状态为 processing
@@ -34,23 +38,46 @@ async function processJob(job: Job<MergeJobData>) {
     started_at: new Date(),
   })
 
-  // 读取登录视频路径（如果有）
-  const demoRow = await db
-    .select({ login_video_path: demos.login_video_path })
-    .from(demos)
-    .where(eq(demos.id, demoId))
-    .then(rows => rows[0] ?? null)
-  const loginVideoPath = demoRow?.login_video_path ?? null
+  let outputPath: string
+  let duration: number
+  let loginDuration = 0
 
-  // 2. 合并视频 + 音频（可选：前置登录视频）
-  // 传入录屏原始时间戳用于按步时间对齐
-  const { outputPath, duration, loginDuration } = await mergeDemo(
-    videoPath,
-    audioPaths,
-    Paths.finalDir(demoId),
-    loginVideoPath,
-    recordTimestamps   // 录屏时间戳，用于按步切割+变速对齐
-  )
+  if ((renderMode === 'promotional' || !videoPath) && demoSteps?.length) {
+    const rendered = await renderPromotionalVideo(
+      demoSteps.map((step, index) => ({
+        title: step.title,
+        narration: step.narration,
+        audioPath: audioPaths[index],
+        duration: Math.max(2, stepTimestamps[index]?.end - stepTimestamps[index]?.start || 4),
+      })),
+      Paths.finalDir(demoId),
+    )
+    outputPath = rendered.outputPath
+    duration = rendered.duration
+  } else {
+    if (!videoPath) throw new Error('录屏合成缺少 videoPath')
+
+    // 读取登录视频路径（如果有）
+    const demoRow = await db
+      .select({ login_video_path: demos.login_video_path })
+      .from(demos)
+      .where(eq(demos.id, demoId))
+      .then(rows => rows[0] ?? null)
+    const loginVideoPath = demoRow?.login_video_path ?? null
+
+    // 合并视频 + 音频（可选：前置登录视频）
+    const merged = await mergeDemo(
+      videoPath,
+      audioPaths,
+      Paths.finalDir(demoId),
+      loginVideoPath,
+      recordTimestamps,
+      demoSteps,
+    )
+    outputPath = merged.outputPath
+    duration = merged.duration
+    loginDuration = merged.loginDuration
+  }
 
   // 3. 优先上传到 R2；失败或未配置时回退到本地持久化存储
   let videoUrl: string

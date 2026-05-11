@@ -1,160 +1,197 @@
-import { chromium } from 'playwright'
 import { Step } from '../../types'
 
-// ── 普通解析 Prompt（公开页面，无登录）────────────────────────────
-const SYSTEM_PROMPT = `You are a browser automation expert using Playwright.
-Given a product URL, the page's visible text, interactive elements (with their real attributes), and a user description, generate a precise list of browser automation steps.
+const MAX_PAGES = 6
+const MAX_PAGE_TEXT = 2600
 
-Return ONLY a valid JSON array. No explanation, no markdown, no extra text.
-Each step must follow this schema:
+interface PageData {
+  url: string
+  title: string
+  description: string
+  headings: string[]
+  text: string
+}
+
+interface PromoScene {
+  position: number
+  title: string
+  narration: string
+}
+
+function stripHtml(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function matchMeta(html: string, names: string[]): string {
+  for (const name of names) {
+    const patterns = [
+      new RegExp(`<meta[^>]+name=["']${name}["'][^>]+content=["']([^"']+)["'][^>]*>`, 'i'),
+      new RegExp(`<meta[^>]+property=["']${name}["'][^>]+content=["']([^"']+)["'][^>]*>`, 'i'),
+      new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+name=["']${name}["'][^>]*>`, 'i'),
+      new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${name}["'][^>]*>`, 'i'),
+    ]
+    for (const pattern of patterns) {
+      const match = html.match(pattern)
+      if (match?.[1]) return stripHtml(match[1]).slice(0, 400)
+    }
+  }
+  return ''
+}
+
+function extractTitle(html: string): string {
+  const ogTitle = matchMeta(html, ['og:title', 'twitter:title'])
+  if (ogTitle) return ogTitle
+  const match = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+  return match?.[1] ? stripHtml(match[1]).slice(0, 160) : ''
+}
+
+function extractHeadings(html: string): string[] {
+  const headings: string[] = []
+  const re = /<h[1-3][^>]*>([\s\S]*?)<\/h[1-3]>/gi
+  let match: RegExpExecArray | null
+  while ((match = re.exec(html)) && headings.length < 24) {
+    const text = stripHtml(match[1]).slice(0, 180)
+    if (text && !headings.includes(text)) headings.push(text)
+  }
+  return headings
+}
+
+function extractLinks(html: string, baseUrl: string): string[] {
+  const origin = new URL(baseUrl).origin
+  const links = new Set<string>()
+  const re = /<a[^>]+href=["']([^"']+)["'][^>]*>/gi
+  let match: RegExpExecArray | null
+  while ((match = re.exec(html))) {
+    try {
+      const url = new URL(match[1], baseUrl)
+      if (url.origin !== origin) continue
+      url.hash = ''
+      const path = url.pathname.toLowerCase()
+      const useful =
+        path === '/' ||
+        path.includes('feature') ||
+        path.includes('product') ||
+        path.includes('solution') ||
+        path.includes('pricing') ||
+        path.includes('customer') ||
+        path.includes('about')
+      if (useful) links.add(url.toString())
+    } catch {}
+  }
+  return Array.from(links).slice(0, MAX_PAGES)
+}
+
+async function fetchHtml(url: string): Promise<string> {
+  const resp = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (compatible; ShowrunnerPromoBot/1.0)',
+      'Accept': 'text/html,application/xhtml+xml',
+    },
+    signal: AbortSignal.timeout(12000),
+  })
+  if (!resp.ok) throw new Error(`网页抓取失败 ${resp.status}`)
+  return await resp.text()
+}
+
+async function analyzePublicWebsite(productUrl: string): Promise<PageData[]> {
+  const homeHtml = await fetchHtml(productUrl)
+  const urls = [productUrl, ...extractLinks(homeHtml, productUrl)]
+  const uniqueUrls = Array.from(new Set(urls)).slice(0, MAX_PAGES)
+  const pages: PageData[] = []
+
+  for (const url of uniqueUrls) {
+    try {
+      const html = url === productUrl ? homeHtml : await fetchHtml(url)
+      pages.push({
+        url,
+        title: extractTitle(html),
+        description: matchMeta(html, ['description', 'og:description', 'twitter:description']),
+        headings: extractHeadings(html),
+        text: stripHtml(html).slice(0, MAX_PAGE_TEXT),
+      })
+    } catch (err) {
+      console.warn(`[parser] 跳过页面 ${url}: ${(err as Error).message}`)
+    }
+  }
+
+  return pages
+}
+
+function fallbackScenes(productUrl: string, description: string | null): PromoScene[] {
+  const product = description?.split(/[.。!！\n]/)[0]?.trim() || new URL(productUrl).hostname.replace(/^www\./, '')
+  return [
+    {
+      position: 1,
+      title: `Meet ${product}`,
+      narration: `${product} helps teams understand the product, communicate the value, and move buyers from curiosity to action.`,
+    },
+    {
+      position: 2,
+      title: 'Built for the problem your customers feel every day',
+      narration: 'The story starts with a clear customer problem, then shows how the product removes friction and creates a better workflow.',
+    },
+    {
+      position: 3,
+      title: 'Turn features into benefits',
+      narration: 'Each core capability is translated into a concrete outcome, so viewers understand why the product matters.',
+    },
+    {
+      position: 4,
+      title: 'Make the next step obvious',
+      narration: 'The video closes with a simple call to action that sends qualified viewers back to the product.',
+    },
+  ]
+}
+
+async function callDeepSeekForScenes(productUrl: string, description: string | null, pages: PageData[]): Promise<PromoScene[]> {
+  const apiKey = process.env.DEEPSEEK_API_KEY
+  if (!apiKey) {
+    console.warn('[parser] DEEPSEEK_API_KEY 未配置，使用推广视频兜底脚本')
+    return fallbackScenes(productUrl, description)
+  }
+
+  const sourceSummary = pages.map((page, index) => [
+    `PAGE ${index + 1}: ${page.url}`,
+    page.title ? `Title: ${page.title}` : '',
+    page.description ? `Description: ${page.description}` : '',
+    page.headings.length ? `Headings: ${page.headings.join(' | ')}` : '',
+    `Text: ${page.text}`,
+  ].filter(Boolean).join('\n')).join('\n\n')
+
+  const systemPrompt = `You are a senior product marketing video writer.
+Create a short product introduction video plan from public website content and user notes.
+Return ONLY a valid JSON array. No markdown, no explanation.
+Each item must be:
 {
   "position": number,
   "title": string,
-  "action_type": "navigate" | "click" | "fill" | "wait" | "assert",
-  "selector": string | null,
-  "value": string | null,
-  "narration": string,
-  "wait_for_selector": string | null
+  "narration": string
 }
-
 Rules:
-- First step is always navigate to the product URL (action_type: "navigate", value: the URL, selector: null)
-- Use the INTERACTIVE ELEMENTS list to pick selectors from REAL elements on the page
-- Selector priority (best to worst):
-  1. [data-testid="..."] if available
-  2. input[placeholder="exact text"] for inputs
-  3. button:has-text("exact text") for buttons
-  4. a:has-text("exact text") for links (Next.js Link = <a> tag)
-  5. [aria-label="..."] for icon buttons
-  6. input[type="email"], input[type="password"] for auth forms
-- For "navigate" steps, put the URL in "value" and set "selector" to null
-- For "wait" steps, put milliseconds in "value" (e.g. "2000"), selector: null
-- narration must be natural spoken English, present tense
-- Maximum 8 steps
-- NEVER use jQuery selectors like :contains(), :eq() — they are INVALID in Playwright
-- wait_for_selector: CSS selector for an element that proves the step result is fully loaded on screen.
-  - For "navigate" steps: use the main content container selector (e.g. "main", ".dashboard", "[data-testid='home']", "nav"). Pick something that only appears AFTER the page fully loads, NOT a skeleton/placeholder.
-  - For "click" steps that open new content: use a selector for the resulting page/panel/modal content.
-  - For "fill" and "wait" steps: set to null.
-  - Use simple, robust selectors: tag names, IDs, data-testid, or short class names. Avoid overly specific selectors.
-  - If unsure, set to null (visual stability detection will be used as fallback).`
+- Create 5 to 7 scenes.
+- Scene 1 must be a hook.
+- Last scene must be a call to action.
+- Keep each narration natural for voiceover, 12 to 28 words.
+- Avoid unsupported claims, fake metrics, and invented customer names.
+- If the source is thin, write a useful but generic product marketing story.
+- Use the same language as the user's description when obvious; otherwise use English.`
 
-interface PageData {
-  text: string
-  elements: string
-}
-
-// ── Playwright 加载页面，提取 DOM 元素和文字 ──────────────────────
-async function fetchPageData(url: string, sessionStateJson?: string | null): Promise<PageData> {
-  let browser
-  try {
-    browser = await chromium.launch({
-      headless: true,
-      executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ?? '/usr/bin/chromium',
-      args: ['--no-sandbox', '--disable-dev-shm-usage'],
-    })
-
-    // 解析 session 状态（支持新格式 StorageState 和旧格式 Cookie[]）
-    let storageState: Parameters<typeof browser.newContext>[0]['storageState'] = undefined
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let legacyCookies: any[] | null = null
-    if (sessionStateJson) {
-      try {
-        const parsed = JSON.parse(sessionStateJson)
-        if (Array.isArray(parsed)) {
-          legacyCookies = parsed
-        } else if (parsed && typeof parsed === 'object') {
-          storageState = parsed
-        }
-      } catch {}
-    }
-
-    const context = await browser.newContext({
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-      ...(storageState ? { storageState } : {}),
-    })
-    if (legacyCookies) await context.addCookies(legacyCookies)
-
-    const page = await context.newPage()
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 })
-    // 登录态页面动态内容更多，等待时间更长
-    await page.waitForTimeout(sessionStateJson ? 4000 : 2000)
-
-    const text = await page.evaluate(() =>
-      (document.body.innerText ?? '').replace(/\s+/g, ' ').trim().slice(0, 2000)
-    )
-
-    const elements = await page.evaluate(() => {
-      const items: string[] = []
-
-      document.querySelectorAll<HTMLElement>('button, [role="button"]').forEach(el => {
-        const txt = el.innerText?.trim().replace(/\s+/g, ' ').slice(0, 60)
-        const testId = el.getAttribute('data-testid')
-        const ariaLabel = el.getAttribute('aria-label')
-        const id = el.id
-        const type = (el as HTMLButtonElement).type
-        const parts: string[] = []
-        if (txt)       parts.push(`text="${txt}"`)
-        if (testId)    parts.push(`data-testid="${testId}"`)
-        if (ariaLabel) parts.push(`aria-label="${ariaLabel}"`)
-        if (id)        parts.push(`id="${id}"`)
-        if (type && type !== 'submit') parts.push(`type="${type}"`)
-        if (parts.length) items.push(`BUTTON: ${parts.join(', ')}`)
-      })
-
-      document.querySelectorAll<HTMLInputElement>('input, textarea').forEach(el => {
-        const parts: string[] = []
-        if (el.type && el.type !== 'text') parts.push(`type="${el.type}"`)
-        if (el.placeholder)  parts.push(`placeholder="${el.placeholder}"`)
-        if (el.name)         parts.push(`name="${el.name}"`)
-        if (el.id)           parts.push(`id="${el.id}"`)
-        const testId = el.getAttribute('data-testid')
-        if (testId)          parts.push(`data-testid="${testId}"`)
-        const ariaLabel = el.getAttribute('aria-label')
-        if (ariaLabel)       parts.push(`aria-label="${ariaLabel}"`)
-        items.push(`INPUT: ${parts.join(', ') || '(no attributes)'}`)
-      })
-
-      document.querySelectorAll<HTMLAnchorElement>('a[href]').forEach(el => {
-        const href = el.getAttribute('href') ?? ''
-        if (href.startsWith('#') || href.startsWith('javascript')) return
-        const txt = el.innerText?.trim().replace(/\s+/g, ' ').slice(0, 60)
-        if (!txt) return
-        items.push(`LINK: text="${txt}" href="${href}"`)
-      })
-
-      return items.slice(0, 50).join('\n')
-    })
-
-    return { text, elements }
-  } catch (err) {
-    console.warn('[parser] Playwright 抓取失败，回退到 HTTP:', (err as Error).message.slice(0, 100))
-    try {
-      const resp = await fetch(url, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ShowrunnerBot/1.0)' },
-        signal: AbortSignal.timeout(8000),
-      })
-      const html = await resp.text()
-      const text = html
-        .replace(/<script[\s\S]*?<\/script>/gi, '')
-        .replace(/<style[\s\S]*?<\/style>/gi, '')
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .slice(0, 2000)
-      return { text, elements: '' }
-    } catch {
-      return { text: '', elements: '' }
-    }
-  } finally {
-    await browser?.close()
-  }
-}
-
-// ── 调用 DeepSeek API ──────────────────────────────────────────────
-async function callDeepSeek(systemPrompt: string, userMessage: string) {
-  const apiKey = process.env.DEEPSEEK_API_KEY
-  if (!apiKey) throw new Error('DEEPSEEK_API_KEY 未配置')
+  const userMessage = [
+    `Product URL: ${productUrl}`,
+    description ? `User notes:\n${description}` : '',
+    pages.length ? `Website analysis:\n${sourceSummary}` : 'No website content was available.',
+  ].filter(Boolean).join('\n\n')
 
   const resp = await fetch('https://api.deepseek.com/chat/completions', {
     method: 'POST',
@@ -166,10 +203,10 @@ async function callDeepSeek(systemPrompt: string, userMessage: string) {
       model: 'deepseek-chat',
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user',   content: userMessage },
+        { role: 'user', content: userMessage },
       ],
-      temperature: 0.3,
-      max_tokens:  2500,
+      temperature: 0.5,
+      max_tokens: 1800,
     }),
   })
 
@@ -178,43 +215,45 @@ async function callDeepSeek(systemPrompt: string, userMessage: string) {
     throw new Error(`DeepSeek API 错误 ${resp.status}: ${errText.slice(0, 200)}`)
   }
 
-  const data = (await resp.json()) as { choices: { message: { content: string } }[] }
+  const data = await resp.json() as { choices?: Array<{ message?: { content?: string } }> }
   const raw = data.choices?.[0]?.message?.content?.trim() ?? ''
-  if (!raw) throw new Error('DeepSeek 返回空内容')
-
   const match = raw.match(/\[[\s\S]*\]/)
-  if (!match) throw new Error(`返回格式错误: ${raw.slice(0, 200)}`)
+  if (!match) throw new Error(`推广脚本返回格式错误: ${raw.slice(0, 200)}`)
 
-  const steps = JSON.parse(match[0])
-  if (!Array.isArray(steps) || steps.length === 0) throw new Error('步骤为空')
-  return steps
+  const scenes = JSON.parse(match[0]) as PromoScene[]
+  if (!Array.isArray(scenes) || scenes.length === 0) throw new Error('推广脚本为空')
+
+  return scenes.slice(0, 7).map((scene, index) => ({
+    position: index + 1,
+    title: String(scene.title || `Scene ${index + 1}`).slice(0, 120),
+    narration: String(scene.narration || scene.title || '').slice(0, 500),
+  }))
 }
 
-// ── 主入口 ─────────────────────────────────────────────────────────
 export async function parseSteps(
   productUrl: string,
   description: string | null,
-  sessionStateJson?: string | null,
 ): Promise<Omit<Step, 'id' | 'demo_id' | 'status' | 'timestamp_start' | 'timestamp_end'>[]> {
+  console.log('[parser] 分析公开网页并生成推广视频场景...')
 
-  // sessionStateJson 存在时：用已登录态加载页面，AI 看到 dashboard 内容并生成 demo 步骤
-  // 登录录制已通过 browser-session recordVideo 单独处理，不再生成登录模拟步骤
-  const loginHint = sessionStateJson ? '（已登录态）' : '（公开页面）'
-  console.log(`[parser] 抓取页面内容 ${loginHint}...`)
-  const { text, elements } = await fetchPageData(productUrl, sessionStateJson)
-  console.log(`[parser] 页面文字 ${text.length} 字符，可交互元素 ${elements.split('\n').filter(Boolean).length} 个`)
+  let pages: PageData[] = []
+  try {
+    pages = await analyzePublicWebsite(productUrl)
+    console.log(`[parser] 完成网页分析，共 ${pages.length} 个页面`)
+  } catch (err) {
+    console.warn(`[parser] 网页分析失败，使用用户描述继续: ${(err as Error).message}`)
+  }
 
-  const userMessage = [
-    `Product URL: ${productUrl}`,
-    text     ? `Page visible text:\n${text}` : '',
-    elements ? `INTERACTIVE ELEMENTS ON THE PAGE (use these for accurate selectors):\n${elements}` : '',
-    description
-      ? `Demo description: ${description}`
-      : 'Generate a sensible onboarding demo flow for this product.',
-  ].filter(Boolean).join('\n\n')
+  const scenes = await callDeepSeekForScenes(productUrl, description, pages)
+  console.log(`[parser] 推广视频脚本生成完成，共 ${scenes.length} 个场景`)
 
-  console.log('[parser] 调用 DeepSeek API...')
-  const steps = await callDeepSeek(SYSTEM_PROMPT, userMessage)
-  console.log(`[parser] DeepSeek 成功，解析 ${steps.length} 个步骤`)
-  return steps
+  return scenes.map(scene => ({
+    position: scene.position,
+    title: scene.title,
+    action_type: 'wait',
+    selector: null,
+    value: '3000',
+    narration: scene.narration,
+    wait_for_selector: null,
+  }))
 }

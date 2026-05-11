@@ -9,7 +9,7 @@
     "build": "npx tsc"
   },
   "engines": {
-    "node": ">=20.3.0"
+    "node": ">=22.0.0"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +19,7 @@
     "@aws-sdk/client-s3": "^3.994.0",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@google/generative-ai": "^0.24.0",
+    "hyperframes": "^0.5.3",
     "bullmq": "^5.69.3",
     "dotenv": "^17.3.1",
     "drizzle-orm": "^0.39.1",

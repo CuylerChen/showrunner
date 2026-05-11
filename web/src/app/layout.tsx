@@ -17,8 +17,8 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'Showrunner — Demo Copilot',
-  description: '自动生成可分享的产品演示视频，粘贴 URL 即可开始',
+  title: 'Showrunner — Promo Video Generator',
+  description: '自动生成可分享的产品推广视频，粘贴 URL 即可开始',
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

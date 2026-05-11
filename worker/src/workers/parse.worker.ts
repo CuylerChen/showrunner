@@ -41,8 +41,10 @@ async function processJob(job: Job<ParseJobData>) {
     await db.delete(steps).where(eq(steps.demo_id, demoId))
   }
 
-  // 4. 调用 AI 解析步骤（isReparse 时传入已登录 session，直接生成 dashboard 步骤）
-  const rawSteps = await parseSteps(productUrl, description, sessionStateJson)
+  // 4. 调用 AI 分析公开资料，生成推广视频场景。
+  // 新版推广视频链路不再使用 Playwright 登录态解析；sessionStateJson 仅保留给旧数据兼容。
+  void sessionStateJson
+  const rawSteps = await parseSteps(productUrl, description)
 
   // 5. 批量写入 steps 表
   const stepsToInsert = rawSteps.map(s => ({
@@ -69,7 +71,7 @@ async function processJob(job: Job<ParseJobData>) {
     .set({ status: 'completed', completed_at: new Date() })
     .where(eq(jobs.demo_id, demoId))
 
-  console.log(`[parse] 完成 demo=${demoId}，生成 ${rawSteps.length} 个步骤，等待用户确认`)
+  console.log(`[parse] 完成 demo=${demoId}，生成 ${rawSteps.length} 个推广视频场景，等待用户确认`)
 }
 
 async function onFailed(job: Job<ParseJobData> | undefined, err: Error) {

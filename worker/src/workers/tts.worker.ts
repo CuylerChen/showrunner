@@ -10,12 +10,13 @@ import { Step } from '../types'
 export interface TtsJobData {
   demoId: string
   steps: Step[]
-  videoPath: string
-  stepTimestamps: { stepId: string; start: number; end: number }[]
+  videoPath?: string
+  stepTimestamps?: { stepId: string; start: number; end: number }[]
+  renderMode?: 'recording' | 'promotional'
 }
 
 async function processJob(job: Job<TtsJobData>) {
-  const { demoId, steps, videoPath } = job.data
+  const { demoId, steps, videoPath, renderMode } = job.data
   console.log(`[tts] 开始生成旁白 demo=${demoId}`)
 
   await db.insert(jobs).values({
@@ -50,6 +51,8 @@ async function processJob(job: Job<TtsJobData>) {
     stepTimestamps: ttsStepTimestamps,   // 使用 TTS 时间轴时间戳
     recordTimestamps: job.data.stepTimestamps,  // 录屏原始时间戳（用于视频切割）
     totalDuration,
+    steps,
+    renderMode: renderMode ?? (videoPath ? 'recording' : 'promotional'),
   }, {
     attempts: 3,
     backoff: { type: 'exponential', delay: 2000 },

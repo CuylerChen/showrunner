@@ -18,12 +18,20 @@ export const users = mysqlTable('users', {
 export const demos = mysqlTable('demos', {
   id:            varchar('id', { length: 36 }).primaryKey(),
   user_id:       varchar('user_id', { length: 36 }).notNull(),
+  title:         varchar('title', { length: 255 }),
+  product_url:   text('product_url'),
+  description:   text('description'),
   status:        mysqlEnum('status', ['pending', 'parsing', 'review', 'recording', 'paused', 'processing', 'completed', 'failed']).default('pending').notNull(),
   error_message:   text('error_message'),
   video_url:       text('video_url'),
   duration:        int('duration'),
+  share_token:     varchar('share_token', { length: 36 }),
+  view_count:      int('view_count'),
+  cta_url:         text('cta_url'),
+  cta_text:        varchar('cta_text', { length: 100 }),
   session_cookies:  text('session_cookies'),
   login_video_path: text('login_video_path'),
+  created_at:       timestamp('created_at'),
   updated_at:       timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 })
 
@@ -40,6 +48,8 @@ export const steps = mysqlTable('steps', {
   timestamp_start:     int('timestamp_start'),
   timestamp_end:   int('timestamp_end'),
   status:          mysqlEnum('status', ['pending', 'recording', 'completed', 'failed', 'skipped']).default('pending').notNull(),
+  created_at:      timestamp('created_at'),
+  updated_at:      timestamp('updated_at'),
 })
 
 export const jobs = mysqlTable('jobs', {
@@ -62,4 +72,4 @@ const pool = mysql.createPool({
   connectionLimit: 5,
 })
 
-export const db = drizzle(pool, { schema: { users, demos, steps, jobs }, mode: 'default' })
+export const db: any = drizzle(pool, { schema: { users, demos, steps, jobs }, mode: 'default' })

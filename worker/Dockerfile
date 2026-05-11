@@ -1,4 +1,4 @@
-FROM node:20-slim
+FROM node:22-slim
 
 # ── 系统依赖 ──────────────────────────────────────────
 # Playwright Chromium + FFmpeg + libvips（Kokoro TTS 需要）

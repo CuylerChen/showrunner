@@ -83,7 +83,7 @@ export function CreateForm() {
       setSuccess(true)
       setUrl('')
       setDesc('')
-      // 2 秒后跳转到导览列表
+      // 2 秒后跳转到视频列表
       setTimeout(() => {
         setSuccess(false)
         router.push('/dashboard/tours')

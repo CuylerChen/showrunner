@@ -168,7 +168,7 @@ function ShareBar({ title, videoUrl }: { title: string | null; videoUrl: string 
       </button>
 
       {/* 下载视频 */}
-      <a href={videoUrl} download="product-tour.mp4"
+      <a href={videoUrl} download="product-promo-video.mp4"
         className={btnBase}
         style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
         <IconDownload />
@@ -293,7 +293,7 @@ export default function SharePage() {
               style={{ background: 'var(--border-bright)' }} />
             <h1 className="hidden sm:block text-sm font-medium truncate"
               style={{ color: 'var(--text-secondary)', maxWidth: '280px' }}>
-              {data.title ?? 'Product Demo'}
+              {data.title ?? 'Product Promo Video'}
             </h1>
           </div>
 
@@ -311,7 +311,7 @@ export default function SharePage() {
         {/* 移动端标题 */}
         <h1 className="sm:hidden text-base font-semibold mb-4"
           style={{ color: 'var(--text-primary)' }}>
-          {data.title ?? 'Product Demo'}
+          {data.title ?? 'Product Promo Video'}
         </h1>
 
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
@@ -366,7 +366,7 @@ export default function SharePage() {
             {/* 视频下方信息栏 */}
             <div className="mt-3 flex items-center justify-between px-1">
               <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                {data.title ?? 'Product Tour'}
+                {data.title ?? 'Product Promo Video'}
               </p>
               <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                 {hasSteps ? sp.stepsCount(data.steps.length) : ''}

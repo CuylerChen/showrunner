@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation'
 import { StatusBadge } from '@/components/demo/status-badge'
 import { useDemoRealtime } from '@/hooks/use-demo-realtime'
 import { useTranslation } from '@/lib/i18n'
-import { LoginSessionModal } from '@/components/demo/login-session-modal'
 import type { Demo, Step } from '@/types'
 
 type DemoWithSteps = Demo & { steps: Step[]; has_session?: boolean }
@@ -20,7 +19,6 @@ export default function DemoDetailPage() {
   const [loading, setLoading] = useState(true)
   const [starting, setStarting] = useState(false)
   const [resolving, setResolving] = useState<string | null>(null)
-  const [showLoginModal, setShowLoginModal] = useState(false)
 
   const { status, errorMessage } = useDemoRealtime(id, demo?.status ?? 'pending')
   const prevStatusRef = useRef<string>('')
@@ -49,7 +47,7 @@ export default function DemoDetailPage() {
     }
   }, [status, demo?.share_token, router])
 
-  async function startRecording() {
+  async function startGeneration() {
     setStarting(true)
     await fetch(`/api/demos/${id}/start`, { method: 'POST' })
     setStarting(false)
@@ -193,20 +191,6 @@ export default function DemoDetailPage() {
                   </p>
                 )}
 
-                {/* 动作标签 */}
-                <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
-                  <span className="inline-block rounded px-1.5 py-0.5 text-xs font-mono"
-                    style={{ background: 'rgba(99,102,241,0.1)', color: '#818CF8' }}>
-                    {step.action_type}
-                  </span>
-                  {step.selector && (
-                    <span className="inline-block rounded px-1.5 py-0.5 text-xs font-mono truncate max-w-xs"
-                      style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)' }}>
-                      {step.selector}
-                    </span>
-                  )}
-                </div>
-
                 {/* 旁白 */}
                 {isReview ? (
                   <textarea
@@ -249,11 +233,11 @@ export default function DemoDetailPage() {
         ))}
       </div>
 
-      {/* 开始录制 + 配置登录 */}
+      {/* 开始生成 */}
       {isReview && (
-        <div className="space-y-2">
+        <div>
           <button
-            onClick={startRecording}
+            onClick={startGeneration}
             disabled={starting}
             className="btn-brand w-full rounded-xl py-3.5 text-sm font-semibold"
           >
@@ -264,35 +248,7 @@ export default function DemoDetailPage() {
               </span>
             ) : dd.startBtn}
           </button>
-
-          {/* 登录配置按钮 */}
-          <button
-            onClick={() => setShowLoginModal(true)}
-            className="w-full rounded-xl py-2.5 text-sm transition-all cursor-pointer"
-            style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
-          >
-            {demo?.has_session
-              ? dd.loginConfigured
-              : dd.loginNotConfigured}
-          </button>
         </div>
-      )}
-
-      {/* 登录会话 Modal */}
-      {showLoginModal && demo && (
-        <LoginSessionModal
-          demoId={id}
-          productUrl={demo.product_url}
-          hasExistingSession={!!demo.has_session}
-          onSaved={() => {
-            setShowLoginModal(false)
-            // 登录后自动重新解析，刷新 demo 数据（旧步骤已清空，status 回到 pending/parsing）
-            fetch(`/api/demos/${id}`)
-              .then(r => r.json())
-              .then(d => { if (d.success) { setDemo(d.data); setSteps(d.data.steps ?? []) } })
-          }}
-          onClose={() => setShowLoginModal(false)}
-        />
       )}
     </div>
   )

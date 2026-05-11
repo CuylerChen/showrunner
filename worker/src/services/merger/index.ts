@@ -3,7 +3,8 @@ import ffmpegInstaller from '@ffmpeg-installer/ffmpeg'
 import path from 'path'
 import fs from 'fs'
 import { execSync } from 'child_process'
-import { MergeResult } from '../../types'
+import { MergeResult, Step } from '../../types'
+import { HyperframesClip, renderHyperframesDemo, stepsToClipMetadata } from '../hyperframes'
 
 // 优先使用系统 FFmpeg（apt 安装，功能完整）；找不到时回退到打包版
 function resolveFFmpegPath(): string {
@@ -67,7 +68,7 @@ function cutAndRescale(
         `-t ${targetDuration}`,
       ])
       .output(outputPath)
-      .on('end', resolve)
+      .on('end', () => resolve())
       .on('error', reject)
       .run()
   })
@@ -94,7 +95,7 @@ function mergeClipWithAudio(
         `-t ${audioDuration}`,   // 以音频时长为准
       ])
       .output(outputPath)
-      .on('end', resolve)
+      .on('end', () => resolve())
       .on('error', reject)
       .run()
   })
@@ -209,7 +210,8 @@ export async function mergeDemo(
   audioPaths: string[],
   outputDir: string,
   loginVideoWebmPath?: string | null,
-  stepTimestamps?: { stepId: string; start: number; end: number }[]
+  stepTimestamps?: { stepId: string; start: number; end: number }[],
+  demoSteps?: Step[],
 ): Promise<MergeResult & { loginDuration: number }> {
   fs.mkdirSync(outputDir, { recursive: true })
 
@@ -220,16 +222,16 @@ export async function mergeDemo(
 
   // ── 尝试按步骤时间对齐 ────────────────────────────────────────
   if (stepTimestamps && stepTimestamps.length === audioPaths.length && stepTimestamps.length > 0) {
-    console.log('[merger] 使用按步时间对齐合成...')
+    console.log('[merger] 使用 HyperFrames 按步时间对齐合成...')
 
     const clipPaths: string[] = []
+    const clipMetadata = stepsToClipMetadata(demoSteps)
 
     for (let i = 0; i < stepTimestamps.length; i++) {
       const ts = stepTimestamps[i]
       const stepVideoDuration = ts.end - ts.start
       const stepAudioDuration = getMediaDuration(audioPaths[i])
       const clipVideoPath = path.join(outputDir, `clip_${i}_v.mp4`)
-      const clipFinalPath = path.join(outputDir, `clip_${i}.mp4`)
 
       if (stepVideoDuration <= 0 || stepAudioDuration <= 0) {
         console.warn(`[merger] Step ${i} 时长异常 (video=${stepVideoDuration.toFixed(1)}s audio=${stepAudioDuration.toFixed(1)}s)，跳过对齐`)
@@ -239,43 +241,72 @@ export async function mergeDemo(
         await cutAndRescale(videoPath, ts.start, stepVideoDuration, stepAudioDuration, clipVideoPath)
       }
 
-      // 合并该片段的视频 + 音频
-      await mergeClipWithAudio(clipVideoPath, audioPaths[i], clipFinalPath)
-
-      clipPaths.push(clipFinalPath)
-
-      // 清理中间视频片段
-      try { fs.unlinkSync(clipVideoPath) } catch {}
+      clipPaths.push(clipVideoPath)
     }
-
-    // 拼接所有片段
-    const demoMp4Path = path.join(outputDir, 'demo_aligned.mp4')
-    if (clipPaths.length === 1) {
-      fs.renameSync(clipPaths[0], demoMp4Path)
-    } else {
-      await concatVideos(clipPaths, demoMp4Path)
-      clipPaths.forEach(p => { try { fs.unlinkSync(p) } catch {} })
-    }
-
-    // 清理 TTS 音频文件
-    audioPaths.forEach(p => { try { fs.unlinkSync(p) } catch {} })
 
     // ── 处理登录视频 ──
     let loginDuration = 0
+    const hyperframesClips: HyperframesClip[] = clipPaths.map((clipPath, index) => ({
+      videoPath: clipPath,
+      audioPath: audioPaths[index],
+      duration: getMediaDuration(audioPaths[index]),
+      title: clipMetadata[index]?.title,
+      narration: clipMetadata[index]?.narration,
+    }))
+
     if (loginVideoWebmPath && fs.existsSync(loginVideoWebmPath)) {
       console.log('[merger] 处理登录视频（2x 加速）...')
       loginDuration = await processLoginVideo(loginVideoWebmPath, loginMp4Path)
-
-      await concatVideos([loginMp4Path, demoMp4Path], outputPath)
-      try { fs.unlinkSync(loginMp4Path) } catch {}
-      try { fs.unlinkSync(demoMp4Path) } catch {}
-    } else {
-      fs.renameSync(demoMp4Path, outputPath)
+      hyperframesClips.unshift({
+        videoPath: loginMp4Path,
+        duration: loginDuration,
+        title: '登录并进入产品',
+        narration: null,
+      })
     }
 
-    const totalDuration = Math.round(loginDuration + getMediaDuration(outputPath))
-    console.log(`[merger] 对齐合成完成: ${outputPath} (${totalDuration}s)`)
-    return { outputPath, duration: totalDuration, loginDuration }
+    try {
+      const rendered = await renderHyperframesDemo(hyperframesClips, outputDir)
+
+      // 清理 TTS 和中间片段，最终文件保留到上传完成后由上层清理目录。
+      audioPaths.forEach(p => { try { fs.unlinkSync(p) } catch {} })
+      clipPaths.forEach(p => { try { fs.unlinkSync(p) } catch {} })
+      try { fs.unlinkSync(loginMp4Path) } catch {}
+
+      console.log(`[merger] HyperFrames 合成完成: ${rendered.outputPath} (${rendered.duration}s)`)
+      return { outputPath: rendered.outputPath, duration: rendered.duration, loginDuration }
+    } catch (err) {
+      console.warn(`[merger] HyperFrames 渲染失败，回退 FFmpeg concat: ${(err as Error).message}`)
+
+      const fallbackClipPaths: string[] = []
+      for (let i = 0; i < clipPaths.length; i++) {
+        const clipFinalPath = path.join(outputDir, `clip_${i}.mp4`)
+        await mergeClipWithAudio(clipPaths[i], audioPaths[i], clipFinalPath)
+        fallbackClipPaths.push(clipFinalPath)
+      }
+
+      const demoMp4Path = path.join(outputDir, 'demo_aligned.mp4')
+      if (fallbackClipPaths.length === 1) {
+        fs.renameSync(fallbackClipPaths[0], demoMp4Path)
+      } else {
+        await concatVideos(fallbackClipPaths, demoMp4Path)
+        fallbackClipPaths.forEach(p => { try { fs.unlinkSync(p) } catch {} })
+      }
+
+      if (loginDuration > 0 && fs.existsSync(loginMp4Path)) {
+        await concatVideos([loginMp4Path, demoMp4Path], outputPath)
+        try { fs.unlinkSync(loginMp4Path) } catch {}
+        try { fs.unlinkSync(demoMp4Path) } catch {}
+      } else {
+        fs.renameSync(demoMp4Path, outputPath)
+      }
+
+      audioPaths.forEach(p => { try { fs.unlinkSync(p) } catch {} })
+      clipPaths.forEach(p => { try { fs.unlinkSync(p) } catch {} })
+
+      const totalDuration = Math.round(loginDuration + getMediaDuration(outputPath))
+      return { outputPath, duration: totalDuration, loginDuration }
+    }
   }
 
   // ── Fallback: 旧的简单合成逻辑 ────────────────────────────────
