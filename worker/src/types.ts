@@ -2,6 +2,8 @@ export type ActionType = 'navigate' | 'click' | 'fill' | 'wait' | 'assert'
 
 export type StepStatus = 'pending' | 'recording' | 'completed' | 'failed' | 'skipped'
 
+export type VisualType = 'screenshot' | 'template' | 'cta'
+
 export interface Step {
   id: string
   position: number
@@ -10,6 +12,8 @@ export interface Step {
   selector: string | null
   value: string | null
   narration: string | null
+  visual_type?: VisualType
+  visual_asset_url?: string | null
   wait_for_selector: string | null  // 步骤完成的标志元素（方案C）
   timestamp_start?: number
   timestamp_end?: number
