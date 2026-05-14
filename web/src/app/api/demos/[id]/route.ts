@@ -8,6 +8,7 @@ import fs from 'fs'
 import path from 'path'
 
 type Params = { params: Promise<{ id: string }> }
+type UpdateResult = { affectedRows?: number }
 
 const VIDEO_DIR = process.env.VIDEO_DIR ?? '/data/videos'
 
@@ -61,7 +62,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     .set(updates)
     .where(and(eq(schema.demos.id, id), eq(schema.demos.user_id, user.id)))
 
-  if (!updated[0] || (updated[0] as any).affectedRows === 0) {
+  if (!updated[0] || (updated[0] as UpdateResult).affectedRows === 0) {
     return err('NOT_FOUND', 'Demo 不存在或无权访问')
   }
 

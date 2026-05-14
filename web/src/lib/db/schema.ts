@@ -3,7 +3,6 @@ import {
   varchar,
   text,
   int,
-  boolean,
   timestamp,
   mysqlEnum,
 } from 'drizzle-orm/mysql-core'

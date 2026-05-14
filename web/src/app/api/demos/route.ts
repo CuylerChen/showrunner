@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get('status') as typeof schema.demos.status.enumValues[number] | null
   const offset = (page - 1) * limit
 
-  let conditions = [eq(schema.demos.user_id, user.id)]
+  const conditions = [eq(schema.demos.user_id, user.id)]
   if (status) conditions.push(eq(schema.demos.status, status))
 
   const [items, countResult] = await Promise.all([

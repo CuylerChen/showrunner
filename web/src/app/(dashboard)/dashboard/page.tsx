@@ -19,7 +19,7 @@ export default async function DashboardPage() {
   const userId = headersList.get('x-user-id')
   if (!userId) redirect('/sign-in')
 
-  const [total, { t, locale }] = await Promise.all([
+  const [total, { t }] = await Promise.all([
     getTotalCount(userId),
     getT(),
   ])

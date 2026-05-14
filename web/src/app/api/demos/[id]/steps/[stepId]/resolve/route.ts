@@ -45,7 +45,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (action === 'manual') {
     await db
       .update(schema.steps)
-      .set({ narration: (parsed.data as any).manual_description, status: 'pending' })
+      .set({ narration: parsed.data.manual_description, status: 'pending' })
       .where(eq(schema.steps.id, stepId))
   }
 
