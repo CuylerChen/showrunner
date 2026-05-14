@@ -26,6 +26,9 @@ export interface PromotionalScene {
   duration: number
   visualType?: 'screenshot' | 'template' | 'cta'
   visualAssetPath?: string | null
+  ctaText?: string | null
+  ctaUrl?: string | null
+  brandTone?: string | null
 }
 
 const WIDTH = 1280
@@ -47,6 +50,16 @@ function escapeHtml(value: string): string {
 
 function formatDuration(seconds: number): string {
   return `${Math.max(0.1, seconds).toFixed(3)}s`
+}
+
+function resolveVisualAsset(value?: string | null): string | null {
+  if (!value) return null
+  if (value.startsWith('/videos/')) {
+    const videoDir = process.env.VIDEO_DIR ?? '/data/videos'
+    return path.join(videoDir, value.replace(/^\/videos\//, ''))
+  }
+  if (fs.existsSync(value)) return value
+  return null
 }
 
 function resolveHyperframesBin(): string {
@@ -264,6 +277,15 @@ function createPromotionalHtml(scenes: PromotionalScene[], totalDuration: number
     const narration = scene.narration ? escapeHtml(scene.narration) : ''
     const progressWidth = `${Math.round(((index + 1) / scenes.length) * 100)}%`
     const visualClass = `visual-${index % 4}`
+    const visualPath = resolveVisualAsset(scene.visualAssetPath)
+    const visual = visualPath
+      ? `<div class="screenshot-stage"><img src="${escapeHtml(fileUrl(visualPath))}" /></div>`
+      : `
+          <div class="panel panel-a"></div>
+          <div class="panel panel-b"></div>
+          <div class="panel panel-c"></div>
+        `
+    const ctaText = scene.visualType === 'cta' && scene.ctaText ? escapeHtml(scene.ctaText) : ''
 
     return `
       <section class="scene ${visualClass}" data-start="${formatDuration(start)}" data-duration="${formatDuration(scene.duration)}">
@@ -274,11 +296,10 @@ function createPromotionalHtml(scenes: PromotionalScene[], totalDuration: number
           <div class="kicker">Product Video</div>
           <h1>${title}</h1>
           ${narration ? `<p>${narration}</p>` : ''}
+          ${ctaText ? `<div class="cta-pill">${ctaText}</div>` : ''}
         </div>
         <div class="visual">
-          <div class="panel panel-a"></div>
-          <div class="panel panel-b"></div>
-          <div class="panel panel-c"></div>
+          ${visual}
         </div>
         <div class="progress"><span style="width: ${progressWidth}"></span></div>
       </section>
@@ -381,6 +402,21 @@ function createPromotionalHtml(scenes: PromotionalScene[], totalDuration: number
       width: 420px;
       height: 390px;
     }
+    .screenshot-stage {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      border-radius: 8px;
+      background: rgba(15,23,42,0.82);
+      border: 1px solid rgba(255,255,255,0.22);
+      box-shadow: 0 30px 80px rgba(0,0,0,0.34);
+    }
+    .screenshot-stage img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
     .panel {
       position: absolute;
       border-radius: 8px;
@@ -408,6 +444,23 @@ function createPromotionalHtml(scenes: PromotionalScene[], totalDuration: number
       width: 190px;
       height: 96px;
       background: rgba(103,232,249,0.22);
+    }
+    .cta-pill {
+      display: inline-flex;
+      align-items: center;
+      max-width: 560px;
+      min-height: 54px;
+      margin-top: 30px;
+      padding: 0 26px;
+      border-radius: 999px;
+      background: #67e8f9;
+      color: #0f172a;
+      font-size: 22px;
+      line-height: 1.1;
+      font-weight: 820;
+      letter-spacing: 0;
+      box-shadow: 0 18px 42px rgba(8,145,178,0.34);
+      overflow-wrap: anywhere;
     }
     .progress {
       position: absolute;
