@@ -172,7 +172,6 @@ docker compose logs -f worker
 正常输出：
 ```
 [parse worker] ready
-[record worker] ready
 [tts worker] ready
 [merge worker] ready
 ```

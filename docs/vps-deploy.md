@@ -228,7 +228,8 @@ docker logs showrunner-worker-1 --tail 20
 ```
 showrunner-web-1     ✓ Ready in XXXms
 showrunner-worker-1  [parse worker] ready
-showrunner-worker-1  [record worker] ready
+showrunner-worker-1  [tts worker] ready
+showrunner-worker-1  [merge worker] ready
 ```
 
 ---
