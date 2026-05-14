@@ -11,8 +11,8 @@ type StepUpdates = {
   position: number
   title: string
   narration: string | null
-  visual_type: StepVisualType
-  visual_asset_url: string | null
+  visual_type?: StepVisualType
+  visual_asset_url?: string | null
 }
 
 const UpdateStepsSchema = z.object({
@@ -53,9 +53,9 @@ export async function PUT(req: NextRequest, { params }: Params) {
       position: s.position,
       title: s.title,
       narration: s.narration ?? null,
-      visual_type: s.visual_type ?? 'template',
-      visual_asset_url: s.visual_asset_url ?? null,
     }
+    if (s.visual_type !== undefined) updates.visual_type = s.visual_type
+    if (s.visual_asset_url !== undefined) updates.visual_asset_url = s.visual_asset_url
 
     return db
       .update(schema.steps)

@@ -48,7 +48,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     audience:   z.string().max(300).nullable().optional(),
     key_points: z.string().max(1000).nullable().optional(),
     brand_tone: z.string().max(80).nullable().optional(),
-    cta_url:    z.string().url().max(2048).nullable().optional(),
+    cta_url:    z.string().url().max(2048).nullable().optional().or(z.literal('')),
     cta_text:   z.string().max(100).nullable().optional(),
   }).refine(d => Object.keys(d).length > 0, { message: '至少提供一个更新字段' })
 
@@ -60,7 +60,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (parsed.data.audience   !== undefined) updates.audience   = parsed.data.audience
   if (parsed.data.key_points !== undefined) updates.key_points = parsed.data.key_points
   if (parsed.data.brand_tone !== undefined) updates.brand_tone = parsed.data.brand_tone
-  if (parsed.data.cta_url    !== undefined) updates.cta_url    = parsed.data.cta_url
+  if (parsed.data.cta_url    !== undefined) updates.cta_url    = parsed.data.cta_url === '' ? null : parsed.data.cta_url
   if (parsed.data.cta_text   !== undefined) updates.cta_text   = parsed.data.cta_text
 
   const updated = await db
