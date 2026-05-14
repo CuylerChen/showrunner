@@ -209,78 +209,98 @@ export function CreateForm() {
 
           {/* Marketing brief */}
           <div className="grid gap-3 sm:grid-cols-2">
-            <input
-              type="text"
-              placeholder={cf.audiencePlaceholder}
-              value={audience}
-              onChange={e => setAudience(e.target.value)}
-              className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-              style={{
-                background: '#F8FAFC',
-                border: '1.5px solid #E2E8F0',
-                color: '#0F172A',
-              }}
-            />
-            <input
-              type="text"
-              placeholder={cf.brandTonePlaceholder}
-              value={brandTone}
-              onChange={e => setBrandTone(e.target.value)}
-              className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-              style={{
-                background: '#F8FAFC',
-                border: '1.5px solid #E2E8F0',
-                color: '#0F172A',
-              }}
-            />
-            <input
-              type="text"
-              placeholder={cf.ctaTextPlaceholder}
-              value={ctaText}
-              onChange={e => setCtaText(e.target.value)}
-              className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-              style={{
-                background: '#F8FAFC',
-                border: '1.5px solid #E2E8F0',
-                color: '#0F172A',
-              }}
-            />
-            <input
-              type="url"
-              placeholder={cf.ctaUrlPlaceholder}
-              value={ctaUrl}
-              onChange={e => setCtaUrl(e.target.value)}
-              className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-              style={{
-                background: '#F8FAFC',
-                border: '1.5px solid #E2E8F0',
-                color: '#0F172A',
-              }}
-            />
-            <textarea
-              placeholder={cf.keyPointsPlaceholder}
-              value={keyPoints}
-              onChange={e => setKeyPoints(e.target.value)}
-              rows={3}
-              className="w-full rounded-xl px-4 py-3 text-sm outline-none resize-none sm:col-span-2"
-              style={{
-                background: '#F8FAFC',
-                border: '1.5px solid #E2E8F0',
-                color: '#0F172A',
-              }}
-            />
-            <input
-              type="text"
-              placeholder={cf.descPlaceholder}
-              value={desc}
-              onChange={e => setDesc(e.target.value)}
-              className="w-full rounded-xl px-4 py-3 text-sm outline-none sm:col-span-2"
-              style={{
-                background: '#F8FAFC',
-                border: '1.5px solid #E2E8F0',
-                color: '#0F172A',
-              }}
-            />
+            <label className="space-y-1.5">
+              <span className="text-xs font-medium" style={{ color: '#64748B' }}>{cf.audienceLabel}</span>
+              <input
+                type="text"
+                placeholder={cf.audiencePlaceholder}
+                value={audience}
+                onChange={e => setAudience(e.target.value)}
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+                style={{
+                  background: '#F8FAFC',
+                  border: '1.5px solid #E2E8F0',
+                  color: '#0F172A',
+                }}
+              />
+            </label>
+            <label className="space-y-1.5">
+              <span className="text-xs font-medium" style={{ color: '#64748B' }}>{cf.brandToneLabel}</span>
+              <input
+                type="text"
+                placeholder={cf.brandTonePlaceholder}
+                value={brandTone}
+                onChange={e => setBrandTone(e.target.value)}
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+                style={{
+                  background: '#F8FAFC',
+                  border: '1.5px solid #E2E8F0',
+                  color: '#0F172A',
+                }}
+              />
+            </label>
+            <label className="space-y-1.5">
+              <span className="text-xs font-medium" style={{ color: '#64748B' }}>{cf.ctaTextLabel}</span>
+              <input
+                type="text"
+                placeholder={cf.ctaTextPlaceholder}
+                value={ctaText}
+                onChange={e => setCtaText(e.target.value)}
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+                style={{
+                  background: '#F8FAFC',
+                  border: '1.5px solid #E2E8F0',
+                  color: '#0F172A',
+                }}
+              />
+            </label>
+            <label className="space-y-1.5">
+              <span className="text-xs font-medium" style={{ color: '#64748B' }}>{cf.ctaUrlLabel}</span>
+              <input
+                type="url"
+                placeholder={cf.ctaUrlPlaceholder}
+                value={ctaUrl}
+                onChange={e => setCtaUrl(e.target.value)}
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+                style={{
+                  background: '#F8FAFC',
+                  border: '1.5px solid #E2E8F0',
+                  color: '#0F172A',
+                }}
+              />
+            </label>
+            <label className="space-y-1.5 sm:col-span-2">
+              <span className="text-xs font-medium" style={{ color: '#64748B' }}>{cf.keyPointsLabel}</span>
+              <textarea
+                placeholder={cf.keyPointsPlaceholder}
+                value={keyPoints}
+                onChange={e => setKeyPoints(e.target.value)}
+                rows={3}
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none resize-none"
+                style={{
+                  background: '#F8FAFC',
+                  border: '1.5px solid #E2E8F0',
+                  color: '#0F172A',
+                }}
+              />
+            </label>
+            <label className="space-y-1.5 sm:col-span-2">
+              <span className="text-xs font-medium" style={{ color: '#64748B' }}>
+                {cf.descLabel} <span style={{ color: '#94A3B8', fontWeight: 400 }}>{cf.descOptional}</span>
+              </span>
+              <input
+                type="text"
+                placeholder={cf.descPlaceholder}
+                value={desc}
+                onChange={e => setDesc(e.target.value)}
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+                style={{
+                  background: '#F8FAFC',
+                  border: '1.5px solid #E2E8F0',
+                  color: '#0F172A',
+                }}
+              />
+            </label>
           </div>
 
           {/* 错误提示 */}
