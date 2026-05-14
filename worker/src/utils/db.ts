@@ -31,7 +31,7 @@ export const demos = mysqlTable('demos', {
   video_url:       text('video_url'),
   duration:        int('duration'),
   share_token:     varchar('share_token', { length: 36 }),
-  view_count:      int('view_count'),
+  view_count:      int('view_count').default(0).notNull(),
   cta_url:         text('cta_url'),
   cta_text:        varchar('cta_text', { length: 100 }),
   session_cookies:  text('session_cookies'),

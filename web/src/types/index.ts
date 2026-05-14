@@ -33,7 +33,7 @@ export interface Demo {
   video_url: string | null
   duration: number | null
   share_token: string
-  view_count?: number | null
+  view_count: number
   cta_text?: string | null
   cta_url?: string | null
   session_cookies?: string | null
@@ -52,7 +52,7 @@ export interface Step {
   selector: string | null
   value: string | null
   narration: string | null
-  visual_type?: VisualType
+  visual_type: VisualType
   visual_asset_url?: string | null
   wait_for_selector: string | null
   timestamp_start: number | null
