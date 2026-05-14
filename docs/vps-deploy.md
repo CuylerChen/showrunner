@@ -25,7 +25,7 @@
 | 磁盘 | 20 GB SSD | 50 GB SSD |
 | 开放端口 | 22（SSH）、80（HTTP）、443（HTTPS） | 同左 |
 
-> **注意**：Worker 容器需要运行 Chromium 进行录制，建议至少 2GB 内存，否则可能 OOM。
+> **注意**：Worker 容器需要运行 Chromium 进行官网截图捕获，并配合 HyperFrames 渲染营销视频；deprecated legacy recorder 也依赖 Chromium。建议至少 2GB 内存，否则可能 OOM。
 
 ---
 

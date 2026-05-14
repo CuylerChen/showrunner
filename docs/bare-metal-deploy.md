@@ -225,7 +225,7 @@ npm ci
 export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 export PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
-# 下载 Playwright FFmpeg（录制视频必需）
+# 下载 Playwright FFmpeg（官网截图 / HyperFrames 渲染工具链使用；真实录制为 deprecated legacy path）
 npx playwright install ffmpeg
 ```
 

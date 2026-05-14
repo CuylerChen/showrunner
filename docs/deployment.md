@@ -239,7 +239,7 @@ Vercel 部署完成、获得域名后，回到 Clerk 完成 2.4 步骤的 Webhoo
 1. 访问 https://your-domain.vercel.app
    ✅ 落地页正常显示
 
-2. 点击「免费开始」→ 注册账号
+2. 点击「免费开始」→ 创建账户
    ✅ Clerk 注册页正常
    ✅ 注册成功后跳转 /dashboard
 
