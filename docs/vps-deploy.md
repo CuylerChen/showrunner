@@ -1,5 +1,7 @@
 # Showrunner VPS 部署文档
 
+> Legacy note: recorder-specific references in this guide describe the deprecated real-browser recording path. The current Marketing Video MVP uses website screenshot capture, Product Story scenes, TTS, and HyperFrames rendering as the primary architecture.
+
 ## 目录
 
 1. [服务器要求](#1-服务器要求)
@@ -42,10 +44,10 @@
     │  └─ 前端页面
     │
   Worker（BullMQ）
-    │  ├─ parse-queue   AI 解析步骤（DeepSeek）
-    │  ├─ record-queue  Playwright 录制
+    │  ├─ parse-queue   官网抓取、截图、AI Product Story 场景生成（DeepSeek）
+    │  ├─ record-queue  Playwright 录制（deprecated legacy recorder，非主流程）
     │  ├─ tts-queue     TTS 旁白生成
-    │  └─ merge-queue   FFmpeg 合成视频
+    │  └─ merge-queue   HyperFrames 合成营销视频
     │
   Redis（任务队列）
     │
@@ -433,7 +435,7 @@ docker logs showrunner-mysql-1
 chown -R 999:999 /opt/showrunner/mysql_data
 ```
 
-### Worker 录制失败 / Chromium 崩溃
+### Worker 录制失败 / Chromium 崩溃（deprecated legacy recorder）
 
 ```bash
 # 查看 worker 详细日志

@@ -1,5 +1,7 @@
 # Showrunner 裸机部署文档（不使用 Docker）
 
+> Legacy note: recorder-specific Playwright references in this guide are historical/deprecated. The current Marketing Video MVP uses Playwright for website screenshot capture, not primary real-browser click recording.
+
 ## 目录
 
 1. [服务器要求](#1-服务器要求)
@@ -79,7 +81,7 @@ apt-get install -y ffmpeg
 # libvips（kokoro-js TTS 依赖）
 apt-get install -y libvips-dev
 
-# Chromium 及运行时依赖（Playwright 录制）
+# Chromium 及运行时依赖（Playwright 官网截图；真实点击录制为 deprecated legacy path）
 apt-get install -y \
   chromium-browser \
   libnss3 libatk1.0-0 libatk-bridge2.0-0 \

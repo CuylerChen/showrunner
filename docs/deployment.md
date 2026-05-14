@@ -1,6 +1,8 @@
 # Showrunner — 部署指南
 > 版本：v0.2 | 更新时间：2026-02-19
 
+> Historical / deprecated: this guide documents the earlier Clerk + Supabase + OpenRouter deployment path and is out of scope for the current Marketing Video MVP architecture. Current architecture uses MySQL, self-managed JWT auth, DeepSeek, website screenshot capture, and HyperFrames rendering.
+
 ## 部署架构
 
 ```

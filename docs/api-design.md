@@ -1,6 +1,6 @@
 # Showrunner — API 接口设计
 > 版本：v0.1 | 更新时间：2026-02-19
-> 框架：Next.js API Routes | 认证：Clerk JWT
+> 框架：Next.js API Routes | 认证：自管 JWT Cookie
 
 ---
 
@@ -8,9 +8,9 @@
 
 - **RESTful 风格**，资源路径清晰
 - **统一响应格式**，成功/失败结构一致
-- **职责解耦**，Worker 直写 Supabase，不经过 Next.js API
+- **职责解耦**，Worker 直写 MySQL，不经过 Next.js API
 - **Webhook 独立分组**，与业务接口隔离
-- **公开接口**（分享页）无需鉴权，其余全部需要 Clerk JWT
+- **公开接口**（分享页）无需鉴权，其余全部需要 JWT 登录态
 
 ---
 
@@ -55,7 +55,7 @@
   /demos/[id]/steps   步骤管理
   /share              公开分享页（无需鉴权）
   /subscription       套餐与额度
-  /webhooks           第三方回调（Clerk / LemonSqueezy）
+  /webhooks           第三方回调（LemonSqueezy）
 ```
 
 ---
@@ -72,7 +72,11 @@ Auth: 必须
 ```json
 {
   "product_url": "https://app.example.com",
-  "description": "用户注册 → 创建项目 → 导出报告"  // 可选
+  "audience": "Sales teams",
+  "key_points": "Automates follow-up, improves conversion",
+  "brand_tone": "confident",
+  "cta_text": "Book a demo",
+  "cta_url": "https://app.example.com/demo"
 }
 ```
 
@@ -91,8 +95,8 @@ Auth: 必须
 **逻辑**
 1. 检查用户额度（`demos_used_this_month < demos_limit`）
 2. 创建 `demos` 记录，status = `parsing`
-3. 入队 `parse-queue`，Worker 异步解析步骤
-4. 返回 `demo_id`，前端通过 Realtime 监听后续状态
+3. 入队 `parse-queue`，Worker 异步抓取官网、截图并生成 Product Story 场景
+4. 返回 `demo_id`，前端查询后续状态
 
 ---
 
@@ -146,7 +150,12 @@ Auth: 必须
     "id": "uuid",
     "title": "Product Demo v1",
     "product_url": "https://app.example.com",
-    "description": "用户注册 → 创建项目 → 导出报告",
+    "description": "Launch angle and constraints",
+    "audience": "Sales teams",
+    "key_points": "Automates follow-up, improves conversion",
+    "brand_tone": "confident",
+    "cta_text": "Book a demo",
+    "cta_url": "https://app.example.com/demo",
     "status": "review",
     "video_url": null,
     "duration": null,
@@ -156,11 +165,13 @@ Auth: 必须
       {
         "id": "uuid",
         "position": 1,
-        "title": "打开注册页面",
+        "title": "Launch your sales follow-up in minutes",
         "action_type": "navigate",
         "selector": null,
-        "value": "https://app.example.com/signup",
-        "narration": "First, navigate to the signup page.",
+        "value": null,
+        "narration": "Show how the product turns messy follow-up into a clear next action.",
+        "visual_type": "screenshot",
+        "visual_asset_url": "/videos/demo-id/assets/home.png",
         "status": "pending"
       }
     ],
@@ -194,13 +205,13 @@ Auth: 必须
 
 ---
 
-### 4.5 确认步骤，开始录制
+### 4.5 确认场景，开始生成视频
 ```
 POST /api/demos/[id]/start
 Auth: 必须
 ```
 
-> 用户在步骤卡片页面确认后调用此接口，触发录制。
+> 用户在场景卡片页面确认后调用此接口，触发旁白和营销视频合成。
 
 **Request**：无 body
 
@@ -208,18 +219,18 @@ Auth: 必须
 ```json
 {
   "success": true,
-  "data": { "id": "uuid", "status": "recording" }
+  "data": { "id": "uuid", "status": "processing" }
 }
 ```
 
 **逻辑**
 1. 校验 `demo.status === 'review'`，否则返回 `DEMO_NOT_READY`
-2. 更新 status = `recording`
-3. 入队 `record-queue`
+2. 更新 status = `processing`
+3. 入队 `tts-queue`，携带 ordered scenes 与 `renderMode = promotional`
 
 ---
 
-### 4.6 录制失败后用户介入
+### 4.6 旧录制失败后用户介入（deprecated / 非主流程）
 ```
 POST /api/demos/[id]/steps/[stepId]/resolve
 Auth: 必须
@@ -246,6 +257,8 @@ Auth: 必须
 - `retry`：将该 step 重新入队重试
 - `manual`：用 AI 重新解析用户描述，更新 step，再重试
 
+> 当前营销视频 MVP 主路径不再使用真实浏览器点击录制；官网抓取或截图失败时直接使用模板动态图形兜底。
+
 ---
 
 ### 4.7 删除 Demo
@@ -262,19 +275,19 @@ Auth: 必须
 }
 ```
 
-**逻辑**：删除 Supabase Storage 视频文件 + 数据库记录
+**逻辑**：删除 R2 / 本地视频文件 + 数据库记录
 
 ---
 
-## 五、步骤接口
+## 五、场景接口
 
-### 5.1 批量更新步骤（编辑 + 排序）
+### 5.1 批量更新场景（编辑 + 排序）
 ```
 PUT /api/demos/[id]/steps
 Auth: 必须
 ```
 
-> 用户在步骤卡片页拖拽排序或修改文字后，整体提交。
+> 用户在 Product Story 场景卡片页拖拽排序或修改文字后，整体提交。
 
 **Request**
 ```json
@@ -283,14 +296,18 @@ Auth: 必须
     {
       "id": "uuid",
       "position": 1,
-      "title": "打开注册页面",
-      "narration": "First, navigate to the signup page."
+      "title": "Launch your sales follow-up in minutes",
+      "narration": "Show how the product turns messy follow-up into a clear next action.",
+      "visual_type": "screenshot",
+      "visual_asset_url": "/videos/demo-id/assets/home.png"
     },
     {
       "id": "uuid",
       "position": 2,
-      "title": "填写邮箱和密码",
-      "narration": "Enter your email and password."
+      "title": "Turn every lead into a guided workflow",
+      "narration": "Highlight the benefit with a concise product story beat.",
+      "visual_type": "template",
+      "visual_asset_url": null
     }
   ]
 }
@@ -320,24 +337,24 @@ Auth: 无需
   "success": true,
   "data": {
     "title": "Product Demo v1",
-    "video_url": "https://storage.supabase.co/videos/xxx/final.mp4",
+    "video_url": "https://cdn.example.com/videos/xxx/final.mp4",
     "duration": 42,
     "steps": [
       {
         "position": 1,
-        "title": "注册账号",
+        "title": "Hook: faster sales follow-up",
         "timestamp_start": 0,
         "timestamp_end": 12.5
       },
       {
         "position": 2,
-        "title": "创建项目",
+        "title": "Benefit: guided workflows",
         "timestamp_start": 12.5,
         "timestamp_end": 28.0
       },
       {
         "position": 3,
-        "title": "导出报告",
+        "title": "CTA: book a demo",
         "timestamp_start": 28.0,
         "timestamp_end": 42.0
       }
@@ -403,20 +420,7 @@ Auth: 必须
 
 ## 八、Webhook 接口
 
-### 8.1 Clerk 用户同步
-```
-POST /api/webhooks/clerk
-Auth: Clerk Webhook 签名验证
-```
-
-**监听事件**
-- `user.created` → 在 `users` 表插入记录，同时创建 `subscriptions`（plan=free）
-- `user.updated` → 更新 `users.email`
-- `user.deleted` → 删除用户及关联数据
-
----
-
-### 8.2 LemonSqueezy 支付回调
+### 8.1 LemonSqueezy 支付回调
 ```
 POST /api/webhooks/lemonsqueezy
 Auth: LemonSqueezy Webhook 签名验证
@@ -426,7 +430,7 @@ Auth: LemonSqueezy Webhook 签名验证
 
 | 事件 | 处理逻辑 |
 |------|----------|
-| `subscription_created` | 更新 plan、demos_limit、lemon_squeezy_id |
+| `subscription_created` | 更新 plan、demos_limit |
 | `subscription_updated` | 更新 plan、status |
 | `subscription_cancelled` | status = cancelled |
 | `subscription_expired` | status = expired，plan 降回 free |
@@ -436,20 +440,19 @@ Auth: LemonSqueezy Webhook 签名验证
 ## 九、接口依赖关系
 
 ```
-用户注册（Clerk Webhook）
+用户注册（自管 Auth）
     ↓
 创建 Demo  POST /api/demos
     ↓
-[Worker 异步解析步骤，Realtime 推送]
+[Worker 异步抓取官网、截图并生成场景]
     ↓
-编辑步骤  PUT /api/demos/[id]/steps
+编辑场景  PUT /api/demos/[id]/steps
     ↓
-确认录制  POST /api/demos/[id]/start
+确认生成  POST /api/demos/[id]/start
     ↓
-[Worker 异步录制，Realtime 推送]
-    ↓                ↓
-  成功            录制失败
-  访问分享页       POST /api/demos/[id]/steps/[stepId]/resolve
+[Worker 异步 TTS + HyperFrames 合成]
+    ↓
+  成功
   GET /api/share/[token]
 ```
 
@@ -460,4 +463,4 @@ Auth: LemonSqueezy Webhook 签名验证
 - [ ] 接口限流策略（未登录用户 IP 限流）
 - [ ] `GET /api/demos` 是否需要搜索 / 过滤功能
 - [ ] 分享页是否需要密码保护（Phase 2 功能）
-- [ ] Worker 直写 Supabase 的权限隔离（service role key 管理）
+- [ ] Worker 直写 MySQL 的权限隔离（最小权限账号管理）

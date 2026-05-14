@@ -1,6 +1,6 @@
 # Showrunner — 数据库表结构设计
 > 版本：v0.1 | 更新时间：2026-02-19
-> 数据库：Supabase（PostgreSQL）
+> 数据库：MySQL
 
 ---
 
@@ -18,15 +18,18 @@ users
 
 ## 一、users 表
 
-> Clerk 管理用户认证，本表只存本地业务数据。
+> 自管登录与 JWT 会话使用本地用户表。
 
 ```sql
 create table users (
-  id              uuid primary key default gen_random_uuid(),
-  clerk_id        text unique not null,       -- Clerk 用户 ID
-  email           text not null,
-  created_at      timestamptz default now(),
-  updated_at      timestamptz default now()
+  id             varchar(36) primary key,
+  email          varchar(255) not null unique,
+  password_hash  varchar(255) null,           -- OAuth 用户为 NULL
+  oauth_provider varchar(50) null,            -- 'google' | 'github'
+  oauth_id       varchar(255) null,           -- provider 侧用户 ID
+  created_at     timestamp default current_timestamp,
+  updated_at     timestamp default current_timestamp on update current_timestamp,
+  unique key uq_oauth (oauth_provider, oauth_id)
 );
 ```
 
@@ -37,20 +40,17 @@ create table users (
 > 记录用户套餐、额度、LemonSqueezy 订阅信息。
 
 ```sql
-create type plan_type as enum ('free', 'starter', 'pro');
-create type sub_status as enum ('active', 'cancelled', 'expired');
-
 create table subscriptions (
-  id                      uuid primary key default gen_random_uuid(),
-  user_id                 uuid not null references users(id) on delete cascade,
-  plan                    plan_type not null default 'free',
-  status                  sub_status not null default 'active',
+  id                      varchar(36) primary key,
+  user_id                 varchar(36) not null unique,
+  plan                    enum('free','starter','pro') not null default 'free',
+  status                  enum('active','cancelled','expired') not null default 'active',
   demos_used_this_month   int not null default 0,
-  demos_limit             int not null default 1,    -- free=1, starter=10, pro=-1(无限)
-  lemon_squeezy_id        text,                      -- LemonSqueezy 订阅 ID
-  current_period_end      timestamptz,               -- 当前计费周期结束时间
-  created_at              timestamptz default now(),
-  updated_at              timestamptz default now()
+  demos_limit             int not null default 3,     -- free=3, starter=10, pro=-1(无限)
+  current_period_end      timestamp null,             -- 当前计费周期结束时间
+  created_at              timestamp default current_timestamp,
+  updated_at              timestamp default current_timestamp on update current_timestamp,
+  constraint fk_sub_user foreign key (user_id) references users(id) on delete cascade
 );
 ```
 
@@ -58,7 +58,7 @@ create table subscriptions (
 ```
 demos_limit = -1  → 无限（Pro）
 demos_limit = 10  → Starter
-demos_limit = 1   → Free（注册首次）
+demos_limit = 3   → Free
 ```
 
 ---
@@ -68,30 +68,39 @@ demos_limit = 1   → Free（注册首次）
 > 核心主表，每条记录代表一次 Demo 生成任务。
 
 ```sql
-create type demo_status as enum (
-  'pending',        -- 已创建，等待开始
-  'parsing',        -- AI 解析步骤中
-  'review',         -- 等待用户确认步骤
-  'recording',      -- Playwright 录制中
-  'paused',         -- 录制失败，等待用户介入
-  'processing',     -- FFmpeg 合成 + TTS 中
-  'completed',      -- 生成完毕
-  'failed'          -- 不可恢复的错误
-);
-
 create table demos (
-  id              uuid primary key default gen_random_uuid(),
-  user_id         uuid not null references users(id) on delete cascade,
-  title           text,                              -- 用户自定义标题（可选）
+  id              varchar(36) primary key,
+  user_id         varchar(36) not null,               -- references users(id)
+  title           varchar(255),                      -- 用户自定义标题（可选）
   product_url     text not null,                     -- 目标产品 URL
   description     text,                              -- 用户自然语言描述（可选）
-  status          demo_status not null default 'pending',
-  video_url       text,                              -- Supabase Storage 最终视频地址
+  audience        text,                              -- 目标受众（可选）
+  key_points      text,                              -- 关键卖点（可选）
+  brand_tone      varchar(80),                       -- 品牌语气（可选）
+  source_summary  text,                              -- 官网公开内容摘要
+  thumbnail_url   text,                              -- 分享页 / 列表封面
+  status          enum(
+                    'pending',     -- 已创建，等待开始
+                    'parsing',     -- 官网抓取、截图、AI 场景生成中
+                    'review',      -- 等待用户确认 Product Story 场景
+                    'recording',   -- deprecated legacy recorder 状态，非主流程
+                    'paused',      -- deprecated legacy recorder 失败介入，非主流程
+                    'processing',  -- TTS + HyperFrames 合成中
+                    'completed',   -- 生成完毕
+                    'failed'       -- 不可恢复的错误
+                  ) not null default 'pending',
+  video_url       text,                              -- R2 或本地最终视频地址
+  login_video_path text,                             -- deprecated legacy recorder 登录片段路径
   duration        int,                               -- 视频时长（秒）
-  share_token     text unique default gen_random_uuid()::text, -- 分享页 token
+  share_token     varchar(36) not null unique,       -- 分享页 token
+  view_count      int not null default 0,            -- 分享页浏览数
+  cta_url         text,                              -- CTA 跳转 URL
+  cta_text        varchar(100),                      -- CTA 按钮文案
+  session_cookies text,                              -- deprecated legacy recorder Cookie JSON
   error_message   text,                              -- 失败时的错误信息
-  created_at      timestamptz default now(),
-  updated_at      timestamptz default now()
+  created_at      timestamp default current_timestamp,
+  updated_at      timestamp default current_timestamp on update current_timestamp,
+  constraint fk_demo_user foreign key (user_id) references users(id) on delete cascade
 );
 ```
 
@@ -102,41 +111,41 @@ https://showrunner.app/share/{share_token}
 
 ---
 
-## 四、steps 表
+## 四、steps 表（主路径语义为视频场景）
 
-> Demo 的每一个操作步骤，AI 解析生成，用户可编辑。
+> 当前 Marketing Video MVP 复用 `steps` 表存储 Product Story 视频场景。`action_type`、`selector`、`value` 等字段为 legacy recorder 兼容字段；主路径读取 title、narration、visual_type、visual_asset_url 和时间戳。
 
 ```sql
-create type action_type as enum (
-  'navigate',     -- 跳转 URL
-  'click',        -- 点击元素
-  'fill',         -- 填写输入框
-  'wait',         -- 等待（毫秒）
-  'assert'        -- 断言元素存在
-);
-
-create type step_status as enum (
-  'pending',      -- 等待录制
-  'recording',    -- 录制中
-  'completed',    -- 录制完成
-  'failed',       -- 录制失败（触发 paused）
-  'skipped'       -- 用户手动跳过
-);
-
 create table steps (
-  id              uuid primary key default gen_random_uuid(),
-  demo_id         uuid not null references demos(id) on delete cascade,
+  id              varchar(36) primary key,
+  demo_id         varchar(36) not null,               -- references demos(id)
   position        int not null,                      -- 步骤顺序（从 1 开始）
-  title           text not null,                     -- 用户可见标题，如 "注册账号"
-  action_type     action_type not null,
-  selector        text,                              -- CSS 选择器（click/fill/assert 使用）
-  value           text,                              -- fill 时的填写内容
-  narration       text,                              -- 该步骤的 TTS 旁白文案
-  timestamp_start float,                             -- 在最终视频中的开始时间（秒）
-  timestamp_end   float,                             -- 在最终视频中的结束时间（秒）
-  status          step_status not null default 'pending',
-  created_at      timestamptz default now(),
-  updated_at      timestamptz default now()
+  title           varchar(255) not null,             -- 用户可见场景标题
+  action_type     enum(
+                    'navigate',  -- legacy recorder：跳转 URL
+                    'click',     -- legacy recorder：点击元素
+                    'fill',      -- legacy recorder：填写输入框
+                    'wait',      -- legacy recorder：等待（毫秒）
+                    'assert'     -- legacy recorder：断言元素存在
+                  ) not null,
+  selector        text,                              -- legacy recorder CSS 选择器
+  value           text,                              -- legacy recorder 填写内容
+  narration       text,                              -- 该场景的 TTS 旁白文案
+  visual_type     enum('screenshot','template','cta') not null default 'template',
+  visual_asset_url text,                             -- 官网截图或素材 URL / 路径
+  wait_for_selector text,                            -- legacy recorder 等待条件
+  timestamp_start int,                               -- 在最终视频中的开始时间（秒）
+  timestamp_end   int,                               -- 在最终视频中的结束时间（秒）
+  status          enum(
+                    'pending',    -- 等待生成 / 合成
+                    'recording',  -- deprecated legacy recorder 状态
+                    'completed',  -- 生成完成
+                    'failed',     -- 生成失败
+                    'skipped'     -- 用户手动跳过 / legacy recorder 跳过
+                  ) not null default 'pending',
+  created_at      timestamp default current_timestamp,
+  updated_at      timestamp default current_timestamp on update current_timestamp,
+  constraint fk_step_demo foreign key (demo_id) references demos(id) on delete cascade
 );
 ```
 
@@ -144,35 +153,27 @@ create table steps (
 
 ## 五、jobs 表
 
-> 后台任务追踪，配合 BullMQ + Supabase Realtime 实现前端实时状态更新。
+> 后台任务追踪，配合 BullMQ 实现异步状态更新。
 
 ```sql
-create type job_type as enum (
-  'parse',        -- AI 解析步骤
-  'record',       -- Playwright 录制
-  'tts',          -- Kokoro TTS 旁白生成
-  'merge'         -- FFmpeg 合成最终视频
-);
-
-create type job_status as enum (
-  'pending',      -- 等待执行
-  'running',      -- 执行中
-  'completed',    -- 完成
-  'failed',       -- 失败
-  'retrying'      -- 重试中
-);
-
 create table jobs (
-  id              uuid primary key default gen_random_uuid(),
-  demo_id         uuid not null references demos(id) on delete cascade,
-  type            job_type not null,
-  status          job_status not null default 'pending',
-  attempt         int not null default 1,            -- 当前重试次数
-  max_attempts    int not null default 3,
+  id              varchar(36) primary key,
+  demo_id         varchar(36) not null,              -- references demos(id)
+  type            enum(
+                    'parse',   -- 官网抓取、截图、AI 场景生成
+                    'record',  -- deprecated legacy recorder 任务，非主流程
+                    'tts',     -- Kokoro TTS 旁白生成
+                    'merge'    -- HyperFrames 合成最终视频
+                  ) not null,
+  status          enum(
+                    'running',   -- 执行中
+                    'completed', -- 完成
+                    'failed'     -- 失败
+                  ) not null default 'running',
   error_message   text,
-  started_at      timestamptz,
-  completed_at    timestamptz,
-  created_at      timestamptz default now()
+  started_at      timestamp not null,
+  completed_at    timestamp null,
+  constraint fk_job_demo foreign key (demo_id) references demos(id) on delete cascade
 );
 ```
 
@@ -193,23 +194,14 @@ create index idx_subs_user_id     on subscriptions(user_id);
 
 ---
 
-## 七、Supabase Realtime 订阅
+## 七、状态查询
 
-前端通过 Supabase Realtime 监听 `demos` 表状态变化，无需轮询。
+前端通过 API 查询 `demos` 表状态变化。后续如需要更实时的体验，可在 MySQL 之上增加 SSE 或 WebSocket。
 
 ```typescript
-// 前端监听 Demo 状态实时更新
-supabase
-  .channel('demo-status')
-  .on('postgres_changes', {
-    event: 'UPDATE',
-    schema: 'public',
-    table: 'demos',
-    filter: `id=eq.${demoId}`
-  }, (payload) => {
-    updateDemoStatus(payload.new.status)
-  })
-  .subscribe()
+const res = await fetch(`/api/demos/${demoId}`, { cache: 'no-store' })
+const demo = await res.json()
+updateDemoStatus(demo.data.status)
 ```
 
 ---
@@ -221,16 +213,13 @@ Demo 状态流转：
 
 pending
   ↓
-parsing ──────────────→ review（等用户确认步骤）
+parsing ──────────────→ review（等用户确认场景）
                               ↓
-                         recording
-                         ↙       ↘
-                    paused      processing
-                    （失败）      ↙       ↘
-                       ↓    completed   failed
-                    用户介入
-                       ↓
-                    recording（继续）
+                         processing
+                          ↙     ↘
+                  completed     failed
+
+recording / paused 为 deprecated legacy recorder 状态，当前主流程不再进入。
 ```
 
 ---

@@ -14,24 +14,21 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │                  Vercel — Next.js 前端                           │
 │                                                                 │
-│   Pages          API Routes          Realtime Client            │
-│   /dashboard     /api/demos          supabase.channel()         │
-│   /demo/[id]     /api/steps          监听 demo 状态变化          │
+│   Pages          API Routes          Polling / Server State     │
+│   /dashboard     /api/demos          查询 demo 状态变化          │
+│   /demo/[id]     /api/steps                                      │
 │   /share/[token] /api/webhooks                                  │
 └──────┬──────────────┬───────────────────────┬───────────────────┘
        │              │                       │
-       │ Auth         │ DB / Storage          │ Realtime
+       │ Auth         │ DB                    │ Storage
        ▼              ▼                       ▼
 ┌────────────┐  ┌─────────────────────────────────────────────────┐
-│   Clerk    │  │                   Supabase                      │
+│  JWT Auth  │  │                    MySQL                        │
 │            │  │                                                 │
-│  用户认证   │  │  PostgreSQL      Storage         Realtime       │
-│  JWT 签发  │  │  ─────────────   ─────────────   ─────────────  │
-│  Webhook   │  │  users           /videos/        demos 表变更   │
-│  同步用户   │  │  subscriptions   /{user_id}/     推送给前端     │
-└────────────┘  │  demos           /{demo_id}/                    │
-                │  steps           final.mp4                      │
-                │  jobs                                           │
+│  用户认证   │  │  users           subscriptions                  │
+│  Cookie    │  │  demos           steps                          │
+│  会话校验   │  │  jobs                                            │
+└────────────┘  │                                                 │
                 └──────────────────┬──────────────────────────────┘
                                    │ 读写
                                    ▼
@@ -42,21 +39,18 @@
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │                                                         │   │
 │  │  Queue: parse-queue                                     │   │
-│  │  ① 调用 OpenRouter API 解析步骤                          │   │
-│  │  ② 写入 steps 表，更新 demo.status = 'review'           │   │
-│  │                                                         │   │
-│  │  Queue: record-queue                                    │   │
-│  │  ③ Playwright 启动 Chromium                             │   │
-│  │  ④ 按 steps 顺序执行操作并录屏（.webm）                  │   │
-│  │  ⑤ 失败 → 更新 demo.status = 'paused'，通知用户         │   │
+│  │    1. 抓取官网公开内容                                  │   │
+│  │    2. 捕获可用官网截图                                  │   │
+│  │    3. 调用 AI 生成 Product Story 场景                   │   │
+│  │    4. 写入 steps，更新 demo.status = review             │   │
 │  │                                                         │   │
 │  │  Queue: tts-queue                                       │   │
-│  │  ⑥ Kokoro 生成每步旁白音频（.wav）                       │   │
+│  │    5. 为每个场景生成旁白音频                            │   │
 │  │                                                         │   │
 │  │  Queue: merge-queue                                     │   │
-│  │  ⑦ FFmpeg 合并录屏 + 旁白 → final.mp4                   │   │
-│  │  ⑧ 上传至 Supabase Storage                              │   │
-│  │  ⑨ 更新 demo.status = 'completed' + video_url          │   │
+│  │    6. HyperFrames 合成官网截图 + 动态包装 + 旁白         │   │
+│  │    7. 上传 R2 或本地视频目录                            │   │
+│  │    8. 更新 demo.status = completed                      │   │
 │  │                                                         │   │
 │  └─────────────────────────────────────────────────────────┘   │
 └──────────────────────────┬──────────────────────────────────────┘
@@ -65,7 +59,8 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │              Railway — Redis（BullMQ 队列存储）                   │
 │                                                                 │
-│   parse-queue     record-queue     tts-queue     merge-queue    │
+│   parse-queue     tts-queue     merge-queue                     │
+│   record-queue 仅为旧录制路径保留，deprecated / 非主流程         │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -76,9 +71,9 @@
 ### 流程 A：生成 Demo
 
 ```
-用户                 Next.js              Supabase          Worker(Railway)
+用户                 Next.js                MySQL           Worker(Railway)
  │                     │                     │                    │
- │  输入 URL + 描述     │                     │                    │
+ │  输入 URL + brief    │                     │                    │
  │──────────────────►  │                     │                    │
  │                     │  写入 demos 表       │                    │
  │                     │  status = pending   │                    │
@@ -88,28 +83,28 @@
  │  返回 demo_id        │                     │                    │
  │◄──────────────────  │                     │                    │
  │                     │                     │                    │
- │  (Realtime 订阅)    │                     │  调用 OpenRouter   │
+ │  (状态查询)         │                     │  抓取官网 + 截图   │
  │                     │                     │◄───────────────────│
+ │                     │                     │  DeepSeek 生成场景 │
  │                     │                     │  写入 steps        │
  │                     │                     │  status = review   │
  │                     │                     │────────────────────│
- │  ← 实时推送状态变更  │                     │                    │
+ │  ← 查询到状态变更    │                     │                    │
  │◄──────────────────────────────────────────│                    │
  │                     │                     │                    │
- │  查看步骤卡片        │                     │                    │
- │  确认 / 编辑步骤     │                     │                    │
+ │  查看场景卡片        │                     │                    │
+ │  确认 / 编辑场景     │                     │                    │
  │──────────────────►  │                     │                    │
- │                     │  入队 record-queue  │                    │
+ │                     │  入队 tts-queue     │                    │
  │                     │─────────────────────────────────────────►│
  │                     │                     │                    │
- │                     │                     │  Playwright 录制   │
  │                     │                     │  Kokoro TTS        │
- │                     │                     │  FFmpeg 合成       │
+ │                     │                     │  HyperFrames 合成  │
  │                     │                     │                    │
- │                     │                     │  上传 Storage      │
+ │                     │                     │  上传 R2/本地目录  │
  │                     │                     │  status=completed  │
  │                     │                     │◄───────────────────│
- │  ← 实时推送完成      │                     │                    │
+ │  ← 查询到完成        │                     │                    │
  │◄──────────────────────────────────────────│                    │
  │                     │                     │                    │
  │  查看视频 + 分享链接 │                     │                    │
@@ -117,37 +112,29 @@
 
 ---
 
-### 流程 B：录制失败介入
+### 流程 B：素材兜底
 
 ```
-Worker                  Supabase              用户
+Worker                    MySQL               用户
   │                        │                   │
-  │  Step 3 录制失败        │                   │
-  │  更新 step.status=failed│                   │
-  │  更新 demo.status=paused│                   │
+  │  官网抓取或截图失败      │                   │
+  │  场景 visual_type=template                  │
+  │  保持 demo.status=review/processing         │
   │────────────────────────►│                   │
-  │                         │  Realtime 推送    │
+  │  用模板动态图形继续合成   │                   │
+  │────────────────────────►│                   │
+  │                         │  状态查询显示进度  │
   │                         │──────────────────►│
-  │                         │                   │  收到通知
-  │                         │                   │  "Step 3 失败，
-  │                         │                   │   请手动处理"
-  │                         │                   │
-  │                         │  用户选择操作      │
-  │                         │  ○ 跳过此步骤      │
-  │                         │  ○ 重新尝试        │
-  │                         │  ○ 手动描述此步    │
-  │                         │◄──────────────────│
-  │                         │                   │
-  │  继续录制下一步          │                   │
-  │◄────────────────────────│                   │
 ```
+
+> 旧的真实浏览器点击录制失败介入流程已从主路径移除，仅作为 deprecated legacy recorder 能力保留。
 
 ---
 
 ### 流程 C：订阅支付
 
 ```
-用户                 Next.js              LemonSqueezy        Supabase
+用户                 Next.js              LemonSqueezy          MySQL
  │                     │                      │                  │
  │  无额度，点击生成    │                      │                  │
  │──────────────────►  │                      │                  │
@@ -176,11 +163,11 @@ Worker                  Supabase              用户
 | 服务 | 职责 | 部署平台 |
 |------|------|----------|
 | Next.js | 页面渲染、API Routes、Webhook 接收 | Vercel |
-| Clerk | 用户认证、JWT、用户同步 Webhook | 托管服务 |
-| Supabase | 数据库、文件存储、Realtime 推送 | 托管服务 |
+| JWT Auth | 自管账号、JWT Cookie、会话校验 | Next.js |
+| MySQL | 用户、订阅、demo、场景、任务历史 | 自管 / 托管 MySQL |
 | Redis | BullMQ 队列存储 | Railway |
-| Worker | Playwright 录制、TTS、FFmpeg 合成 | Railway |
-| OpenRouter | AI 步骤解析 | 托管服务 |
+| Worker | 官网抓取、Playwright 截图、TTS、HyperFrames 合成 | Railway |
+| DeepSeek | AI Product Story 场景生成 | 托管服务 |
 | Kokoro | 英文 TTS 旁白生成 | Worker 内运行 |
 | LemonSqueezy | 订阅支付、Webhook | 托管服务 |
 
@@ -189,38 +176,33 @@ Worker                  Supabase              用户
 ## 四、环境变量清单
 
 ```bash
-# Clerk
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
-CLERK_SECRET_KEY=
-CLERK_WEBHOOK_SECRET=
-
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+# Auth / Database
+JWT_SECRET=
+DATABASE_URL=
 
 # Redis（BullMQ）
 REDIS_URL=
 
-# OpenRouter
-OPENROUTER_API_KEY=
+# AI
+DEEPSEEK_API_KEY=
 
 # LemonSqueezy
 LEMONSQUEEZY_API_KEY=
 LEMONSQUEEZY_WEBHOOK_SECRET=
 LEMONSQUEEZY_STORE_ID=
 
-# Worker 内部
-SUPABASE_URL=
-SUPABASE_SERVICE_ROLE_KEY=
-REDIS_URL=
+# Storage / Worker 内部
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_BUCKET=
+VIDEO_OUTPUT_DIR=
 ```
 
 ---
 
 ## 五、待定事项
 
-- [ ] Worker 并发数设置（同时处理几个录制任务）
-- [ ] Supabase Storage 视频文件过期策略（免费用户视频保留多久）
-- [ ] OpenRouter 免费模型限速处理（失败重试策略）
+- [ ] Worker 并发数设置（同时处理几个视频生成任务）
+- [ ] R2 / 本地视频文件过期策略（免费用户视频保留多久）
+- [ ] DeepSeek 限速处理（失败重试策略）
 - [ ] Kokoro 模型在 Railway 的内存配置（建议 2GB+）
