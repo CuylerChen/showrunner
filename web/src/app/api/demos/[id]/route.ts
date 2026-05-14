@@ -44,18 +44,24 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const { id } = await params
   const body = await req.json().catch(() => ({}))
   const schema2 = z.object({
-    title:    z.string().min(1).max(100).optional(),
-    cta_url:  z.string().url().max(2048).nullable().optional(),
-    cta_text: z.string().max(100).nullable().optional(),
+    title:      z.string().min(1).max(100).optional(),
+    audience:   z.string().max(300).nullable().optional(),
+    key_points: z.string().max(1000).nullable().optional(),
+    brand_tone: z.string().max(80).nullable().optional(),
+    cta_url:    z.string().url().max(2048).nullable().optional(),
+    cta_text:   z.string().max(100).nullable().optional(),
   }).refine(d => Object.keys(d).length > 0, { message: '至少提供一个更新字段' })
 
   const parsed = schema2.safeParse(body)
   if (!parsed.success) return err('VALIDATION_ERROR', '参数错误')
 
   const updates: Record<string, unknown> = {}
-  if (parsed.data.title    !== undefined) updates.title    = parsed.data.title
-  if (parsed.data.cta_url  !== undefined) updates.cta_url  = parsed.data.cta_url
-  if (parsed.data.cta_text !== undefined) updates.cta_text = parsed.data.cta_text
+  if (parsed.data.title      !== undefined) updates.title      = parsed.data.title
+  if (parsed.data.audience   !== undefined) updates.audience   = parsed.data.audience
+  if (parsed.data.key_points !== undefined) updates.key_points = parsed.data.key_points
+  if (parsed.data.brand_tone !== undefined) updates.brand_tone = parsed.data.brand_tone
+  if (parsed.data.cta_url    !== undefined) updates.cta_url    = parsed.data.cta_url
+  if (parsed.data.cta_text   !== undefined) updates.cta_text   = parsed.data.cta_text
 
   const updated = await db
     .update(schema.demos)

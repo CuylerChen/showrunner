@@ -9,6 +9,11 @@ import { ok, err } from '@/lib/api'
 const CreateDemoSchema = z.object({
   product_url: z.string().url('请输入有效的产品 URL'),
   description: z.string().max(500).nullable().optional(),
+  audience: z.string().max(300).nullable().optional(),
+  key_points: z.string().max(1000).nullable().optional(),
+  brand_tone: z.string().max(80).nullable().optional(),
+  cta_text: z.string().max(100).nullable().optional(),
+  cta_url: z.string().url('请输入有效的 CTA URL').max(2048).nullable().optional().or(z.literal('')),
 })
 
 // GET /api/demos — 获取当前用户的 Demo 列表
@@ -61,7 +66,8 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return err('VALIDATION_ERROR', parsed.error.issues.map(e => e.message).join(', '))
   }
-  const { product_url, description } = parsed.data
+  const { product_url, description, audience, key_points, brand_tone, cta_text, cta_url } = parsed.data
+  const normalizedCtaUrl = cta_url === '' ? null : cta_url ?? null
 
   // 检查额度
   const sub = await getSubscription(user.id)
@@ -81,6 +87,11 @@ export async function POST(req: NextRequest) {
     user_id:     user.id,
     product_url,
     description: description ?? null,
+    audience:    audience ?? null,
+    key_points:  key_points ?? null,
+    brand_tone:  brand_tone ?? null,
+    cta_text:    cta_text ?? null,
+    cta_url:     normalizedCtaUrl,
     status:      'pending',
     share_token,
   })
@@ -96,6 +107,11 @@ export async function POST(req: NextRequest) {
     demoId,
     productUrl:  product_url,
     description: description ?? null,
+    audience: audience ?? null,
+    keyPoints: key_points ?? null,
+    brandTone: brand_tone ?? null,
+    ctaText: cta_text ?? null,
+    ctaUrl: normalizedCtaUrl,
   }, {
     attempts: 3,
     backoff: { type: 'exponential', delay: 2000 },
