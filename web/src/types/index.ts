@@ -33,8 +33,11 @@ export interface Demo {
   video_url: string | null
   duration: number | null
   share_token: string
+  view_count?: number | null
   cta_text?: string | null
   cta_url?: string | null
+  session_cookies?: string | null
+  login_video_path?: string | null
   error_message: string | null
   created_at: string
   updated_at: string
