@@ -2,17 +2,29 @@ import { Worker, Job } from 'bullmq'
 import { connection } from '../utils/redis'
 import { db, demos, steps, jobs } from '../utils/db'
 import { eq } from 'drizzle-orm'
-import { parseSteps } from '../services/parser'
+import { parseProductStory, type ParseStepsOptions } from '../services/parser'
 
 export interface ParseJobData {
   demoId: string
   productUrl: string
   description: string | null
+  audience?: string
+  keyPoints?: string
+  brandTone?: string
+  ctaText?: string
+  ctaUrl?: string
   isReparse?: boolean   // true 时：用登录态重新解析（删除旧步骤，用 session_cookies 加载页面）
 }
 
 async function processJob(job: Job<ParseJobData>) {
   const { demoId, productUrl, description, isReparse } = job.data
+  const options: ParseStepsOptions = {
+    audience: job.data.audience,
+    keyPoints: job.data.keyPoints,
+    brandTone: job.data.brandTone,
+    ctaText: job.data.ctaText,
+    ctaUrl: job.data.ctaUrl,
+  }
   console.log(`[parse] 开始解析 demo=${demoId}${isReparse ? '（重新解析）' : ''}`)
 
   // 1. 更新状态为 parsing
@@ -44,7 +56,8 @@ async function processJob(job: Job<ParseJobData>) {
   // 4. 调用 AI 分析公开资料，生成推广视频场景。
   // 新版推广视频链路不再使用 Playwright 登录态解析；sessionStateJson 仅保留给旧数据兼容。
   void sessionStateJson
-  const rawSteps = await parseSteps(productUrl, description)
+  const result = await parseProductStory(demoId, productUrl, description, options)
+  const rawSteps = result.steps
 
   // 5. 批量写入 steps 表
   const stepsToInsert = rawSteps.map(s => ({
@@ -52,18 +65,24 @@ async function processJob(job: Job<ParseJobData>) {
     demo_id:           demoId,
     position:          s.position,
     title:             s.title,
-    action_type:       s.action_type as 'navigate' | 'click' | 'fill' | 'wait' | 'assert',
-    selector:          s.selector ?? null,
-    value:             s.value ?? null,
+    action_type:       'wait' as const,
+    selector:          null,
+    value:             '3000',
     narration:         s.narration ?? null,
-    wait_for_selector: (s as { wait_for_selector?: string | null }).wait_for_selector ?? null,
+    visual_type:       s.visual_type,
+    visual_asset_url:  s.visual_asset_url ?? null,
+    wait_for_selector: null,
     status:            'pending' as const,
   }))
 
   await db.insert(steps).values(stepsToInsert)
 
   // 5. 更新 demo 状态为 review
-  await db.update(demos).set({ status: 'review' }).where(eq(demos.id, demoId))
+  await db.update(demos).set({
+    status: 'review',
+    source_summary: result.sourceSummary,
+    thumbnail_url: result.thumbnailUrl,
+  }).where(eq(demos.id, demoId))
 
   // 6. 标记 job 完成
   await db
