@@ -1,7 +1,8 @@
 import fs from 'fs/promises'
 import path from 'path'
 import { chromium } from 'playwright'
-import { Paths } from '../../utils/paths'
+
+const VIDEO_DIR = process.env.VIDEO_DIR ?? '/data/videos'
 
 export interface ScreenshotAsset {
   url: string
@@ -46,7 +47,7 @@ export async function captureWebsiteScreenshots(demoId: string, urls: string[]):
   const uniqueUrls = Array.from(new Set(urls.filter(Boolean))).slice(0, 5)
   if (!uniqueUrls.length) return []
 
-  const assetDir = path.join(Paths.finalDir(demoId), 'assets')
+  const assetDir = path.join(VIDEO_DIR, demoId, 'assets')
   await fs.mkdir(assetDir, { recursive: true })
 
   const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined

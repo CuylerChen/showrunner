@@ -24,6 +24,8 @@ export interface PromotionalScene {
   narration?: string | null
   audioPath?: string
   duration: number
+  visualType?: 'screenshot' | 'template' | 'cta'
+  visualAssetPath?: string | null
 }
 
 const WIDTH = 1280

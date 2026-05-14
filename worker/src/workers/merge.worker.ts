@@ -49,6 +49,8 @@ async function processJob(job: Job<MergeJobData>) {
         narration: step.narration,
         audioPath: audioPaths[index],
         duration: Math.max(2, stepTimestamps[index]?.end - stepTimestamps[index]?.start || 4),
+        visualType: step.visual_type ?? 'template',
+        visualAssetPath: step.visual_asset_url ?? null,
       })),
       Paths.finalDir(demoId),
     )
