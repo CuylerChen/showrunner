@@ -154,12 +154,18 @@ function fallbackScenes(productUrl: string, description: string | null): PromoSc
   ]
 }
 
-async function callDeepSeekForScenes(productUrl: string, description: string | null, pages: PageData[]): Promise<PromoScene[]> {
-  const apiKey = process.env.DEEPSEEK_API_KEY
+function getOpenAIChatCompletionsUrl(): string {
+  const baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
+  return `${baseUrl.replace(/\/+$/, '')}/chat/completions`
+}
+
+async function callOpenAIForScenes(productUrl: string, description: string | null, pages: PageData[]): Promise<PromoScene[]> {
+  const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) {
-    console.warn('[parser] DEEPSEEK_API_KEY 未配置，使用推广视频兜底脚本')
+    console.warn('[parser] OPENAI_API_KEY 未配置，使用推广视频兜底脚本')
     return fallbackScenes(productUrl, description)
   }
+  const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'
 
   const sourceSummary = pages.map((page, index) => [
     `PAGE ${index + 1}: ${page.url}`,
@@ -193,14 +199,14 @@ Rules:
     pages.length ? `Website analysis:\n${sourceSummary}` : 'No website content was available.',
   ].filter(Boolean).join('\n\n')
 
-  const resp = await fetch('https://api.deepseek.com/chat/completions', {
+  const resp = await fetch(getOpenAIChatCompletionsUrl(), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'deepseek-chat',
+      model,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userMessage },
@@ -212,7 +218,7 @@ Rules:
 
   if (!resp.ok) {
     const errText = await resp.text()
-    throw new Error(`DeepSeek API 错误 ${resp.status}: ${errText.slice(0, 200)}`)
+    throw new Error(`OpenAI Chat Completions API 错误 ${resp.status}: ${errText.slice(0, 200)}`)
   }
 
   const data = await resp.json() as { choices?: Array<{ message?: { content?: string } }> }
@@ -244,7 +250,7 @@ export async function parseSteps(
     console.warn(`[parser] 网页分析失败，使用用户描述继续: ${(err as Error).message}`)
   }
 
-  const scenes = await callDeepSeekForScenes(productUrl, description, pages)
+  const scenes = await callOpenAIForScenes(productUrl, description, pages)
   console.log(`[parser] 推广视频脚本生成完成，共 ${scenes.length} 个场景`)
 
   return scenes.map(scene => ({

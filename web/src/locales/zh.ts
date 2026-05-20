@@ -21,7 +21,7 @@ export const zh = {
     featuresTitle: '自动化产品推广视频生成',
     featuresSub: '三步生成专业产品介绍视频',
     features: [
-      { title: 'AI 智能分析', desc: 'DeepSeek 分析公开页面和介绍资料，提炼产品卖点' },
+      { title: 'AI 智能分析', desc: 'OpenAI 兼容接口分析公开页面和介绍资料，提炼产品卖点' },
       { title: '自动生成分镜', desc: '生成 Hook、功能亮点、价值主张和 CTA 场景' },
       { title: '一键分享', desc: 'HyperFrames 合成专属视频，带章节导航的分享页' },
     ] as { title: string; desc: string }[],

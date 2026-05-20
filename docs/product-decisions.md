@@ -122,7 +122,7 @@ Playwright 录制 → TTS 旁白 → FFmpeg 合成
 | 文件存储 | Supabase Storage |
 | 任务队列 | BullMQ + Redis |
 | 录制 Worker | Railway（Node.js + Playwright + FFmpeg） |
-| AI 步骤解析 | OpenRouter 免费模型（DeepSeek V3 / Llama 3.3 70B） |
+| AI 步骤解析 | OpenAI 兼容 Chat Completions 接口 |
 | TTS | Kokoro（英文主，中文辅） |
 | 订阅支付 | LemonSqueezy |
 | 前端部署 | Vercel |
