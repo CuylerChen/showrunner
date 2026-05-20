@@ -1,6 +1,8 @@
 # Showrunner — 部署指南
 > 版本：v0.2 | 更新时间：2026-02-19
 
+> Historical / deprecated: this guide documents the earlier Clerk + Supabase + OpenRouter deployment path and is out of scope for the current Marketing Video MVP architecture. Current architecture uses MySQL, self-managed JWT auth, DeepSeek, website screenshot capture, and HyperFrames rendering.
+
 ## 部署架构
 
 ```
@@ -170,7 +172,6 @@ docker compose logs -f worker
 正常输出：
 ```
 [parse worker] ready
-[record worker] ready
 [tts worker] ready
 [merge worker] ready
 ```
@@ -237,7 +238,7 @@ Vercel 部署完成、获得域名后，回到 Clerk 完成 2.4 步骤的 Webhoo
 1. 访问 https://your-domain.vercel.app
    ✅ 落地页正常显示
 
-2. 点击「免费开始」→ 注册账号
+2. 点击「免费开始」→ 创建账户
    ✅ Clerk 注册页正常
    ✅ 注册成功后跳转 /dashboard
 

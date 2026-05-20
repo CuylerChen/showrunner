@@ -43,12 +43,23 @@ async function processJob(job: Job<MergeJobData>) {
   let loginDuration = 0
 
   if ((renderMode === 'promotional' || !videoPath) && demoSteps?.length) {
+    const demoRow = await db
+      .select({ cta_text: demos.cta_text, cta_url: demos.cta_url, brand_tone: demos.brand_tone })
+      .from(demos)
+      .where(eq(demos.id, demoId))
+      .then(rows => rows[0] ?? null)
+
     const rendered = await renderPromotionalVideo(
       demoSteps.map((step, index) => ({
         title: step.title,
         narration: step.narration,
         audioPath: audioPaths[index],
         duration: Math.max(2, stepTimestamps[index]?.end - stepTimestamps[index]?.start || 4),
+        visualType: step.visual_type ?? 'template',
+        visualAssetPath: step.visual_asset_url ?? null,
+        ctaText: demoRow?.cta_text ?? null,
+        ctaUrl: demoRow?.cta_url ?? null,
+        brandTone: demoRow?.brand_tone ?? null,
       })),
       Paths.finalDir(demoId),
     )

@@ -12,6 +12,8 @@ export type ActionType = 'navigate' | 'click' | 'fill' | 'wait' | 'assert'
 
 export type StepStatus = 'pending' | 'recording' | 'completed' | 'failed' | 'skipped'
 
+export type VisualType = 'screenshot' | 'template' | 'cta'
+
 export type PlanType = 'free' | 'starter' | 'pro'
 
 export type SubStatus = 'active' | 'cancelled' | 'expired'
@@ -22,10 +24,20 @@ export interface Demo {
   title: string | null
   product_url: string
   description: string | null
+  audience?: string | null
+  key_points?: string | null
+  brand_tone?: string | null
+  source_summary?: string | null
+  thumbnail_url?: string | null
   status: DemoStatus
   video_url: string | null
   duration: number | null
   share_token: string
+  view_count: number
+  cta_text?: string | null
+  cta_url?: string | null
+  session_cookies?: string | null
+  login_video_path?: string | null
   error_message: string | null
   created_at: string
   updated_at: string
@@ -40,6 +52,8 @@ export interface Step {
   selector: string | null
   value: string | null
   narration: string | null
+  visual_type: VisualType
+  visual_asset_url?: string | null
   wait_for_selector: string | null
   timestamp_start: number | null
   timestamp_end: number | null

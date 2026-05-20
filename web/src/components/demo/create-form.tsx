@@ -24,16 +24,6 @@ function IconArrow() {
   )
 }
 
-function IconChevronDown({ open }: { open: boolean }) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8"
-      strokeLinecap="round" strokeLinejoin="round"
-      className={`w-4 h-4 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>
-      <path d="M4 6l4 4 4-4" />
-    </svg>
-  )
-}
-
 function IconCheck() {
   return (
     <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
@@ -61,7 +51,11 @@ export function CreateForm() {
 
   const [url, setUrl]           = useState('')
   const [desc, setDesc]         = useState('')
-  const [descOpen, setDescOpen] = useState(false)
+  const [audience, setAudience] = useState('')
+  const [keyPoints, setKeyPoints] = useState('')
+  const [brandTone, setBrandTone] = useState('')
+  const [ctaText, setCtaText] = useState('')
+  const [ctaUrl, setCtaUrl] = useState('')
   const [loading, setLoading]   = useState(false)
   const [success, setSuccess]   = useState(false)
   const [error, setError]       = useState<string | null>(null)
@@ -76,13 +70,26 @@ export function CreateForm() {
       const res = await fetch('/api/demos', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ product_url: url, description: desc || null }),
+        body:    JSON.stringify({
+          product_url: url,
+          description: desc || null,
+          audience: audience || null,
+          key_points: keyPoints || null,
+          brand_tone: brandTone || null,
+          cta_text: ctaText || null,
+          cta_url: ctaUrl || null,
+        }),
       })
       const data = await res.json()
       if (!data.success) { setError(data.error?.message ?? cf.errorDefault); return }
       setSuccess(true)
       setUrl('')
       setDesc('')
+      setAudience('')
+      setKeyPoints('')
+      setBrandTone('')
+      setCtaText('')
+      setCtaUrl('')
       // 2 秒后跳转到视频列表
       setTimeout(() => {
         setSuccess(false)
@@ -200,35 +207,100 @@ export function CreateForm() {
             ))}
           </div>
 
-          {/* 可选描述（折叠式）*/}
-          <div>
-            <button
-              type="button"
-              onClick={() => setDescOpen(v => !v)}
-              className="flex items-center gap-1.5 text-xs font-medium transition-colors cursor-pointer"
-              style={{ color: descOpen ? '#6366F1' : '#64748B' }}
-            >
-              <IconChevronDown open={descOpen} />
-              {cf.descLabel}
-              <span style={{ color: '#94A3B8', fontWeight: 400 }}>{cf.descOptional}</span>
-            </button>
-
-            {descOpen && (
-              <div className="mt-2">
-                <input
-                  type="text"
-                  placeholder={cf.descPlaceholder}
-                  value={desc}
-                  onChange={e => setDesc(e.target.value)}
-                  className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-                  style={{
-                    background: '#F8FAFC',
-                    border: '1.5px solid #E2E8F0',
-                    color: '#0F172A',
-                  }}
-                />
-              </div>
-            )}
+          {/* Marketing brief */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="space-y-1.5">
+              <span className="text-xs font-medium" style={{ color: '#64748B' }}>{cf.audienceLabel}</span>
+              <input
+                type="text"
+                placeholder={cf.audiencePlaceholder}
+                value={audience}
+                onChange={e => setAudience(e.target.value)}
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+                style={{
+                  background: '#F8FAFC',
+                  border: '1.5px solid #E2E8F0',
+                  color: '#0F172A',
+                }}
+              />
+            </label>
+            <label className="space-y-1.5">
+              <span className="text-xs font-medium" style={{ color: '#64748B' }}>{cf.brandToneLabel}</span>
+              <input
+                type="text"
+                placeholder={cf.brandTonePlaceholder}
+                value={brandTone}
+                onChange={e => setBrandTone(e.target.value)}
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+                style={{
+                  background: '#F8FAFC',
+                  border: '1.5px solid #E2E8F0',
+                  color: '#0F172A',
+                }}
+              />
+            </label>
+            <label className="space-y-1.5">
+              <span className="text-xs font-medium" style={{ color: '#64748B' }}>{cf.ctaTextLabel}</span>
+              <input
+                type="text"
+                placeholder={cf.ctaTextPlaceholder}
+                value={ctaText}
+                onChange={e => setCtaText(e.target.value)}
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+                style={{
+                  background: '#F8FAFC',
+                  border: '1.5px solid #E2E8F0',
+                  color: '#0F172A',
+                }}
+              />
+            </label>
+            <label className="space-y-1.5">
+              <span className="text-xs font-medium" style={{ color: '#64748B' }}>{cf.ctaUrlLabel}</span>
+              <input
+                type="url"
+                placeholder={cf.ctaUrlPlaceholder}
+                value={ctaUrl}
+                onChange={e => setCtaUrl(e.target.value)}
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+                style={{
+                  background: '#F8FAFC',
+                  border: '1.5px solid #E2E8F0',
+                  color: '#0F172A',
+                }}
+              />
+            </label>
+            <label className="space-y-1.5 sm:col-span-2">
+              <span className="text-xs font-medium" style={{ color: '#64748B' }}>{cf.keyPointsLabel}</span>
+              <textarea
+                placeholder={cf.keyPointsPlaceholder}
+                value={keyPoints}
+                onChange={e => setKeyPoints(e.target.value)}
+                rows={3}
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none resize-none"
+                style={{
+                  background: '#F8FAFC',
+                  border: '1.5px solid #E2E8F0',
+                  color: '#0F172A',
+                }}
+              />
+            </label>
+            <label className="space-y-1.5 sm:col-span-2">
+              <span className="text-xs font-medium" style={{ color: '#64748B' }}>
+                {cf.descLabel} <span style={{ color: '#94A3B8', fontWeight: 400 }}>{cf.descOptional}</span>
+              </span>
+              <input
+                type="text"
+                placeholder={cf.descPlaceholder}
+                value={desc}
+                onChange={e => setDesc(e.target.value)}
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+                style={{
+                  background: '#F8FAFC',
+                  border: '1.5px solid #E2E8F0',
+                  color: '#0F172A',
+                }}
+              />
+            </label>
           </div>
 
           {/* 错误提示 */}

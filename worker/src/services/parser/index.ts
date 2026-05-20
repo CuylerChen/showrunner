@@ -1,9 +1,15 @@
 import { Step } from '../../types'
+import { captureWebsiteScreenshots, type ScreenshotAsset } from './assets'
+import {
+  generateProductStoryScenes,
+  type ProductStoryInput,
+  type ProductStoryScene,
+} from './scenes'
 
 const MAX_PAGES = 6
 const MAX_PAGE_TEXT = 2600
 
-interface PageData {
+export interface PageData {
   url: string
   title: string
   description: string
@@ -11,10 +17,24 @@ interface PageData {
   text: string
 }
 
-interface PromoScene {
-  position: number
-  title: string
-  narration: string
+export interface WebsiteAnalysis {
+  pages: PageData[]
+  urls: string[]
+  sourceSummary: string
+}
+
+export interface ParseStepsOptions {
+  audience?: string
+  keyPoints?: string
+  brandTone?: string
+  ctaText?: string
+  ctaUrl?: string
+}
+
+export interface ParseProductStoryResult {
+  steps: ProductStoryScene[]
+  sourceSummary: string
+  thumbnailUrl: string | null
 }
 
 function stripHtml(html: string): string {
@@ -104,13 +124,22 @@ async function fetchHtml(url: string): Promise<string> {
   return await resp.text()
 }
 
-async function analyzePublicWebsite(productUrl: string): Promise<PageData[]> {
+function summarizePages(pages: PageData[]): string {
+  return pages.map((page, index) => [
+    `PAGE ${index + 1}: ${page.url}`,
+    page.title ? `Title: ${page.title}` : '',
+    page.description ? `Description: ${page.description}` : '',
+    page.headings.length ? `Headings: ${page.headings.join(' | ')}` : '',
+    `Text: ${page.text}`,
+  ].filter(Boolean).join('\n')).join('\n\n')
+}
+
+export async function analyzePublicWebsite(productUrl: string): Promise<WebsiteAnalysis> {
   const homeHtml = await fetchHtml(productUrl)
-  const urls = [productUrl, ...extractLinks(homeHtml, productUrl)]
-  const uniqueUrls = Array.from(new Set(urls)).slice(0, MAX_PAGES)
+  const urls = Array.from(new Set([productUrl, ...extractLinks(homeHtml, productUrl)])).slice(0, MAX_PAGES)
   const pages: PageData[] = []
 
-  for (const url of uniqueUrls) {
+  for (const url of urls) {
     try {
       const html = url === productUrl ? homeHtml : await fetchHtml(url)
       pages.push({
@@ -125,141 +154,93 @@ async function analyzePublicWebsite(productUrl: string): Promise<PageData[]> {
     }
   }
 
-  return pages
-}
-
-function fallbackScenes(productUrl: string, description: string | null): PromoScene[] {
-  const product = description?.split(/[.。!！\n]/)[0]?.trim() || new URL(productUrl).hostname.replace(/^www\./, '')
-  return [
-    {
-      position: 1,
-      title: `Meet ${product}`,
-      narration: `${product} helps teams understand the product, communicate the value, and move buyers from curiosity to action.`,
-    },
-    {
-      position: 2,
-      title: 'Built for the problem your customers feel every day',
-      narration: 'The story starts with a clear customer problem, then shows how the product removes friction and creates a better workflow.',
-    },
-    {
-      position: 3,
-      title: 'Turn features into benefits',
-      narration: 'Each core capability is translated into a concrete outcome, so viewers understand why the product matters.',
-    },
-    {
-      position: 4,
-      title: 'Make the next step obvious',
-      narration: 'The video closes with a simple call to action that sends qualified viewers back to the product.',
-    },
-  ]
-}
-
-function getOpenAIChatCompletionsUrl(): string {
-  const baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
-  return `${baseUrl.replace(/\/+$/, '')}/chat/completions`
-}
-
-async function callOpenAIForScenes(productUrl: string, description: string | null, pages: PageData[]): Promise<PromoScene[]> {
-  const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) {
-    console.warn('[parser] OPENAI_API_KEY 未配置，使用推广视频兜底脚本')
-    return fallbackScenes(productUrl, description)
+  return {
+    pages,
+    urls,
+    sourceSummary: summarizePages(pages),
   }
-  const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'
-
-  const sourceSummary = pages.map((page, index) => [
-    `PAGE ${index + 1}: ${page.url}`,
-    page.title ? `Title: ${page.title}` : '',
-    page.description ? `Description: ${page.description}` : '',
-    page.headings.length ? `Headings: ${page.headings.join(' | ')}` : '',
-    `Text: ${page.text}`,
-  ].filter(Boolean).join('\n')).join('\n\n')
-
-  const systemPrompt = `You are a senior product marketing video writer.
-Create a short product introduction video plan from public website content and user notes.
-Return ONLY a valid JSON array. No markdown, no explanation.
-Each item must be:
-{
-  "position": number,
-  "title": string,
-  "narration": string
-}
-Rules:
-- Create 5 to 7 scenes.
-- Scene 1 must be a hook.
-- Last scene must be a call to action.
-- Keep each narration natural for voiceover, 12 to 28 words.
-- Avoid unsupported claims, fake metrics, and invented customer names.
-- If the source is thin, write a useful but generic product marketing story.
-- Use the same language as the user's description when obvious; otherwise use English.`
-
-  const userMessage = [
-    `Product URL: ${productUrl}`,
-    description ? `User notes:\n${description}` : '',
-    pages.length ? `Website analysis:\n${sourceSummary}` : 'No website content was available.',
-  ].filter(Boolean).join('\n\n')
-
-  const resp = await fetch(getOpenAIChatCompletionsUrl(), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage },
-      ],
-      temperature: 0.5,
-      max_tokens: 1800,
-    }),
-  })
-
-  if (!resp.ok) {
-    const errText = await resp.text()
-    throw new Error(`OpenAI Chat Completions API 错误 ${resp.status}: ${errText.slice(0, 200)}`)
-  }
-
-  const data = await resp.json() as { choices?: Array<{ message?: { content?: string } }> }
-  const raw = data.choices?.[0]?.message?.content?.trim() ?? ''
-  const match = raw.match(/\[[\s\S]*\]/)
-  if (!match) throw new Error(`推广脚本返回格式错误: ${raw.slice(0, 200)}`)
-
-  const scenes = JSON.parse(match[0]) as PromoScene[]
-  if (!Array.isArray(scenes) || scenes.length === 0) throw new Error('推广脚本为空')
-
-  return scenes.slice(0, 7).map((scene, index) => ({
-    position: index + 1,
-    title: String(scene.title || `Scene ${index + 1}`).slice(0, 120),
-    narration: String(scene.narration || scene.title || '').slice(0, 500),
-  }))
 }
 
-export async function parseSteps(
-  productUrl: string,
-  description: string | null,
-): Promise<Omit<Step, 'id' | 'demo_id' | 'status' | 'timestamp_start' | 'timestamp_end'>[]> {
-  console.log('[parser] 分析公开网页并生成推广视频场景...')
-
-  let pages: PageData[] = []
-  try {
-    pages = await analyzePublicWebsite(productUrl)
-    console.log(`[parser] 完成网页分析，共 ${pages.length} 个页面`)
-  } catch (err) {
-    console.warn(`[parser] 网页分析失败，使用用户描述继续: ${(err as Error).message}`)
-  }
-
-  const scenes = await callOpenAIForScenes(productUrl, description, pages)
-  console.log(`[parser] 推广视频脚本生成完成，共 ${scenes.length} 个场景`)
-
-  return scenes.map(scene => ({
+function toStep(scene: ProductStoryScene): Omit<Step, 'id' | 'demo_id' | 'status' | 'timestamp_start' | 'timestamp_end'> {
+  return {
     position: scene.position,
     title: scene.title,
     action_type: 'wait',
     selector: null,
     value: '3000',
     narration: scene.narration,
+    visual_type: scene.visual_type,
+    visual_asset_url: scene.visual_asset_url,
     wait_for_selector: null,
-  }))
+  }
+}
+
+function buildInput(
+  productUrl: string,
+  description: string | null,
+  sourceSummary: string,
+  options: ParseStepsOptions,
+): ProductStoryInput {
+  return {
+    productUrl,
+    description: description ?? '',
+    audience: options.audience,
+    keyPoints: options.keyPoints,
+    brandTone: options.brandTone,
+    ctaText: options.ctaText,
+    ctaUrl: options.ctaUrl,
+    sourceSummary,
+  }
+}
+
+export async function parseProductStory(
+  demoId: string,
+  productUrl: string,
+  description: string | null,
+  options: ParseStepsOptions = {},
+): Promise<ParseProductStoryResult> {
+  console.log('[parser] 分析公开网页并生成 Product Story 场景...')
+
+  let analysis: WebsiteAnalysis = { pages: [], urls: [productUrl], sourceSummary: '' }
+  try {
+    analysis = await analyzePublicWebsite(productUrl)
+    console.log(`[parser] 完成网页分析，共 ${analysis.pages.length} 个页面`)
+  } catch (err) {
+    console.warn(`[parser] 网页分析失败，使用用户描述继续: ${(err as Error).message}`)
+  }
+
+  let assets: ScreenshotAsset[] = []
+  try {
+    assets = await captureWebsiteScreenshots(demoId, analysis.urls)
+    console.log(`[parser] 完成网页截图，共 ${assets.length} 张`)
+  } catch (err) {
+    console.warn(`[parser] 网页截图失败，继续使用模板画面: ${(err as Error).message}`)
+  }
+
+  const input = buildInput(productUrl, description, analysis.sourceSummary, options)
+  const steps = await generateProductStoryScenes(input, assets)
+  console.log(`[parser] Product Story 脚本生成完成，共 ${steps.length} 个场景`)
+
+  return {
+    steps,
+    sourceSummary: analysis.sourceSummary,
+    thumbnailUrl: assets[0]?.publicUrl ?? null,
+  }
+}
+
+export async function parseSteps(
+  productUrl: string,
+  description: string | null,
+  options: ParseStepsOptions = {},
+): Promise<Omit<Step, 'id' | 'demo_id' | 'status' | 'timestamp_start' | 'timestamp_end'>[]> {
+  let analysis: WebsiteAnalysis = { pages: [], urls: [productUrl], sourceSummary: '' }
+  try {
+    analysis = await analyzePublicWebsite(productUrl)
+  } catch (err) {
+    console.warn(`[parser] 网页分析失败，使用用户描述继续: ${(err as Error).message}`)
+  }
+
+  const input = buildInput(productUrl, description, analysis.sourceSummary, options)
+  const scenes = await generateProductStoryScenes(input, [])
+  return scenes.map(toStep)
 }

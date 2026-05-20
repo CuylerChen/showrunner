@@ -18,7 +18,6 @@ export default function DemoDetailPage() {
   const [steps, setSteps]     = useState<Step[]>([])
   const [loading, setLoading] = useState(true)
   const [starting, setStarting] = useState(false)
-  const [resolving, setResolving] = useState<string | null>(null)
 
   const { status, errorMessage } = useDemoRealtime(id, demo?.status ?? 'pending')
   const prevStatusRef = useRef<string>('')
@@ -31,7 +30,7 @@ export default function DemoDetailPage() {
       .finally(() => setLoading(false))
   }, [id])
 
-  // status 变为 review 时（包括重新解析完成），刷新步骤列表
+  // status 变为 review 时（包括重新解析完成），刷新场景列表
   useEffect(() => {
     if (prevStatusRef.current !== '' && prevStatusRef.current !== 'review' && status === 'review') {
       fetch(`/api/demos/${id}`)
@@ -51,16 +50,6 @@ export default function DemoDetailPage() {
     setStarting(true)
     await fetch(`/api/demos/${id}/start`, { method: 'POST' })
     setStarting(false)
-  }
-
-  async function resolveStep(stepId: string, action: 'skip' | 'retry') {
-    setResolving(stepId)
-    await fetch(`/api/demos/${id}/steps/${stepId}/resolve`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action }),
-    })
-    setResolving(null)
   }
 
   function updateStep(stepId: string, field: 'title' | 'narration', value: string) {
@@ -92,7 +81,7 @@ export default function DemoDetailPage() {
 
   const isPaused  = status === 'paused'
   const isReview  = status === 'review'
-  const isRunning = ['recording', 'processing', 'parsing'].includes(status)
+  const isRunning = ['processing', 'parsing'].includes(status)
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -127,13 +116,12 @@ export default function DemoDetailPage() {
           <div className="h-3.5 w-3.5 flex-shrink-0 rounded-full border-2 border-indigo-400/30 border-t-indigo-400 animate-spin" />
           <p className="text-sm" style={{ color: '#818CF8' }}>
             {status === 'parsing'    && dd.statusParsing}
-            {status === 'recording'  && dd.statusRecording}
             {status === 'processing' && dd.statusProcessing}
           </p>
         </div>
       )}
 
-      {/* 步骤列表 */}
+      {/* 场景列表 */}
       <div className="space-y-2">
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
@@ -177,18 +165,32 @@ export default function DemoDetailPage() {
               </span>
 
               <div className="flex-1 min-w-0">
-                {/* 步骤标题 */}
+                {/* 场景标题 */}
                 {isReview ? (
-                  <input
-                    value={step.title}
-                    onChange={e => updateStep(step.id, 'title', e.target.value)}
-                    className="input-dark w-full rounded-md px-2 py-1 text-sm font-medium bg-transparent border-0 border-b focus:border-b"
-                    style={{ color: 'var(--text-primary)', borderBottom: '1px solid var(--border)' }}
-                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={step.title}
+                      onChange={e => updateStep(step.id, 'title', e.target.value)}
+                      className="input-dark min-w-0 flex-1 rounded-md px-2 py-1 text-sm font-medium bg-transparent border-0 border-b focus:border-b"
+                      style={{ color: 'var(--text-primary)', borderBottom: '1px solid var(--border)' }}
+                    />
+                    {step.visual_type && (
+                      <span className="ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase flex-shrink-0" style={{ background: 'rgba(99,102,241,0.10)', color: '#818CF8' }}>
+                        {step.visual_type === 'screenshot' ? dd.visualScreenshot : step.visual_type === 'cta' ? dd.visualCta : dd.visualTemplate}
+                      </span>
+                    )}
+                  </div>
                 ) : (
-                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                    {step.title}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium min-w-0" style={{ color: 'var(--text-primary)' }}>
+                      {step.title}
+                    </p>
+                    {step.visual_type && (
+                      <span className="ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase flex-shrink-0" style={{ background: 'rgba(99,102,241,0.10)', color: '#818CF8' }}>
+                        {step.visual_type === 'screenshot' ? dd.visualScreenshot : step.visual_type === 'cta' ? dd.visualCta : dd.visualTemplate}
+                      </span>
+                    )}
+                  </div>
                 )}
 
                 {/* 旁白 */}
@@ -209,25 +211,6 @@ export default function DemoDetailPage() {
                 )}
               </div>
 
-              {/* 失败步骤按钮 */}
-              {isPaused && step.status === 'failed' && (
-                <div className="flex gap-2 flex-shrink-0">
-                  <button
-                    disabled={!!resolving}
-                    onClick={() => resolveStep(step.id, 'retry')}
-                    className="btn-brand rounded-lg px-3 py-1.5 text-xs font-medium"
-                    style={{ boxShadow: 'none' }}>
-                    {resolving === step.id ? '...' : dd.retry}
-                  </button>
-                  <button
-                    disabled={!!resolving}
-                    onClick={() => resolveStep(step.id, 'skip')}
-                    className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all"
-                    style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-                    {dd.skip}
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         ))}

@@ -6,13 +6,23 @@ import { getCurrentUser } from '@/lib/auth'
 import { ok, err } from '@/lib/api'
 
 type Params = { params: Promise<{ id: string }> }
+type StepVisualType = 'screenshot' | 'template' | 'cta'
+type StepUpdates = {
+  position: number
+  title: string
+  narration: string | null
+  visual_type?: StepVisualType
+  visual_asset_url?: string | null
+}
 
-const StepUpdateSchema = z.object({
+const UpdateStepsSchema = z.object({
   steps: z.array(z.object({
-    id:        z.string().uuid(),
-    position:  z.number().int().min(1),
-    title:     z.string().min(1).max(100),
-    narration: z.string().max(500).optional(),
+    id:               z.string().uuid(),
+    position:         z.number().int().min(1),
+    title:            z.string().min(1).max(255),
+    narration:        z.string().max(1000).nullable().optional(),
+    visual_type:      z.enum(['screenshot', 'template', 'cta']).optional(),
+    visual_asset_url: z.string().max(2048).nullable().optional(),
   })).min(1),
 })
 
@@ -23,7 +33,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
   const { id } = await params
   const body = await req.json().catch(() => null)
-  const parsed = StepUpdateSchema.safeParse(body)
+  const parsed = UpdateStepsSchema.safeParse(body)
   if (!parsed.success) {
     return err('VALIDATION_ERROR', parsed.error.issues.map(e => e.message).join(', '))
   }
@@ -38,12 +48,20 @@ export async function PUT(req: NextRequest, { params }: Params) {
   if (!demo) return err('NOT_FOUND', 'Demo 不存在或无权访问')
   if (demo.status !== 'review') return err('DEMO_NOT_READY', '只能在 review 状态下编辑步骤')
 
-  await Promise.all(parsed.data.steps.map(s =>
-    db
+  await Promise.all(parsed.data.steps.map(s => {
+    const updates: StepUpdates = {
+      position: s.position,
+      title: s.title,
+      narration: s.narration ?? null,
+    }
+    if (s.visual_type !== undefined) updates.visual_type = s.visual_type
+    if (s.visual_asset_url !== undefined) updates.visual_asset_url = s.visual_asset_url
+
+    return db
       .update(schema.steps)
-      .set({ position: s.position, title: s.title, narration: s.narration })
+      .set(updates)
       .where(and(eq(schema.steps.id, s.id), eq(schema.steps.demo_id, id)))
-  ))
+  }))
 
   return ok({ updated: parsed.data.steps.length })
 }
