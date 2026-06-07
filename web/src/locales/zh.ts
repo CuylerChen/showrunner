@@ -208,6 +208,7 @@ export const zh = {
       oauth_token_failed: 'OAuth 令牌获取失败，请重试',
       oauth_profile_failed: '获取账号信息失败，请重试',
       oauth_no_email: '无法获取邮箱地址，请确保已授权邮箱访问',
+      oauth_not_configured: 'OAuth 登录尚未配置，请使用邮箱登录。',
     },
   },
 }

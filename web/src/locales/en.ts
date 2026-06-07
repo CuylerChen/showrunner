@@ -210,6 +210,7 @@ export const en: typeof zh = {
       oauth_token_failed: 'Failed to get OAuth token, please try again',
       oauth_profile_failed: 'Failed to get account info, please try again',
       oauth_no_email: 'Could not get email address, please ensure email access is authorized',
+      oauth_not_configured: 'OAuth sign-in is not configured. Please use email sign-in.',
     },
   },
 }
