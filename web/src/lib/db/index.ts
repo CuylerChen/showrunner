@@ -2,7 +2,9 @@ import { drizzle } from 'drizzle-orm/mysql2'
 import mysql from 'mysql2/promise'
 import * as schema from './schema'
 
-let _db: ReturnType<typeof drizzle> | null = null
+type Db = ReturnType<typeof drizzle<typeof schema>>
+
+let _db: Db | null = null
 
 function getDb() {
   if (!_db) {
@@ -15,12 +17,12 @@ function getDb() {
       waitForConnections: true,
       connectionLimit: 10,
     })
-    _db = drizzle(pool, { schema, mode: 'default' })
+    _db = drizzle(pool, { schema, mode: 'default' }) as unknown as Db
   }
   return _db
 }
 
-export const db = new Proxy({} as ReturnType<typeof drizzle<typeof schema>>, {
+export const db = new Proxy({} as Db, {
   get(_target, prop) {
     return Reflect.get(getDb() as object, prop)
   },
