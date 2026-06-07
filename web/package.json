@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:security": "tsx scripts/test-safe-url.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
