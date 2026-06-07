@@ -1,10 +1,13 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { db, schema } from '@/lib/db'
-import { eq, and, desc, sql } from 'drizzle-orm'
+import { eq, and, desc, sql, or, gt } from 'drizzle-orm'
 import { parseQueue } from '@/lib/queue'
-import { getCurrentUser, getSubscription } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth'
 import { ok, err } from '@/lib/api'
+import { assertSafePublicUrl } from '@/lib/security/safe-url'
+
+type UpdateResult = { affectedRows?: number }
 
 const CreateDemoSchema = z.object({
   product_url: z.string().url('请输入有效的产品 URL'),
@@ -60,6 +63,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const { user, response } = await getCurrentUser()
   if (!user) return response!
+  const userId = user.id
 
   const body = await req.json().catch(() => null)
   const parsed = CreateDemoSchema.safeParse(body)
@@ -68,54 +72,83 @@ export async function POST(req: NextRequest) {
   }
   const { product_url, description, audience, key_points, brand_tone, cta_text, cta_url } = parsed.data
   const normalizedCtaUrl = cta_url === '' ? null : cta_url ?? null
+  let safeProductUrl: URL
+  try {
+    safeProductUrl = await assertSafePublicUrl(product_url)
+    if (normalizedCtaUrl) await assertSafePublicUrl(normalizedCtaUrl)
+  } catch (validationError) {
+    return err('VALIDATION_ERROR', (validationError as Error).message)
+  }
+  const normalizedProductUrl = safeProductUrl.toString()
 
-  // 检查额度
-  const sub = await getSubscription(user.id)
-  if (!sub) return err('INTERNAL_ERROR', '订阅信息不存在')
+  const reserved = await db
+    .update(schema.subscriptions)
+    .set({
+      demos_used_this_month: sql`CASE WHEN ${schema.subscriptions.demos_limit} = -1 THEN ${schema.subscriptions.demos_used_this_month} ELSE ${schema.subscriptions.demos_used_this_month} + 1 END`,
+    })
+    .where(and(
+      eq(schema.subscriptions.user_id, userId),
+      or(
+        eq(schema.subscriptions.demos_limit, -1),
+        sql`${schema.subscriptions.demos_used_this_month} < ${schema.subscriptions.demos_limit}`,
+      ),
+    ))
 
-  const hasQuota = sub.demos_limit === -1 || sub.demos_used_this_month < sub.demos_limit
-  if (!hasQuota) {
-    return err('QUOTA_EXCEEDED', `本月额度已用完（${sub.demos_used_this_month}/${sub.demos_limit}），请升级套餐`)
+  const reservedRows = (reserved[0] as UpdateResult | undefined)?.affectedRows ?? 0
+  if (reservedRows === 0) {
+    return err('QUOTA_EXCEEDED', '本月免费额度已用完。当前版本暂不支持自助升级，请联系管理员增加额度。')
   }
 
   // 创建 Demo 记录
   const demoId      = crypto.randomUUID()
   const share_token = crypto.randomUUID()
 
-  await db.insert(schema.demos).values({
-    id:          demoId,
-    user_id:     user.id,
-    product_url,
-    description: description ?? null,
-    audience:    audience ?? null,
-    key_points:  key_points ?? null,
-    brand_tone:  brand_tone ?? null,
-    cta_text:    cta_text ?? null,
-    cta_url:     normalizedCtaUrl,
-    status:      'pending',
-    share_token,
-  })
+  async function releaseQuota() {
+    await db
+      .update(schema.subscriptions)
+      .set({
+        demos_used_this_month: sql`GREATEST(${schema.subscriptions.demos_used_this_month} - 1, 0)`,
+      })
+      .where(and(
+        eq(schema.subscriptions.user_id, userId),
+        gt(schema.subscriptions.demos_limit, -1),
+      ))
+  }
 
-  // 扣减额度
-  await db
-    .update(schema.subscriptions)
-    .set({ demos_used_this_month: sub.demos_used_this_month + 1 })
-    .where(eq(schema.subscriptions.user_id, user.id))
+  try {
+    await db.insert(schema.demos).values({
+      id:          demoId,
+      user_id:     userId,
+      product_url: normalizedProductUrl,
+      description: description ?? null,
+      audience:    audience ?? null,
+      key_points:  key_points ?? null,
+      brand_tone:  brand_tone ?? null,
+      cta_text:    cta_text ?? null,
+      cta_url:     normalizedCtaUrl,
+      status:      'pending',
+      share_token,
+    })
 
-  // 入队 parse-queue
-  await parseQueue.add('parse', {
-    demoId,
-    productUrl:  product_url,
-    description: description ?? null,
-    audience: audience ?? null,
-    keyPoints: key_points ?? null,
-    brandTone: brand_tone ?? null,
-    ctaText: cta_text ?? null,
-    ctaUrl: normalizedCtaUrl,
-  }, {
-    attempts: 3,
-    backoff: { type: 'exponential', delay: 2000 },
-  })
+    // 入队 parse-queue
+    await parseQueue.add('parse', {
+      demoId,
+      productUrl:  normalizedProductUrl,
+      description: description ?? null,
+      audience: audience ?? null,
+      keyPoints: key_points ?? null,
+      brandTone: brand_tone ?? null,
+      ctaText: cta_text ?? null,
+      ctaUrl: normalizedCtaUrl,
+    }, {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 2000 },
+    })
+  } catch (queueError) {
+    await db.delete(schema.demos).where(eq(schema.demos.id, demoId)).catch(() => undefined)
+    await releaseQuota()
+    return err('INTERNAL_ERROR', `创建任务失败: ${(queueError as Error).message}`)
+  }
 
   return ok({ id: demoId, status: 'pending', share_token }, 201)
 }

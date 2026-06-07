@@ -1,5 +1,7 @@
 // 启动 / 查询 / 关闭远程登录浏览器会话
 import { headers } from 'next/headers'
+import { assertSafePublicUrl } from '@/lib/security/safe-url'
+import { findOwnedDemo, forbiddenDemoResponse } from '@/lib/demo-owner'
 
 const WORKER = process.env.WORKER_INTERNAL_URL ?? 'http://worker:3001'
 
@@ -9,9 +11,20 @@ async function getUserId() {
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  if (!await getUserId()) return Response.json({ success: false }, { status: 401 })
+  const userId = await getUserId()
+  if (!userId) return Response.json({ success: false }, { status: 401 })
   const { id } = await params
+  const demo = await findOwnedDemo(userId, id)
+  if (!demo) return forbiddenDemoResponse()
+
   const body   = await req.json()
+
+  try {
+    const safeUrl = await assertSafePublicUrl(String(body.url ?? ''))
+    body.url = safeUrl.toString()
+  } catch (e) {
+    return Response.json({ success: false, error: (e as Error).message }, { status: 422 })
+  }
 
   const res = await fetch(`${WORKER}/browser-sessions/${id}`, {
     method:  'POST',
@@ -23,8 +36,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 }
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  if (!await getUserId()) return Response.json({ success: false }, { status: 401 })
+  const userId = await getUserId()
+  if (!userId) return Response.json({ success: false }, { status: 401 })
   const { id } = await params
+  const demo = await findOwnedDemo(userId, id)
+  if (!demo) return forbiddenDemoResponse()
 
   const res = await fetch(`${WORKER}/browser-sessions/${id}`)
     .catch(() => null)
@@ -33,8 +49,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 }
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  if (!await getUserId()) return Response.json({ success: false }, { status: 401 })
+  const userId = await getUserId()
+  if (!userId) return Response.json({ success: false }, { status: 401 })
   const { id } = await params
+  const demo = await findOwnedDemo(userId, id)
+  if (!demo) return forbiddenDemoResponse()
 
   const res = await fetch(`${WORKER}/browser-sessions/${id}`, { method: 'DELETE' })
     .catch(() => null)

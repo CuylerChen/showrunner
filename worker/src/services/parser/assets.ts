@@ -1,6 +1,7 @@
 import fs from 'fs/promises'
 import path from 'path'
 import { chromium } from 'playwright'
+import { assertSafePublicUrl, resolveSafeRedirectUrl } from '../../utils/safe-url'
 
 const VIDEO_DIR = process.env.VIDEO_DIR ?? '/data/videos'
 
@@ -63,10 +64,12 @@ export async function captureWebsiteScreenshots(demoId: string, urls: string[]):
       const localPath = path.join(assetDir, filename)
 
       try {
-        await page.goto(url, { waitUntil: 'networkidle', timeout: 20000 })
+        const safeUrl = await resolveSafeRedirectUrl(url)
+        await page.goto(safeUrl.toString(), { waitUntil: 'networkidle', timeout: 20000 })
+        await assertSafePublicUrl(page.url())
         await page.screenshot({ path: localPath, fullPage: true })
         assets.push({
-          url,
+          url: safeUrl.toString(),
           role,
           localPath,
           publicUrl: `/videos/${demoId}/assets/${filename}`,

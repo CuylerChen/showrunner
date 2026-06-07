@@ -1,4 +1,5 @@
 import { Step } from '../../types'
+import { assertSafePublicUrl, resolveSafeRedirectUrl } from '../../utils/safe-url'
 import { captureWebsiteScreenshots, type ScreenshotAsset } from './assets'
 import {
   generateProductStoryScenes,
@@ -112,14 +113,23 @@ function extractLinks(html: string, baseUrl: string): string[] {
   return Array.from(links).slice(0, MAX_PAGES)
 }
 
-async function fetchHtml(url: string): Promise<string> {
-  const resp = await fetch(url, {
+async function fetchHtml(url: string, redirectDepth = 0): Promise<string> {
+  if (redirectDepth > 5) throw new Error('网页重定向次数过多')
+
+  const safeUrl = await assertSafePublicUrl(url)
+  const resp = await fetch(safeUrl, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (compatible; ShowrunnerPromoBot/1.0)',
       'Accept': 'text/html,application/xhtml+xml',
     },
+    redirect: 'manual',
     signal: AbortSignal.timeout(12000),
   })
+  if ([301, 302, 303, 307, 308].includes(resp.status)) {
+    const location = resp.headers.get('location')
+    if (!location) throw new Error('网页重定向缺少 Location')
+    return fetchHtml(new URL(location, safeUrl).toString(), redirectDepth + 1)
+  }
   if (!resp.ok) throw new Error(`网页抓取失败 ${resp.status}`)
   return await resp.text()
 }
@@ -135,8 +145,12 @@ function summarizePages(pages: PageData[]): string {
 }
 
 export async function analyzePublicWebsite(productUrl: string): Promise<WebsiteAnalysis> {
-  const homeHtml = await fetchHtml(productUrl)
-  const urls = Array.from(new Set([productUrl, ...extractLinks(homeHtml, productUrl)])).slice(0, MAX_PAGES)
+  const safeHome = await resolveSafeRedirectUrl(productUrl)
+  const homeHtml = await fetchHtml(safeHome.toString())
+  const urls = Array.from(new Set([
+    safeHome.toString(),
+    ...extractLinks(homeHtml, safeHome.toString()),
+  ])).slice(0, MAX_PAGES)
   const pages: PageData[] = []
 
   for (const url of urls) {

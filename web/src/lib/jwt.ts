@@ -1,8 +1,18 @@
 import { SignJWT, jwtVerify } from 'jose'
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? 'dev-secret-change-in-production'
-)
+function getJwtSecret() {
+  const secret = process.env.JWT_SECRET
+  const isProduction = process.env.NODE_ENV === 'production'
+
+  if (
+    isProduction &&
+    (!secret || secret === 'dev-secret-change-in-production' || secret.startsWith('change_this'))
+  ) {
+    throw new Error('JWT_SECRET must be configured in production')
+  }
+
+  return new TextEncoder().encode(secret ?? 'dev-secret-change-in-production')
+}
 
 export interface JwtPayload {
   sub: string  // userId
@@ -15,12 +25,12 @@ export async function signJwt(payload: JwtPayload): Promise<string> {
     .setSubject(payload.sub)
     .setIssuedAt()
     .setExpirationTime('7d')
-    .sign(JWT_SECRET)
+    .sign(getJwtSecret())
 }
 
 export async function verifyJwt(token: string): Promise<JwtPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET)
+    const { payload } = await jwtVerify(token, getJwtSecret())
     return { sub: payload.sub as string, email: payload.email as string }
   } catch {
     return null

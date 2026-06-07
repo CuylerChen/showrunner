@@ -2,6 +2,7 @@ import { chromium, Browser, BrowserContext, Page } from 'playwright'
 import path from 'path'
 import fs from 'fs'
 import { Paths } from '../../utils/paths'
+import { assertSafePublicUrl } from '../../utils/safe-url'
 
 const VIEWPORT = { width: 1280, height: 720 }
 const SESSION_TIMEOUT_MS = 15 * 60 * 1000  // 15 分钟无操作自动关闭
@@ -25,6 +26,8 @@ function resetTimer(session: Session) {
 }
 
 export async function startSession(demoId: string, url: string): Promise<void> {
+  const safeUrl = await assertSafePublicUrl(url)
+
   // 如有旧会话先关闭
   await closeSession(demoId)
 
@@ -72,7 +75,7 @@ export async function startSession(demoId: string, url: string): Promise<void> {
 
   // 导航到目标页，忽略超时错误
   try {
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 })
+    await page.goto(safeUrl.toString(), { waitUntil: 'domcontentloaded', timeout: 15000 })
   } catch {
     // 部分站点首次加载较慢，继续即可
   }
@@ -122,7 +125,7 @@ export async function startSession(demoId: string, url: string): Promise<void> {
     try {
       const newPage = await context.newPage()
       session.page = newPage
-      await newPage.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {})
+      await newPage.goto(safeUrl.toString(), { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {})
       console.log(`[browser-session] 页面已重建 demo=${demoId}`)
     } catch (e) {
       console.error(`[browser-session] 重建失败 demo=${demoId}:`, (e as Error).message)
@@ -238,7 +241,10 @@ export async function handleInput(demoId: string, event: InputEvent): Promise<vo
     }
 
     case 'navigate':
-      await session.page.goto(event.url, { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {})
+      {
+        const safeUrl = await assertSafePublicUrl(event.url)
+        await session.page.goto(safeUrl.toString(), { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {})
+      }
       break
   }
 

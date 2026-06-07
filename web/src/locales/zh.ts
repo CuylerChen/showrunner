@@ -108,7 +108,7 @@ export const zh = {
   },
   sessionPanel: {
     description: '为需要登录的产品设置访问凭证',
-    hasSession: '登录凭证已设置，生成时将自动使用',
+    hasSession: '登录凭证已保存（旧录制流程兼容）',
     step1: '在您的浏览器中打开产品网站并完成登录',
     step2note: '脚本会自动将 Cookie 复制到剪贴板并弹出确认提示。',
     step3: '将复制的内容粘贴到下方：',
@@ -208,6 +208,7 @@ export const zh = {
       oauth_token_failed: 'OAuth 令牌获取失败，请重试',
       oauth_profile_failed: '获取账号信息失败，请重试',
       oauth_no_email: '无法获取邮箱地址，请确保已授权邮箱访问',
+      oauth_not_configured: 'OAuth 登录尚未配置，请使用邮箱登录。',
     },
   },
 }

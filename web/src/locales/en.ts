@@ -110,7 +110,7 @@ export const en: typeof zh = {
   },
   sessionPanel: {
     description: 'Set up access credentials for products that require login',
-    hasSession: 'Login credentials set. Will be used automatically during generation.',
+    hasSession: 'Login credentials saved for legacy recording compatibility.',
     step1: 'Open the product website in your browser and complete login',
     step2note: 'The script will automatically copy cookies to the clipboard.',
     step3: 'Paste the copied content below:',
@@ -210,6 +210,7 @@ export const en: typeof zh = {
       oauth_token_failed: 'Failed to get OAuth token, please try again',
       oauth_profile_failed: 'Failed to get account info, please try again',
       oauth_no_email: 'Could not get email address, please ensure email access is authorized',
+      oauth_not_configured: 'OAuth sign-in is not configured. Please use email sign-in.',
     },
   },
 }

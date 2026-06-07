@@ -29,6 +29,14 @@ export async function GET(req: NextRequest, { params }: Params) {
     async start(controller) {
       let lastStatus = demo.status
       let lastError  = demo.error_message
+      let closed = false
+
+      function closeStream() {
+        if (closed) return
+        closed = true
+        clearInterval(interval)
+        controller.close()
+      }
 
       // 发送初始状态
       controller.enqueue(
@@ -38,15 +46,18 @@ export async function GET(req: NextRequest, { params }: Params) {
       // 每 2 秒轮询数据库
       const interval = setInterval(async () => {
         try {
+          if (closed) return
+
           const current = await db
             .select({ status: schema.demos.status, error_message: schema.demos.error_message })
             .from(schema.demos)
             .where(eq(schema.demos.id, id))
             .then(rows => rows[0] ?? null)
 
+          if (closed) return
+
           if (!current) {
-            clearInterval(interval)
-            controller.close()
+            closeStream()
             return
           }
 
@@ -60,19 +71,16 @@ export async function GET(req: NextRequest, { params }: Params) {
 
           // 终态时关闭连接
           if (lastStatus === 'completed' || lastStatus === 'failed') {
-            clearInterval(interval)
-            controller.close()
+            closeStream()
           }
         } catch {
-          clearInterval(interval)
-          controller.close()
+          closeStream()
         }
       }, 2000)
 
       // 客户端断开时清理
       req.signal.addEventListener('abort', () => {
-        clearInterval(interval)
-        controller.close()
+        closeStream()
       })
     },
   })

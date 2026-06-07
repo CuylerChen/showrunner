@@ -5,8 +5,12 @@ export async function GET() {
   const state  = crypto.randomUUID()
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
+  if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
+    return NextResponse.redirect(`${appUrl}/sign-in?error=oauth_not_configured`)
+  }
+
   const params = new URLSearchParams({
-    client_id:    process.env.GITHUB_CLIENT_ID!,
+    client_id:    process.env.GITHUB_CLIENT_ID,
     redirect_uri: `${appUrl}/api/auth/callback/github`,
     scope:        'read:user user:email',
     state,

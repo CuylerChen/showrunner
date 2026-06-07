@@ -6,15 +6,16 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:security": "tsx scripts/test-safe-url.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "bullmq": "^5.69.3",
-    "drizzle-orm": "^0.39.1",
+    "bullmq": "^5.78.0",
+    "drizzle-orm": "^0.45.2",
     "jose": "^5.10.0",
     "mysql2": "^3.14.0",
-    "next": "16.1.6",
+    "next": "16.2.7",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "zod": "^4.3.6"
@@ -25,10 +26,13 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "drizzle-kit": "^0.30.4",
     "eslint": "^9",
-    "eslint-config-next": "16.1.6",
+    "eslint-config-next": "16.2.7",
     "tailwindcss": "^4",
+    "tsx": "^4.22.4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "postcss": "8.5.15"
   }
 }
