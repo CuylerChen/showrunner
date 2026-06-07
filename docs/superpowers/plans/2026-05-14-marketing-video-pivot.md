@@ -6,7 +6,7 @@
 
 **Architecture:** Keep the current `web + worker + BullMQ + MySQL + HyperFrames` split. The main path becomes short-form marketing brief -> website analysis and screenshots -> AI scenes -> TTS -> HyperFrames promotional render; old recorder code remains temporarily unused.
 
-**Tech Stack:** Next.js 16, React 19, Drizzle MySQL, BullMQ, Redis, Playwright, DeepSeek API, Kokoro TTS, HyperFrames, FFmpeg, R2/local video storage.
+**Tech Stack:** Next.js 16, React 19, Drizzle MySQL, BullMQ, Redis, Playwright, OpenAI-compatible Chat Completions, Kokoro TTS, HyperFrames, FFmpeg, R2/local video storage.
 
 ---
 
@@ -14,7 +14,7 @@
 
 Modify these files:
 
-- `supabase/schema.sql`: add marketing columns to `demos` and scene visual columns to `steps`.
+- `database/schema.sql`: add marketing columns to `demos` and scene visual columns to `steps`.
 - `web/src/lib/db/schema.ts`: keep Drizzle schema aligned with MySQL.
 - `worker/src/utils/db.ts`: keep worker schema aligned with MySQL.
 - `web/src/types/index.ts`: add marketing fields and scene visual fields to frontend types.
@@ -43,13 +43,13 @@ Create these files:
 ### Task 1: Align Database Schema With Marketing Video Fields
 
 **Files:**
-- Modify: `supabase/schema.sql`
+- Modify: `database/schema.sql`
 - Modify: `web/src/lib/db/schema.ts`
 - Modify: `worker/src/utils/db.ts`
 - Modify: `web/src/types/index.ts`
 - Modify: `worker/src/types.ts`
 
-- [ ] **Step 1: Add MySQL columns in `supabase/schema.sql`**
+- [ ] **Step 1: Add MySQL columns in `database/schema.sql`**
 
 Add these columns to `demos` after `description`:
 
@@ -190,7 +190,7 @@ Expected:
 - [ ] **Step 6: Commit schema alignment**
 
 ```bash
-git add supabase/schema.sql web/src/lib/db/schema.ts worker/src/utils/db.ts web/src/types/index.ts worker/src/types.ts
+git add database/schema.sql web/src/lib/db/schema.ts worker/src/utils/db.ts web/src/types/index.ts worker/src/types.ts
 git commit -m "feat: add marketing video schema fields"
 ```
 
@@ -515,7 +515,7 @@ export async function generateProductStoryScenes(
   input: ProductStoryInput,
   assets: ScreenshotAsset[],
 ): Promise<ProductStoryScene[]> {
-  const apiKey = process.env.DEEPSEEK_API_KEY
+  const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) return fallbackProductStory(input, assets)
 
   const assetSummary = assets.map((asset, index) => `${index + 1}. ${asset.role}: ${asset.url}`).join('\n')
@@ -542,14 +542,14 @@ Rules:
     assetSummary ? `Screenshot assets:\n${assetSummary}` : 'No screenshots available.',
   ].filter(Boolean).join('\n\n')
 
-  const resp = await fetch('https://api.deepseek.com/chat/completions', {
+  const resp = await fetch(`${process.env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1'}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'deepseek-chat',
+      model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userMessage },
@@ -1188,7 +1188,7 @@ In `docs/database-schema.md`, add the marketing fields to `demos` and `steps` ex
 Run:
 
 ```bash
-rg -n "Clerk|Supabase|OpenRouter|Playwright 录制|record-queue|录制失败|浏览器自动录制" docs
+rg -n "legacy auth provider|legacy database provider|legacy AI provider|Playwright 录制|record-queue|录制失败|浏览器自动录制" docs
 ```
 
 Expected:

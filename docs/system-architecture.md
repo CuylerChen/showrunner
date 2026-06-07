@@ -85,7 +85,7 @@
  │                     │                     │                    │
  │  (状态查询)         │                     │  抓取官网 + 截图   │
  │                     │                     │◄───────────────────│
- │                     │                     │  DeepSeek 生成场景 │
+ │                     │                     │  AI 生成场景       │
  │                     │                     │  写入 steps        │
  │                     │                     │  status = review   │
  │                     │                     │────────────────────│
@@ -167,7 +167,7 @@ Worker                    MySQL               用户
 | MySQL | 用户、订阅、demo、场景、任务历史 | 自管 / 托管 MySQL |
 | Redis | BullMQ 队列存储 | Railway |
 | Worker | 官网抓取、Playwright 截图、TTS、HyperFrames 合成 | Railway |
-| DeepSeek | AI Product Story 场景生成 | 托管服务 |
+| OpenAI-compatible Chat Completions | AI Product Story 场景生成 | 托管服务 |
 | Kokoro | 英文 TTS 旁白生成 | Worker 内运行 |
 | LemonSqueezy | 订阅支付、Webhook | 托管服务 |
 
@@ -184,7 +184,9 @@ DATABASE_URL=
 REDIS_URL=
 
 # AI
-DEEPSEEK_API_KEY=
+OPENAI_API_KEY=
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_MODEL=gpt-4o-mini
 
 # LemonSqueezy
 LEMONSQUEEZY_API_KEY=
@@ -204,5 +206,5 @@ VIDEO_OUTPUT_DIR=
 
 - [ ] Worker 并发数设置（同时处理几个视频生成任务）
 - [ ] R2 / 本地视频文件过期策略（免费用户视频保留多久）
-- [ ] DeepSeek 限速处理（失败重试策略）
+- [ ] OpenAI-compatible 接口限速处理（失败重试策略）
 - [ ] Kokoro 模型在 Railway 的内存配置（建议 2GB+）

@@ -142,11 +142,13 @@ export async function generateProductStoryScenes(
   input: ProductStoryInput,
   assets: ScreenshotAsset[],
 ): Promise<ProductStoryScene[]> {
-  const apiKey = process.env.DEEPSEEK_API_KEY
+  const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) {
-    console.warn('[parser] DEEPSEEK_API_KEY missing, using product story fallback')
+    console.warn('[parser] OPENAI_API_KEY missing, using product story fallback')
     return fallbackProductStory(input, assets)
   }
+  const baseUrl = (process.env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1').replace(/\/+$/, '')
+  const model = process.env.OPENAI_MODEL ?? 'gpt-4o-mini'
 
   const assetSummary = assets.map(asset => `${asset.role}: ${asset.url} -> ${asset.publicUrl}`).join('\n')
   const systemPrompt = `You are a senior product marketing video writer.
@@ -183,14 +185,14 @@ Rules:
   ].filter(Boolean).join('\n\n')
 
   try {
-    const resp = await fetch('https://api.deepseek.com/chat/completions', {
+    const resp = await fetch(`${baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'deepseek-chat',
+        model,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage },
@@ -202,7 +204,7 @@ Rules:
 
     if (!resp.ok) {
       const errText = await resp.text()
-      throw new Error(`DeepSeek API error ${resp.status}: ${errText.slice(0, 200)}`)
+      throw new Error(`OpenAI-compatible API error ${resp.status}: ${errText.slice(0, 200)}`)
     }
 
     const data = await resp.json() as { choices?: Array<{ message?: { content?: string } }> }

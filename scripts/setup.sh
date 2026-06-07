@@ -175,7 +175,7 @@ services:
       --performance-schema=OFF
     volumes:
       - /opt/showrunner/mysql_data:/var/lib/mysql
-      - ./supabase/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
 
   nginx:
     ports:

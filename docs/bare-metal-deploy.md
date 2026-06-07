@@ -131,7 +131,7 @@ SQL
 导入数据库结构：
 
 ```bash
-mysql -u showrunner -p showrunner < /opt/showrunner/supabase/schema.sql
+mysql -u showrunner -p showrunner < /opt/showrunner/database/schema.sql
 ```
 
 ### 4.4 安装 Redis 7

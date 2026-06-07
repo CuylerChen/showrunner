@@ -1,5 +1,5 @@
 /**
- * 完整管道端到端测试（不依赖 Redis/Supabase，直接串联四个服务）
+ * 完整管道端到端测试（不依赖 Redis/MySQL，直接串联四个服务）
  * 运行：npm run test:full
  *
  * 模拟流程：parse → record → tts → merge
@@ -45,8 +45,8 @@ async function runFullPipeline() {
     { id: 's3', position: 3, title: '确认标题存在', action_type: 'assert',   selector: 'h1', value: null,        narration: 'As you can see, the interface is clean and intuitive.' },
   ]
 
-  if (!process.env.OPENROUTER_API_KEY) {
-    console.log('⚠️  未设置 OPENROUTER_API_KEY，使用 Mock 步骤')
+  if (!process.env.OPENAI_API_KEY) {
+    console.log('⚠️  未设置 OPENAI_API_KEY，使用 Mock 步骤')
     steps = MOCK_STEPS
   } else {
     try {

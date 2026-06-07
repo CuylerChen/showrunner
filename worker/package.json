@@ -7,7 +7,7 @@
     "test:full": "npx tsx scripts/test-full-pipeline.ts",
     "dev": "npx tsx src/index.ts",
     "build": "npx tsc",
-    "test:security": "npx tsx scripts/test-safe-url.ts"
+    "test:security": "npx tsx scripts/test-safe-url.ts && npx tsx scripts/test-openai-compatible-scenes.ts"
   },
   "engines": {
     "node": ">=22.0.0"

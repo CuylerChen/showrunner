@@ -217,10 +217,10 @@ EOF
 fi
 
 # ── 导入数据库结构 ─────────────────────────────────────────
-if [ -f "$INSTALL_DIR/supabase/schema.sql" ]; then
+if [ -f "$INSTALL_DIR/database/schema.sql" ]; then
   MYSQL_PWD=$(grep MYSQL_PASSWORD "$INSTALL_DIR/.env" | cut -d= -f2)
   info "导入数据库结构..."
-  mysql -u showrunner -p"${MYSQL_PWD}" showrunner < "$INSTALL_DIR/supabase/schema.sql" 2>/dev/null || \
+  mysql -u showrunner -p"${MYSQL_PWD}" showrunner < "$INSTALL_DIR/database/schema.sql" 2>/dev/null || \
     warn "数据库结构导入失败（可能已存在），跳过"
   success "数据库结构就绪"
 fi

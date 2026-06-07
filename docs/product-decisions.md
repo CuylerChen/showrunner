@@ -51,7 +51,7 @@ TTS 旁白 → HyperFrames 合成官网截图、动态图形和 CTA
 |------|------|
 | 注册 / 登录 | 自管账号体系 + JWT，支持邮箱登录 |
 | URL 输入 + brief | 产品 URL 必填，受众、卖点、品牌语气、CTA 可选 |
-| AI 场景生成 | DeepSeek 生成 Product Story 场景卡片 |
+| AI 场景生成 | OpenAI-compatible Chat Completions 生成 Product Story 场景卡片 |
 | 场景卡片编辑 | 拖拽排序、删除、标题和旁白修改 |
 | 官网分析与截图 | 抓取公开页面内容，捕获首页/功能/价格等视觉素材 |
 | TTS 旁白生成 | Kokoro（英文主，中文辅） |
@@ -123,7 +123,7 @@ TTS 旁白 → HyperFrames 合成官网截图、动态图形和 CTA
 | 文件存储 | R2 或本地视频目录 |
 | 任务队列 | BullMQ + Redis |
 | Worker | Node.js + Playwright 截图 + Kokoro + HyperFrames + FFmpeg |
-| AI 场景生成 | DeepSeek / OpenAI 兼容 Chat Completions 接口 |
+| AI 场景生成 | OpenAI-compatible Chat Completions 接口 |
 | TTS | Kokoro（英文主，中文辅） |
 | 订阅支付 | LemonSqueezy |
 | 前端部署 | Vercel |

@@ -42,7 +42,7 @@ showrunner/
 │           └── demo/           # Demo 相关组件
 ├── worker/                     # BullMQ 后台录制 Worker
 ├── nginx/                      # Nginx 配置
-├── supabase/                   # 数据库 Schema
+├── database/                   # MySQL Schema 和迁移脚本
 └── docker-compose.yml          # 容器编排
 ```
 
