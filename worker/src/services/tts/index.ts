@@ -3,6 +3,55 @@ import fs from 'fs'
 import { execSync } from 'child_process'
 import { Step, TtsResult } from '../../types'
 
+type OpenAITtsConfig = {
+  apiKey: string
+  baseUrl: string
+  model: string
+  voice: string
+  speed: number
+  instructions?: string
+}
+
+export type TtsConfig =
+  | { provider: 'openai', openai: OpenAITtsConfig }
+  | { provider: 'kokoro', openai?: undefined }
+
+function cleanEnvValue(value: string | undefined): string | undefined {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : undefined
+}
+
+function parseTtsSpeed(value: string | undefined): number {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return 0.95
+  return Math.min(4, Math.max(0.25, parsed))
+}
+
+export function resolveTtsConfig(env: NodeJS.ProcessEnv = process.env): TtsConfig {
+  const requestedProvider = cleanEnvValue(env.TTS_PROVIDER)?.toLowerCase() ?? 'auto'
+
+  if (requestedProvider === 'kokoro') {
+    return { provider: 'kokoro' }
+  }
+
+  const apiKey = cleanEnvValue(env.OPENAI_TTS_API_KEY)
+  if (!apiKey) {
+    return { provider: 'kokoro' }
+  }
+
+  return {
+    provider: 'openai',
+    openai: {
+      apiKey,
+      baseUrl: (cleanEnvValue(env.OPENAI_TTS_BASE_URL) ?? 'https://api.openai.com/v1').replace(/\/+$/, ''),
+      model: cleanEnvValue(env.OPENAI_TTS_MODEL) ?? 'gpt-4o-mini-tts',
+      voice: cleanEnvValue(env.OPENAI_TTS_VOICE) ?? 'coral',
+      speed: parseTtsSpeed(env.OPENAI_TTS_SPEED),
+      instructions: cleanEnvValue(env.OPENAI_TTS_INSTRUCTIONS),
+    },
+  }
+}
+
 // 使用系统 ffprobe 测量音频文件的实际时长（秒）
 function getAudioDuration(filePath: string): number {
   const probePaths = ['/usr/bin/ffprobe', '/usr/local/bin/ffprobe']
@@ -34,29 +83,25 @@ function getAudioDuration(filePath: string): number {
   return 3
 }
 
-// ── OpenAI TTS（主选方案，高质量自然语音）────────────────────────
-async function generateWithOpenAI(text: string, outputPath: string): Promise<boolean> {
-  const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) return false
-
+// ── OpenAI TTS-compatible speech endpoint（可选高质量旁白）────────
+async function generateWithOpenAI(text: string, outputPath: string, config: OpenAITtsConfig): Promise<boolean> {
   try {
-    // 检测语言：含中文字符则用中文优化的 voice
-    const hasChinese = /[\u4e00-\u9fff]/.test(text)
-    const voice = hasChinese ? 'nova' : 'nova'  // nova 对中英文都表现好
+    const body: Record<string, unknown> = {
+      model: config.model,
+      input: text,
+      voice: config.voice,
+      response_format: 'mp3',
+      speed: config.speed,
+    }
+    if (config.instructions) body.instructions = config.instructions
 
-    const response = await fetch('https://api.openai.com/v1/audio/speech', {
+    const response = await fetch(`${config.baseUrl}/audio/speech`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${config.apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: 'tts-1-hd',
-        input: text,
-        voice,
-        response_format: 'mp3',
-        speed: 0.95,  // 稍慢一点，产品演示更清晰
-      }),
+      body: JSON.stringify(body),
     })
 
     if (!response.ok) {
@@ -131,6 +176,7 @@ export async function generateNarration(
   outputDir: string
 ): Promise<TtsResult> {
   fs.mkdirSync(outputDir, { recursive: true })
+  const ttsConfig = resolveTtsConfig()
 
   const audioPaths: string[] = []
   const stepDurations: number[] = []
@@ -144,15 +190,25 @@ export async function generateNarration(
 
     console.log(`[tts] Step ${step.position}: "${narration}"`)
 
-    // 使用 Kokoro TTS（免费本地方案），fallback 到静音
     let finalPath: string
-    let success = await generateWithKokoro(narration, outputPathWav)
+    let success = false
+
+    if (ttsConfig.provider === 'openai') {
+      success = await generateWithOpenAI(narration, outputPathMp3, ttsConfig.openai)
+    }
+
     if (success) {
-      finalPath = outputPathWav
-    } else {
-      // Kokoro 失败，生成静音占位
-      generateSilence(estimatedDuration, outputPathMp3)
       finalPath = outputPathMp3
+    } else {
+      // 使用 Kokoro TTS（免费本地方案），fallback 到静音
+      success = await generateWithKokoro(narration, outputPathWav)
+      if (success) {
+        finalPath = outputPathWav
+      } else {
+        // Kokoro 失败，生成静音占位
+        generateSilence(estimatedDuration, outputPathMp3)
+        finalPath = outputPathMp3
+      }
     }
 
     audioPaths.push(finalPath)

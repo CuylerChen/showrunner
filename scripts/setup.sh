@@ -134,6 +134,9 @@ OPENAI_API_KEY=${OPENAI_KEY}
 OPENAI_BASE_URL=${OPENAI_BASE}
 OPENAI_MODEL=${OPENAI_MODEL}
 
+# ── TTS 旁白 ──────────────────────────────────────────────
+TTS_PROVIDER=kokoro
+
 # ── 应用地址 ──────────────────────────────────────────────
 NEXT_PUBLIC_APP_URL=${APP_URL}
 

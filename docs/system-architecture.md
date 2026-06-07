@@ -98,7 +98,7 @@
  │                     │  入队 tts-queue     │                    │
  │                     │─────────────────────────────────────────►│
  │                     │                     │                    │
- │                     │                     │  Kokoro TTS        │
+ │                     │                     │  TTS 旁白生成      │
  │                     │                     │  HyperFrames 合成  │
  │                     │                     │                    │
  │                     │                     │  上传 R2/本地目录  │
@@ -168,7 +168,7 @@ Worker                    MySQL               用户
 | Redis | BullMQ 队列存储 | Railway |
 | Worker | 官网抓取、Playwright 截图、TTS、HyperFrames 合成 | Railway |
 | OpenAI-compatible Chat Completions | AI Product Story 场景生成 | 托管服务 |
-| Kokoro | 英文 TTS 旁白生成 | Worker 内运行 |
+| TTS | Kokoro 默认；可选独立 OpenAI TTS | Worker 内运行 / 托管服务 |
 | LemonSqueezy | 订阅支付、Webhook | 托管服务 |
 
 ---
@@ -187,6 +187,12 @@ REDIS_URL=
 OPENAI_API_KEY=
 OPENAI_BASE_URL=https://api.openai.com/v1
 OPENAI_MODEL=gpt-4o-mini
+
+# TTS
+TTS_PROVIDER=kokoro
+OPENAI_TTS_API_KEY=
+OPENAI_TTS_BASE_URL=https://api.openai.com/v1
+OPENAI_TTS_MODEL=gpt-4o-mini-tts
 
 # LemonSqueezy
 LEMONSQUEEZY_API_KEY=

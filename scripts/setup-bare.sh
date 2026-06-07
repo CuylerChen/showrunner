@@ -205,6 +205,9 @@ OPENAI_API_KEY=${OPENAI_KEY}
 OPENAI_BASE_URL=${OPENAI_BASE}
 OPENAI_MODEL=${OPENAI_MODEL}
 
+# ── TTS 旁白 ──────────────────────────────────────────────
+TTS_PROVIDER=kokoro
+
 # ── 应用地址 ──────────────────────────────────────────────
 NEXT_PUBLIC_APP_URL=${APP_URL}
 
@@ -261,6 +264,13 @@ const env = {
   OPENAI_API_KEY:    process.env.OPENAI_API_KEY,
   OPENAI_BASE_URL:   process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
   OPENAI_MODEL:      process.env.OPENAI_MODEL    || 'gpt-4o-mini',
+  TTS_PROVIDER:      process.env.TTS_PROVIDER    || 'auto',
+  OPENAI_TTS_API_KEY: process.env.OPENAI_TTS_API_KEY,
+  OPENAI_TTS_BASE_URL: process.env.OPENAI_TTS_BASE_URL || 'https://api.openai.com/v1',
+  OPENAI_TTS_MODEL:  process.env.OPENAI_TTS_MODEL || 'gpt-4o-mini-tts',
+  OPENAI_TTS_VOICE:  process.env.OPENAI_TTS_VOICE || 'coral',
+  OPENAI_TTS_SPEED:  process.env.OPENAI_TTS_SPEED || '0.95',
+  OPENAI_TTS_INSTRUCTIONS: process.env.OPENAI_TTS_INSTRUCTIONS,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   VIDEO_DIR:         process.env.VIDEO_DIR         || '/opt/showrunner/videos',
 }

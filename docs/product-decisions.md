@@ -124,13 +124,13 @@ TTS 旁白 → HyperFrames 合成官网截图、动态图形和 CTA
 | 任务队列 | BullMQ + Redis |
 | Worker | Node.js + Playwright 截图 + Kokoro + HyperFrames + FFmpeg |
 | AI 场景生成 | OpenAI-compatible Chat Completions 接口 |
-| TTS | Kokoro（英文主，中文辅） |
+| TTS | Kokoro 默认；可选独立 OpenAI TTS（不走 Chat Completions gateway） |
 | 订阅支付 | LemonSqueezy |
 | 前端部署 | Vercel |
 | Worker 部署 | Railway |
 
 **TTS 升级策略**
-MVP 阶段使用 Kokoro（免费开源），规模扩大后迁移至 OpenAI TTS（$15 / 百万字符）。
+MVP 阶段默认使用 Kokoro（免费开源）。需要更强商业旁白时，单独配置 `OPENAI_TTS_*` 直连支持 `/audio/speech` 的 TTS 服务，不复用自建 Chat Completions gateway。
 
 ---
 

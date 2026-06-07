@@ -148,6 +148,14 @@ OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxx
 OPENAI_BASE_URL=https://api.openai.com/v1
 OPENAI_MODEL=gpt-4o-mini
 
+# ── TTS 旁白 ──────────────────────────────────────────────
+# 自建 Chat Completions gateway 没有 TTS 接口时保持 kokoro
+TTS_PROVIDER=kokoro
+# OPENAI_TTS_API_KEY=sk-xxxxxxxxxxxxxxxxxxxx
+# OPENAI_TTS_BASE_URL=https://api.openai.com/v1
+# OPENAI_TTS_MODEL=gpt-4o-mini-tts
+# OPENAI_TTS_VOICE=coral
+
 # ── 应用地址（填写你的域名或 IP）──────────────────────────
 NEXT_PUBLIC_APP_URL=https://your-domain.com
 ```

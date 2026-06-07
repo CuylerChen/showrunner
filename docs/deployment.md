@@ -1,6 +1,6 @@
 # Showrunner 部署指南
 
-> 当前架构：MySQL、自管 JWT 认证、Redis 队列、OpenAI-compatible Chat Completions、OpenAI TTS/Kokoro fallback、HyperFrames 视频合成。
+> 当前架构：MySQL、自管 JWT 认证、Redis 队列、OpenAI-compatible Chat Completions、Kokoro TTS（可选独立 OpenAI TTS）、HyperFrames 视频合成。
 
 ## 推荐路径
 
@@ -32,7 +32,7 @@ Worker
   -> MySQL
   -> Redis / BullMQ
   -> OpenAI-compatible Chat Completions
-  -> OpenAI TTS or Kokoro fallback
+  -> Kokoro TTS, or optional OpenAI TTS via OPENAI_TTS_*
   -> local video storage or Cloudflare R2
 ```
 
@@ -54,6 +54,13 @@ REDIS_URL=redis://redis:6379
 OPENAI_API_KEY=sk-...
 OPENAI_BASE_URL=https://api.openai.com/v1
 OPENAI_MODEL=gpt-4o-mini
+
+TTS_PROVIDER=kokoro
+# OPENAI_TTS_API_KEY=sk-...
+# OPENAI_TTS_BASE_URL=https://api.openai.com/v1
+# OPENAI_TTS_MODEL=gpt-4o-mini-tts
+# OPENAI_TTS_VOICE=coral
+# OPENAI_TTS_SPEED=0.95
 
 NEXT_PUBLIC_APP_URL=https://your-domain.com
 VIDEO_DIR=/data/videos
