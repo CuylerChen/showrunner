@@ -108,7 +108,7 @@ export const zh = {
   },
   sessionPanel: {
     description: '为需要登录的产品设置访问凭证',
-    hasSession: '登录凭证已设置，生成时将自动使用',
+    hasSession: '登录凭证已保存（旧录制流程兼容）',
     step1: '在您的浏览器中打开产品网站并完成登录',
     step2note: '脚本会自动将 Cookie 复制到剪贴板并弹出确认提示。',
     step3: '将复制的内容粘贴到下方：',

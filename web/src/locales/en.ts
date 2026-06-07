@@ -110,7 +110,7 @@ export const en: typeof zh = {
   },
   sessionPanel: {
     description: 'Set up access credentials for products that require login',
-    hasSession: 'Login credentials set. Will be used automatically during generation.',
+    hasSession: 'Login credentials saved for legacy recording compatibility.',
     step1: 'Open the product website in your browser and complete login',
     step2note: 'The script will automatically copy cookies to the clipboard.',
     step3: 'Paste the copied content below:',

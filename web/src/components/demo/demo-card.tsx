@@ -380,7 +380,7 @@ export function DemoCard(props: DemoCardProps) {
     { month: 'short', day: 'numeric' },
   )
 
-  const showSessionBtn = status === 'review' || status === 'paused'
+  const showSessionBtn = false
 
   return (
     <div className="glass-card rounded-xl overflow-hidden">
