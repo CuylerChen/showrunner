@@ -123,7 +123,7 @@ TTS 旁白 → HyperFrames 合成官网截图、动态图形和 CTA
 | 文件存储 | R2 或本地视频目录 |
 | 任务队列 | BullMQ + Redis |
 | Worker | Node.js + Playwright 截图 + Kokoro + HyperFrames + FFmpeg |
-| AI 场景生成 | DeepSeek |
+| AI 场景生成 | DeepSeek / OpenAI 兼容 Chat Completions 接口 |
 | TTS | Kokoro（英文主，中文辅） |
 | 订阅支付 | LemonSqueezy |
 | 前端部署 | Vercel |

@@ -164,8 +164,12 @@ else
   echo -e "${YELLOW}请输入以下配置信息：${RESET}"
   echo ""
 
-  read -rp "  DeepSeek API Key (sk-...): " DEEPSEEK_KEY
-  [ -z "$DEEPSEEK_KEY" ] && warn "DeepSeek API Key 为空，AI 解析功能将无法使用"
+  read -rp "  OpenAI API Key (sk-...): " OPENAI_KEY
+  [ -z "$OPENAI_KEY" ] && warn "OpenAI API Key 为空，AI 解析功能将无法使用"
+  read -rp "  OpenAI Base URL（可选，默认 https://api.openai.com/v1）: " OPENAI_BASE
+  [ -z "$OPENAI_BASE" ] && OPENAI_BASE="https://api.openai.com/v1"
+  read -rp "  OpenAI Model（可选，默认 gpt-4o-mini）: " OPENAI_MODEL
+  [ -z "$OPENAI_MODEL" ] && OPENAI_MODEL="gpt-4o-mini"
 
   read -rp "  应用访问地址 (例: https://your-domain.com 或 http://1.2.3.4): " APP_URL
   [ -z "$APP_URL" ] && APP_URL="http://$(curl -s ifconfig.me 2>/dev/null || echo '127.0.0.1')"
@@ -196,8 +200,10 @@ JWT_SECRET=${JWT_SECRET}
 # ── Redis ─────────────────────────────────────────────────
 REDIS_URL=redis://127.0.0.1:6379
 
-# ── DeepSeek AI ───────────────────────────────────────────
-DEEPSEEK_API_KEY=${DEEPSEEK_KEY}
+# ── OpenAI 兼容 Chat Completions ──────────────────────────
+OPENAI_API_KEY=${OPENAI_KEY}
+OPENAI_BASE_URL=${OPENAI_BASE}
+OPENAI_MODEL=${OPENAI_MODEL}
 
 # ── 应用地址 ──────────────────────────────────────────────
 NEXT_PUBLIC_APP_URL=${APP_URL}
@@ -252,7 +258,9 @@ const env = {
   MYSQL_DATABASE:    process.env.MYSQL_DATABASE    || 'showrunner',
   JWT_SECRET:        process.env.JWT_SECRET,
   REDIS_URL:         process.env.REDIS_URL         || 'redis://127.0.0.1:6379',
-  DEEPSEEK_API_KEY:  process.env.DEEPSEEK_API_KEY,
+  OPENAI_API_KEY:    process.env.OPENAI_API_KEY,
+  OPENAI_BASE_URL:   process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
+  OPENAI_MODEL:      process.env.OPENAI_MODEL    || 'gpt-4o-mini',
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   VIDEO_DIR:         process.env.VIDEO_DIR         || '/opt/showrunner/videos',
 }

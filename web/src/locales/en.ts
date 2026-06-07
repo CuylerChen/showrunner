@@ -23,7 +23,7 @@ export const en: typeof zh = {
     featuresTitle: 'Automated product promo video generation',
     featuresSub: 'Three steps to a professional product introduction video',
     features: [
-      { title: 'AI Analysis', desc: 'DeepSeek analyzes public pages and product notes to extract the key value proposition' },
+      { title: 'AI Analysis', desc: 'An OpenAI-compatible model analyzes public pages and product notes to extract the key value proposition' },
       { title: 'Auto Storyboard', desc: 'Generate hook, feature, benefit, proof, and call-to-action scenes automatically' },
       { title: 'One-click Share', desc: 'HyperFrames renders a branded video with a share page and chapter navigation' },
     ],

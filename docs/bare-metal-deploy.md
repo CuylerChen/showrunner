@@ -195,8 +195,10 @@ JWT_SECRET=<openssl rand -base64 32 生成>
 # Redis
 REDIS_URL=redis://127.0.0.1:6379
 
-# DeepSeek AI
-DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxxxxxx
+# OpenAI 兼容 Chat Completions
+OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxx
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_MODEL=gpt-4o-mini
 
 # 应用地址
 NEXT_PUBLIC_APP_URL=https://your-domain.com
@@ -245,7 +247,9 @@ const env = {
   MYSQL_DATABASE:    process.env.MYSQL_DATABASE    || 'showrunner',
   JWT_SECRET:        process.env.JWT_SECRET,
   REDIS_URL:         process.env.REDIS_URL         || 'redis://127.0.0.1:6379',
-  DEEPSEEK_API_KEY:  process.env.DEEPSEEK_API_KEY,
+  OPENAI_API_KEY:    process.env.OPENAI_API_KEY,
+  OPENAI_BASE_URL:   process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
+  OPENAI_MODEL:      process.env.OPENAI_MODEL    || 'gpt-4o-mini',
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   VIDEO_DIR:         process.env.VIDEO_DIR         || '/opt/showrunner/videos',
 }

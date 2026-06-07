@@ -44,7 +44,7 @@
     │  └─ 前端页面
     │
   Worker（BullMQ）
-    │  ├─ parse-queue   官网抓取、截图、AI Product Story 场景生成（DeepSeek）
+    │  ├─ parse-queue   官网抓取、截图、AI Product Story 场景生成
     │  ├─ record-queue  Playwright 录制（deprecated legacy recorder，非主流程）
     │  ├─ tts-queue     TTS 旁白生成
     │  └─ merge-queue   HyperFrames 合成营销视频
@@ -143,9 +143,10 @@ JWT_SECRET=<32位以上随机字符串，例如 openssl rand -base64 32 生成>
 # ── Redis ─────────────────────────────────────────────────
 REDIS_URL=redis://redis:6379
 
-# ── DeepSeek AI（步骤解析）────────────────────────────────
-# 申请地址：https://platform.deepseek.com/api_keys
-DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxxxxxx
+# ── OpenAI 兼容 Chat Completions（步骤解析）───────────────
+OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxx
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_MODEL=gpt-4o-mini
 
 # ── 应用地址（填写你的域名或 IP）──────────────────────────
 NEXT_PUBLIC_APP_URL=https://your-domain.com
