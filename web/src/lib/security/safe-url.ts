@@ -75,7 +75,9 @@ export function validateUrlForUserInput(raw: string): UrlValidationResult {
 
 export async function assertSafePublicUrl(raw: string): Promise<URL> {
   const parsed = validateUrlForUserInput(raw)
-  if (!parsed.ok) throw new Error(parsed.message)
+  if (parsed.ok === false) {
+    throw new Error(parsed.message)
+  }
 
   const records = await dns.lookup(parsed.url.hostname, { all: true, verbatim: true })
   if (!records.length) throw new Error('无法解析目标域名')

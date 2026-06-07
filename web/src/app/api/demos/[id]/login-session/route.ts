@@ -1,5 +1,6 @@
 // 启动 / 查询 / 关闭远程登录浏览器会话
 import { headers } from 'next/headers'
+import { assertSafePublicUrl } from '@/lib/security/safe-url'
 
 const WORKER = process.env.WORKER_INTERNAL_URL ?? 'http://worker:3001'
 
@@ -12,6 +13,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!await getUserId()) return Response.json({ success: false }, { status: 401 })
   const { id } = await params
   const body   = await req.json()
+
+  try {
+    const safeUrl = await assertSafePublicUrl(String(body.url ?? ''))
+    body.url = safeUrl.toString()
+  } catch (e) {
+    return Response.json({ success: false, error: (e as Error).message }, { status: 422 })
+  }
 
   const res = await fetch(`${WORKER}/browser-sessions/${id}`, {
     method:  'POST',

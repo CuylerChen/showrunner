@@ -5,6 +5,7 @@ import { eq, and, desc, sql } from 'drizzle-orm'
 import { parseQueue } from '@/lib/queue'
 import { getCurrentUser, getSubscription } from '@/lib/auth'
 import { ok, err } from '@/lib/api'
+import { assertSafePublicUrl } from '@/lib/security/safe-url'
 
 const CreateDemoSchema = z.object({
   product_url: z.string().url('请输入有效的产品 URL'),
@@ -68,6 +69,14 @@ export async function POST(req: NextRequest) {
   }
   const { product_url, description, audience, key_points, brand_tone, cta_text, cta_url } = parsed.data
   const normalizedCtaUrl = cta_url === '' ? null : cta_url ?? null
+  let safeProductUrl: URL
+  try {
+    safeProductUrl = await assertSafePublicUrl(product_url)
+    if (normalizedCtaUrl) await assertSafePublicUrl(normalizedCtaUrl)
+  } catch (validationError) {
+    return err('VALIDATION_ERROR', (validationError as Error).message)
+  }
+  const normalizedProductUrl = safeProductUrl.toString()
 
   // 检查额度
   const sub = await getSubscription(user.id)
@@ -85,7 +94,7 @@ export async function POST(req: NextRequest) {
   await db.insert(schema.demos).values({
     id:          demoId,
     user_id:     user.id,
-    product_url,
+    product_url: normalizedProductUrl,
     description: description ?? null,
     audience:    audience ?? null,
     key_points:  key_points ?? null,
@@ -105,7 +114,7 @@ export async function POST(req: NextRequest) {
   // 入队 parse-queue
   await parseQueue.add('parse', {
     demoId,
-    productUrl:  product_url,
+    productUrl:  normalizedProductUrl,
     description: description ?? null,
     audience: audience ?? null,
     keyPoints: key_points ?? null,
