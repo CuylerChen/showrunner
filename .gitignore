@@ -13,6 +13,7 @@ out/
 worker/output/
 .superpowers/
 .worktrees/
+.local/
 
 # ── 系统文件 ──────────────────────────────
 .DS_Store
