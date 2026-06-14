@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { db, schema } from '@/lib/db'
 import { eq, count } from 'drizzle-orm'
 import { CreateForm } from '@/components/demo/create-form'
+import { UpgradePanel } from '@/components/subscription/upgrade-panel'
 import { getT } from '@/lib/i18n-server'
 import Link from 'next/link'
 
@@ -14,13 +15,27 @@ async function getTotalCount(userId: string) {
   return row?.total ?? 0
 }
 
+async function getSubscriptionSummary(userId: string) {
+  const [row] = await db
+    .select({
+      plan: schema.subscriptions.plan,
+      status: schema.subscriptions.status,
+      demos_used_this_month: schema.subscriptions.demos_used_this_month,
+      demos_limit: schema.subscriptions.demos_limit,
+    })
+    .from(schema.subscriptions)
+    .where(eq(schema.subscriptions.user_id, userId))
+  return row ?? null
+}
+
 export default async function DashboardPage() {
   const headersList = await headers()
   const userId = headersList.get('x-user-id')
   if (!userId) redirect('/sign-in')
 
-  const [total, { t }] = await Promise.all([
+  const [total, subscription, { t }] = await Promise.all([
     getTotalCount(userId),
+    getSubscriptionSummary(userId),
     getT(),
   ])
   const d = t.dashboard
@@ -39,6 +54,15 @@ export default async function DashboardPage() {
       </div>
 
       {/* ── 创建表单 ──────────────────────────────────────── */}
+      {subscription && (
+        <UpgradePanel
+          plan={subscription.plan}
+          status={subscription.status}
+          demosUsed={subscription.demos_used_this_month}
+          demosLimit={subscription.demos_limit}
+        />
+      )}
+
       <CreateForm />
 
       {/* ── 快捷入口：已有导览 ─────────────────────────────── */}

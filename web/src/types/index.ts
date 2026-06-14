@@ -69,8 +69,12 @@ export interface Subscription {
   status: SubStatus
   demos_used_this_month: number
   demos_limit: number
-  lemon_squeezy_id: string | null
   current_period_end: string | null
+  paddle_customer_id: string | null
+  paddle_subscription_id: string | null
+  paddle_price_id: string | null
+  paddle_status: string | null
+  paddle_updated_at: string | null
   created_at: string
   updated_at: string
 }

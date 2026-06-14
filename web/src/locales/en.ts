@@ -170,6 +170,25 @@ export const en: typeof zh = {
     completed: 'Completed',
     failed: 'Failed',
   },
+  subscriptionPanel: {
+    label: 'Current plan',
+    description: 'Starter includes 10 videos per month. Pro removes generation limits.',
+    unlimited: 'Unlimited',
+    starter: 'Upgrade Starter',
+    pro: 'Upgrade Pro',
+    loading: 'Opening...',
+    error: 'Could not open Paddle checkout. Please try again.',
+    planName: {
+      free: 'Free',
+      starter: 'Starter',
+      pro: 'Pro',
+    },
+    statusName: {
+      active: 'Active',
+      cancelled: 'Cancelled',
+      expired: 'Expired',
+    },
+  },
   auth: {
     signIn: {
       title: 'Welcome back',

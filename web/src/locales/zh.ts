@@ -168,6 +168,25 @@ export const zh = {
     completed: '已完成',
     failed: '失败',
   },
+  subscriptionPanel: {
+    label: '当前套餐',
+    description: 'Starter 每月 10 条视频；Pro 不限制生成次数。',
+    unlimited: '无限制',
+    starter: '升级 Starter',
+    pro: '升级 Pro',
+    loading: '打开中...',
+    error: '无法打开 Paddle 结账，请稍后重试',
+    planName: {
+      free: 'Free',
+      starter: 'Starter',
+      pro: 'Pro',
+    } as Record<'free' | 'starter' | 'pro', string>,
+    statusName: {
+      active: '生效中',
+      cancelled: '已取消',
+      expired: '已过期',
+    } as Record<'active' | 'cancelled' | 'expired', string>,
+  },
   auth: {
     signIn: {
       title: '欢迎回来',
