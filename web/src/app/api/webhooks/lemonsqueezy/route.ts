@@ -1,4 +1,4 @@
-// LemonSqueezy webhook 已移除（暂不支持支付）
+// Legacy LemonSqueezy webhook is disabled. Paddle webhooks use /api/webhooks/paddle.
 export async function POST() {
   return new Response('Not found', { status: 404 })
 }

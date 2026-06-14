@@ -26,7 +26,7 @@ export const subscriptions = mysqlTable('subscriptions', {
   demos_limit:           int('demos_limit').default(3).notNull(),
   current_period_end:    timestamp('current_period_end'),
   paddle_customer_id:     varchar('paddle_customer_id', { length: 64 }),
-  paddle_subscription_id: varchar('paddle_subscription_id', { length: 64 }),
+  paddle_subscription_id: varchar('paddle_subscription_id', { length: 64 }).unique(),
   paddle_price_id:        varchar('paddle_price_id', { length: 64 }),
   paddle_status:          varchar('paddle_status', { length: 40 }),
   paddle_updated_at:      timestamp('paddle_updated_at'),

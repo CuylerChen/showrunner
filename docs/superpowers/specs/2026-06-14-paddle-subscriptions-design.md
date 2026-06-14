@@ -18,7 +18,7 @@ In scope:
 - Local subscription updates for active, trialing, paused, past due, canceled, and expired subscription states.
 - Plan limits aligned with the existing product model: `free = 3`, `starter = 10`, `pro = -1`.
 - Minimal UI and API copy so quota exhaustion can send users to a real checkout path.
-- Environment and deployment configuration for Paddle.
+- Environment configuration for Paddle without Docker-specific deployment changes.
 - Focused tests for plan mapping, checkout request construction, webhook signature verification, and webhook subscription updates.
 
 Out of scope:
@@ -51,7 +51,7 @@ The frontend opens the hosted checkout URL in the current browser tab. This is d
 
 ## Environment
 
-Add these variables to `.env.example`, Docker, and deployment docs:
+Add these variables to `.env.example` and the target runtime environment:
 
 ```bash
 PADDLE_ENVIRONMENT=sandbox
@@ -128,7 +128,6 @@ Paddle request:
     }
   ],
   "collection_mode": "automatic",
-  "customer_email": "user@example.com",
   "custom_data": {
     "user_id": "local-user-id",
     "plan": "starter"

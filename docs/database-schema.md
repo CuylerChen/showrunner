@@ -1,5 +1,5 @@
 # Showrunner — 数据库表结构设计
-> 版本：v0.1 | 更新时间：2026-02-19
+> 版本：v0.1 | 更新时间：2026-06-14
 > 数据库：MySQL
 
 ---
@@ -12,6 +12,7 @@ users
   └── demos           (1:N)
         └── steps     (1:N)
         └── jobs      (1:N)
+paddle_events         (Webhook 幂等记录)
 ```
 
 ---
@@ -37,7 +38,7 @@ create table users (
 
 ## 二、subscriptions 表
 
-> 记录用户套餐、额度、LemonSqueezy 订阅信息。
+> 记录用户套餐、额度、Paddle Billing 订阅信息。
 
 ```sql
 create table subscriptions (
@@ -48,8 +49,14 @@ create table subscriptions (
   demos_used_this_month   int not null default 0,
   demos_limit             int not null default 3,     -- free=3, starter=10, pro=-1(无限)
   current_period_end      timestamp null,             -- 当前计费周期结束时间
+  paddle_customer_id      varchar(64) null,           -- Paddle customer ID
+  paddle_subscription_id  varchar(64) null,           -- Paddle subscription ID
+  paddle_price_id         varchar(64) null,           -- 当前 Paddle price ID
+  paddle_status           varchar(40) null,           -- Paddle 原始订阅状态
+  paddle_updated_at       timestamp null,             -- 最近一次 Paddle webhook 更新时间
   created_at              timestamp default current_timestamp,
   updated_at              timestamp default current_timestamp on update current_timestamp,
+  unique key uq_sub_paddle_subscription (paddle_subscription_id),
   constraint fk_sub_user foreign key (user_id) references users(id) on delete cascade
 );
 ```
@@ -63,7 +70,22 @@ demos_limit = 3   → Free
 
 ---
 
-## 三、demos 表
+## 三、paddle_events 表
+
+> 记录已处理的 Paddle webhook event ID，保证重复回调不会重复扣改本地订阅状态。
+
+```sql
+create table paddle_events (
+  id             varchar(64) primary key,
+  event_type     varchar(80) not null,
+  occurred_at    timestamp null,
+  processed_at   timestamp not null default current_timestamp
+);
+```
+
+---
+
+## 四、demos 表
 
 > 核心主表，每条记录代表一次 Demo 生成任务。
 
@@ -111,7 +133,7 @@ https://showrunner.app/share/{share_token}
 
 ---
 
-## 四、steps 表（主路径语义为视频场景）
+## 五、steps 表（主路径语义为视频场景）
 
 > 当前 Marketing Video MVP 复用 `steps` 表存储 Product Story 视频场景。`action_type`、`selector`、`value` 等字段为 legacy recorder 兼容字段；主路径读取 title、narration、visual_type、visual_asset_url 和时间戳。
 
@@ -151,7 +173,7 @@ create table steps (
 
 ---
 
-## 五、jobs 表
+## 六、jobs 表
 
 > 后台任务追踪，配合 BullMQ 实现异步状态更新。
 
@@ -179,7 +201,7 @@ create table jobs (
 
 ---
 
-## 六、索引
+## 七、索引
 
 ```sql
 -- 常用查询加速
@@ -194,7 +216,7 @@ create index idx_subs_user_id     on subscriptions(user_id);
 
 ---
 
-## 七、状态查询
+## 八、状态查询
 
 前端通过 API 查询 `demos` 表状态变化。后续如需要更实时的体验，可在 MySQL 之上增加 SSE 或 WebSocket。
 
@@ -206,7 +228,7 @@ updateDemoStatus(demo.data.status)
 
 ---
 
-## 八、状态流转图
+## 九、状态流转图
 
 ```
 Demo 状态流转：
@@ -224,7 +246,7 @@ recording / paused 为 deprecated legacy recorder 状态，当前主流程不再
 
 ---
 
-## 九、待定事项
+## 十、待定事项
 
 - [ ] RLS（Row Level Security）策略设计（每个用户只能访问自己的数据）
 - [ ] `updated_at` 自动更新触发器

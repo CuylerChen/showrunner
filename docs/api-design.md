@@ -55,7 +55,7 @@
   /demos/[id]/steps   步骤管理
   /share              公开分享页（无需鉴权）
   /subscription       套餐与额度
-  /webhooks           第三方回调（LemonSqueezy）
+  /webhooks           第三方回调（Paddle）
 ```
 
 ---
@@ -400,40 +400,44 @@ Auth: 必须
 **Request**
 ```json
 {
-  "plan": "starter" | "pro"
+  "plan": "starter"
 }
 ```
+
+`plan` 可选值：`starter`、`pro`。
 
 **Response 200**
 ```json
 {
   "success": true,
   "data": {
-    "checkout_url": "https://showrunner.lemonsqueezy.com/checkout/..."
+    "checkout_url": "https://checkout.paddle.com/...",
+    "transaction_id": "txn_..."
   }
 }
 ```
 
-> 前端拿到 `checkout_url` 后用 LemonSqueezy 内嵌 JS 弹出 Checkout 弹窗，不跳转页面。
+> 前端拿到 `checkout_url` 后跳转到 Paddle Hosted Checkout。Paddle Webhook 成功后更新本地订阅和额度。
 
 ---
 
 ## 八、Webhook 接口
 
-### 8.1 LemonSqueezy 支付回调
+### 8.1 Paddle 支付回调
 ```
-POST /api/webhooks/lemonsqueezy
-Auth: LemonSqueezy Webhook 签名验证
+POST /api/webhooks/paddle
+Auth: Paddle-Signature Webhook 签名验证
 ```
 
 **监听事件**
 
 | 事件 | 处理逻辑 |
 |------|----------|
-| `subscription_created` | 更新 plan、demos_limit |
-| `subscription_updated` | 更新 plan、status |
-| `subscription_cancelled` | status = cancelled |
-| `subscription_expired` | status = expired，plan 降回 free |
+| `subscription.created` | 更新 Paddle 订阅 ID、plan、demos_limit |
+| `subscription.updated` | 更新 plan、status、current_period_end |
+| `subscription.canceled` | status = cancelled，plan 降回 free |
+| `subscription.paused` | status = cancelled，plan 降回 free |
+| `subscription.past_due` | status = expired，plan 降回 free |
 
 ---
 

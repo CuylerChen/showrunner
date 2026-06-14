@@ -64,6 +64,18 @@ function firstKnownPriceId(data: PaddleSubscriptionData): string | null {
   return null
 }
 
+function parsePaddleEvent(rawBody: string): PaddleEvent | null {
+  try {
+    return JSON.parse(rawBody) as PaddleEvent
+  } catch {
+    return null
+  }
+}
+
+function isSubscriptionEvent(event: PaddleEvent): boolean {
+  return typeof event.event_type === 'string' && event.event_type.startsWith('subscription.')
+}
+
 async function insertEventOnce(event: PaddleEvent): Promise<'inserted' | 'duplicate'> {
   try {
     await db.insert(schema.paddleEvents).values({
@@ -143,14 +155,18 @@ export async function POST(req: NextRequest) {
     return err('UNAUTHORIZED', 'Invalid Paddle signature')
   }
 
-  const event = JSON.parse(rawBody) as PaddleEvent
-  if (!event.event_id || !event.data) {
+  const event = parsePaddleEvent(rawBody)
+  if (!event || !event.event_id || !event.data) {
     return err('VALIDATION_ERROR', 'Invalid Paddle webhook payload')
   }
 
   const eventInsert = await insertEventOnce(event)
   if (eventInsert === 'duplicate') {
     return ok({ duplicate: true })
+  }
+
+  if (!isSubscriptionEvent(event)) {
+    return ok({ ignored: true })
   }
 
   const data = event.data

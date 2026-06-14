@@ -134,14 +134,14 @@ Worker                    MySQL               用户
 ### 流程 C：订阅支付
 
 ```
-用户                 Next.js              LemonSqueezy          MySQL
+用户                 Next.js              Paddle Billing        MySQL
  │                     │                      │                  │
  │  无额度，点击生成    │                      │                  │
  │──────────────────►  │                      │                  │
- │  弹出付费弹窗        │                      │                  │
+ │  返回 Paddle 结账链接 │                      │                  │
  │◄──────────────────  │                      │                  │
  │                     │                      │                  │
- │  内嵌 Checkout 付款 │                      │                  │
+ │  Hosted Checkout 付款 │                    │                  │
  │─────────────────────────────────────────►  │                  │
  │  付款成功           │                      │                  │
  │◄─────────────────────────────────────────  │                  │
@@ -169,7 +169,7 @@ Worker                    MySQL               用户
 | Worker | 官网抓取、Playwright 截图、TTS、HyperFrames 合成 | Railway |
 | OpenAI-compatible Chat Completions | AI Product Story 场景生成 | 托管服务 |
 | TTS | Kokoro 默认；可选独立 OpenAI TTS | Worker 内运行 / 托管服务 |
-| LemonSqueezy | 订阅支付、Webhook | 托管服务 |
+| Paddle Billing | 订阅支付、Hosted Checkout、Webhook | 托管服务 |
 
 ---
 
@@ -194,10 +194,12 @@ OPENAI_TTS_API_KEY=
 OPENAI_TTS_BASE_URL=https://api.openai.com/v1
 OPENAI_TTS_MODEL=gpt-4o-mini-tts
 
-# LemonSqueezy
-LEMONSQUEEZY_API_KEY=
-LEMONSQUEEZY_WEBHOOK_SECRET=
-LEMONSQUEEZY_STORE_ID=
+# Paddle Billing
+PADDLE_ENVIRONMENT=sandbox
+PADDLE_API_KEY=
+PADDLE_WEBHOOK_SECRET=
+PADDLE_STARTER_PRICE_ID=
+PADDLE_PRO_PRICE_ID=
 
 # Storage / Worker 内部
 R2_ACCESS_KEY_ID=

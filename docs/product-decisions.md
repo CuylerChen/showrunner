@@ -58,7 +58,7 @@ TTS 旁白 → HyperFrames 合成官网截图、动态图形和 CTA
 | 视频合成 | HyperFrames 合成官网截图 + 动态包装 + 旁白 |
 | 素材兜底 | 官网抓取或截图失败时使用模板动态图形 |
 | 交互分享页 | 视频播放器 + 场景导航（可跳转时间节点） + CTA |
-| 订阅集成 | LemonSqueezy Freemium |
+| 订阅集成 | Paddle Billing Freemium |
 
 ### Phase 2 — 增长功能
 
@@ -107,9 +107,9 @@ TTS 旁白 → HyperFrames 合成官网截图、动态图形和 CTA
 
 **付费触发节点**
 用户注册后生成第一个 Demo（免费），结果页出现订阅引导。
-用户无额度时，点击生成弹出内嵌付费弹窗，不跳转页面。
+用户无额度时，点击生成后创建 Paddle Hosted Checkout 并跳转到结账页。
 
-**订阅工具**：LemonSqueezy（自动处理全球税务）
+**订阅工具**：Paddle Billing（Hosted Checkout + Webhook 同步本地额度）
 
 ---
 
@@ -125,7 +125,7 @@ TTS 旁白 → HyperFrames 合成官网截图、动态图形和 CTA
 | Worker | Node.js + Playwright 截图 + Kokoro + HyperFrames + FFmpeg |
 | AI 场景生成 | OpenAI-compatible Chat Completions 接口 |
 | TTS | Kokoro 默认；可选独立 OpenAI TTS（不走 Chat Completions gateway） |
-| 订阅支付 | LemonSqueezy |
+| 订阅支付 | Paddle Billing |
 | 前端部署 | Vercel |
 | Worker 部署 | Railway |
 
@@ -144,7 +144,7 @@ MVP 阶段默认使用 Kokoro（免费开源）。需要更强商业旁白时，
 - TTS 旁白 + 字幕
 - 素材兜底动态图形
 - 交互分享页 + CTA
-- LemonSqueezy 订阅
+- Paddle Billing 订阅
 
 **不做（Phase 1 明确排除）**
 - 团队协作

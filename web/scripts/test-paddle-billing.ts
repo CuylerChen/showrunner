@@ -32,12 +32,12 @@ assert.equal(getPaddlePriceIdForPlan('starter', { ...config, priceIds: { ...conf
 const payload = buildPaddleTransactionPayload({
   plan: 'starter',
   priceId: 'pri_starter',
-  user: { id: 'user_1', email: 'user@example.com' },
+  user: { id: 'user_1' },
 })
 assert.deepEqual(payload.items, [{ price_id: 'pri_starter', quantity: 1 }])
 assert.equal(payload.collection_mode, 'automatic')
-assert.equal(payload.customer_email, 'user@example.com')
 assert.deepEqual(payload.custom_data, { user_id: 'user_1', plan: 'starter' })
+assert.equal('customer_email' in payload, false)
 
 const rawBody = JSON.stringify({ event_id: 'evt_1' })
 const timestamp = 1770883200

@@ -16,7 +16,6 @@ export interface PaddleConfig {
 export interface PaddleTransactionPayload {
   items: Array<{ price_id: string; quantity: number }>
   collection_mode: 'automatic'
-  customer_email: string
   custom_data: {
     user_id: string
     plan: PaidPlan
@@ -79,12 +78,11 @@ export function getPaddlePriceIdForPlan(plan: PaidPlan, config: PaddleConfig): s
 export function buildPaddleTransactionPayload(input: {
   plan: PaidPlan
   priceId: string
-  user: { id: string; email: string }
+  user: { id: string }
 }): PaddleTransactionPayload {
   return {
     items: [{ price_id: input.priceId, quantity: 1 }],
     collection_mode: 'automatic',
-    customer_email: input.user.email,
     custom_data: {
       user_id: input.user.id,
       plan: input.plan,

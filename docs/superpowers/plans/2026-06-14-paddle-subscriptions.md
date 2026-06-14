@@ -25,7 +25,7 @@
 - Create `web/src/components/subscription/upgrade-panel.tsx`: compact client component for Starter/Pro checkout.
 - Modify `web/src/app/(dashboard)/dashboard/page.tsx`: show current quota and upgrade panel.
 - Modify `web/src/locales/zh.ts` and `web/src/locales/en.ts`: add subscription UI copy.
-- Modify `.env.example` and `docker-compose.yml`: add Paddle configuration.
+- Modify `.env.example`: add Paddle configuration. No Docker configuration is required for this pass.
 - Modify `docs/api-design.md` and `docs/system-architecture.md`: replace LemonSqueezy subscription references with Paddle.
 
 ---
@@ -71,12 +71,12 @@ assert.equal(config.priceIds.starter, 'pri_starter')
 const payload = buildPaddleTransactionPayload({
   plan: 'starter',
   priceId: 'pri_starter',
-  user: { id: 'user_1', email: 'user@example.com' },
+  user: { id: 'user_1' },
 })
 assert.deepEqual(payload.items, [{ price_id: 'pri_starter', quantity: 1 }])
 assert.equal(payload.collection_mode, 'automatic')
-assert.equal(payload.customer_email, 'user@example.com')
 assert.deepEqual(payload.custom_data, { user_id: 'user_1', plan: 'starter' })
+assert.equal('customer_email' in payload, false)
 
 const rawBody = JSON.stringify({ event_id: 'evt_1' })
 const timestamp = 1770883200
@@ -286,7 +286,6 @@ Expected: PASS.
 
 **Files:**
 - Modify: `.env.example`
-- Modify: `docker-compose.yml`
 - Modify: `docs/api-design.md`
 - Modify: `docs/system-architecture.md`
 
@@ -294,15 +293,11 @@ Expected: PASS.
 
 Add `PADDLE_ENVIRONMENT`, `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`, `PADDLE_STARTER_PRICE_ID`, and `PADDLE_PRO_PRICE_ID`.
 
-- [ ] **Step 2: Pass Paddle env to web container**
-
-Add the same variables under `services.web.environment` in `docker-compose.yml`.
-
-- [ ] **Step 3: Update docs**
+- [ ] **Step 2: Update docs**
 
 Replace LemonSqueezy subscription references with Paddle Billing checkout/webhook references.
 
-- [ ] **Step 4: Final verification**
+- [ ] **Step 3: Final verification**
 
 Run:
 
