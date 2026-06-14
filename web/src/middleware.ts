@@ -12,6 +12,7 @@ function isPublic(pathname: string): boolean {
   if (pathname.startsWith('/share/')) return true
   if (pathname.startsWith('/api/share/')) return true
   if (pathname.startsWith('/api/auth/')) return true
+  if (pathname === '/api/webhooks/paddle') return true
   return false
 }
 

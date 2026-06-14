@@ -3,6 +3,7 @@ import crypto from 'node:crypto'
 export type AppPlan = 'free' | 'starter' | 'pro'
 export type PaidPlan = Exclude<AppPlan, 'free'>
 export type PaddleEnvironment = 'sandbox' | 'production'
+export type LocalSubscriptionStatus = 'active' | 'cancelled' | 'expired'
 
 export interface PaddleConfig {
   environment: PaddleEnvironment
@@ -28,6 +29,11 @@ export interface PaddlePlanEventLike {
     price_id?: string | null
     price?: { id?: string | null } | null
   }> | null
+}
+
+export interface PaddleStatusMapping {
+  localStatus: LocalSubscriptionStatus
+  resetToFree: boolean
 }
 
 function cleanEnv(value: string | undefined): string {
@@ -155,4 +161,20 @@ export function resolvePaddlePlanFromEvent(
   }
 
   return null
+}
+
+export function mapPaddleSubscriptionStatus(status: string | null | undefined): PaddleStatusMapping | null {
+  switch (status) {
+    case 'active':
+    case 'trialing':
+      return { localStatus: 'active', resetToFree: false }
+    case 'paused':
+    case 'canceled':
+    case 'cancelled':
+      return { localStatus: 'cancelled', resetToFree: true }
+    case 'past_due':
+      return { localStatus: 'expired', resetToFree: true }
+    default:
+      return null
+  }
 }

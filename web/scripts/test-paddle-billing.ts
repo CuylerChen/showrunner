@@ -3,6 +3,7 @@ import {
   buildPaddleTransactionPayload,
   getPlanLimit,
   getPaddlePriceIdForPlan,
+  mapPaddleSubscriptionStatus,
   resolvePaddleConfig,
   resolvePaddlePlanFromEvent,
   signPaddleWebhookPayload,
@@ -59,5 +60,12 @@ assert.equal(
   resolvePaddlePlanFromEvent({ custom_data: {}, items: [{ price: { id: 'pri_starter' } }] }, config),
   'starter',
 )
+
+assert.deepEqual(mapPaddleSubscriptionStatus('active'), { localStatus: 'active', resetToFree: false })
+assert.deepEqual(mapPaddleSubscriptionStatus('trialing'), { localStatus: 'active', resetToFree: false })
+assert.deepEqual(mapPaddleSubscriptionStatus('paused'), { localStatus: 'cancelled', resetToFree: true })
+assert.deepEqual(mapPaddleSubscriptionStatus('past_due'), { localStatus: 'expired', resetToFree: true })
+assert.deepEqual(mapPaddleSubscriptionStatus('canceled'), { localStatus: 'cancelled', resetToFree: true })
+assert.deepEqual(mapPaddleSubscriptionStatus('unknown'), null)
 
 console.log('paddle billing tests passed')
