@@ -70,15 +70,26 @@ export async function POST(req: NextRequest, { params }: Params) {
     return err('DEMO_NOT_READY', '没有需要重录的步骤')
   }
 
-  await db
-    .update(schema.demos)
-    .set({ status: 'recording', error_message: null })
-    .where(eq(schema.demos.id, id))
+  try {
+    await db
+      .update(schema.demos)
+      .set({ status: 'recording', error_message: null })
+      .where(eq(schema.demos.id, id))
 
-  await recordQueue.add('record', { demoId: id, steps: remainingSteps }, {
-    attempts: 1,
-    removeOnComplete: true,
-  })
+    await recordQueue.add('record', { demoId: id, steps: remainingSteps }, {
+      attempts: 1,
+      removeOnComplete: true,
+    })
+  } catch (queueError) {
+    await db
+      .update(schema.demos)
+      .set({
+        status: 'paused',
+        error_message: `RECORD_RETRY_FAILED: ${(queueError as Error).message}`,
+      })
+      .where(eq(schema.demos.id, id))
+    return err('RECORD_RETRY_FAILED', '重录任务入队失败，请稍后重试')
+  }
 
   return ok({ demo_id: id, status: 'recording' })
 }

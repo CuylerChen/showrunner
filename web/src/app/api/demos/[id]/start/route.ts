@@ -36,16 +36,27 @@ export async function POST(_req: NextRequest, { params }: Params) {
     return err('DEMO_NOT_READY', '没有可生成的视频场景，请先等待 AI 分析完成')
   }
 
-  await db
-    .update(schema.demos)
-    .set({ status: 'processing' })
-    .where(eq(schema.demos.id, id))
+  try {
+    await db
+      .update(schema.demos)
+      .set({ status: 'processing', error_message: null })
+      .where(eq(schema.demos.id, id))
 
-  await ttsQueue.add('tts', { demoId: id, steps, renderMode: 'promotional' }, {
-    attempts: 3,
-    backoff: { type: 'exponential', delay: 2000 },
-    removeOnComplete: true,
-  })
+    await ttsQueue.add('tts', { demoId: id, steps, renderMode: 'promotional' }, {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 2000 },
+      removeOnComplete: true,
+    })
+  } catch (queueError) {
+    await db
+      .update(schema.demos)
+      .set({
+        status: 'review',
+        error_message: `START_FAILED: ${(queueError as Error).message}`,
+      })
+      .where(eq(schema.demos.id, id))
+    return err('START_FAILED', '视频生成任务入队失败，请稍后重试')
+  }
 
   return ok({ id, status: 'processing' })
 }

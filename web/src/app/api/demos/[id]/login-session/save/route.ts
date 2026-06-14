@@ -32,25 +32,40 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return Response.json({ success: false, error: 'Demo not found' }, { status: 404 })
   }
 
-  // 将 storageState JSON 写入 session_cookies 字段，并重置 demo 状态为 pending（等待重新解析）
-  await db.update(schema.demos)
-    .set({
-      session_cookies:  data.state,
-      login_video_path: data.loginVideoPath ?? null,  // 登录录制视频路径
-      status:           'pending',
-    })
-    .where(and(eq(schema.demos.id, id), eq(schema.demos.user_id, userId)))
+  try {
+    // 将 storageState JSON 写入 session_cookies 字段，并重置 demo 状态为 pending（等待重新解析）
+    await db.update(schema.demos)
+      .set({
+        session_cookies:  data.state,
+        login_video_path: data.loginVideoPath ?? null,  // 登录录制视频路径
+        status:           'pending',
+        error_message:    null,
+      })
+      .where(and(eq(schema.demos.id, id), eq(schema.demos.user_id, userId)))
 
-  // 触发重新解析：用登录态加载页面，生成针对已登录内容的步骤
-  await parseQueue.add('parse', {
-    demoId:      id,
-    productUrl:  demo.product_url!,
-    description: demo.description ?? null,
-    isReparse:   true,
-  }, {
-    attempts: 3,
-    backoff: { type: 'exponential', delay: 2000 },
-  })
+    // 触发重新解析：用登录态加载页面，生成针对已登录内容的步骤
+    await parseQueue.add('parse', {
+      demoId:      id,
+      productUrl:  demo.product_url!,
+      description: demo.description ?? null,
+      isReparse:   true,
+    }, {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 2000 },
+    })
+  } catch (queueError) {
+    await db.update(schema.demos)
+      .set({
+        status:        'failed',
+        error_message: `Failed to enqueue reparse job: ${(queueError as Error).message}`,
+      })
+      .where(and(eq(schema.demos.id, id), eq(schema.demos.user_id, userId)))
+
+    return Response.json({
+      success: false,
+      error: 'Failed to enqueue reparse job',
+    }, { status: 500 })
+  }
 
   console.log(`[save-session] demo=${id} 登录状态已保存，已触发重新解析`)
   return Response.json({ success: true })
