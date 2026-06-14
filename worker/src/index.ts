@@ -17,6 +17,10 @@ function resolveWorkerPort() {
   return parsed
 }
 
+function resolveWorkerHost() {
+  return process.env.WORKER_HOST?.trim() || '127.0.0.1'
+}
+
 async function main() {
   console.log('='.repeat(50))
   console.log('Showrunner Worker 启动中...')
@@ -29,7 +33,7 @@ async function main() {
     startMergeWorker(),
   ]
 
-  const httpServer = startHttpServer(resolveWorkerPort())
+  const httpServer = startHttpServer(resolveWorkerPort(), resolveWorkerHost())
 
   console.log('\n✅ 所有 Worker 已就绪，等待任务...\n')
 

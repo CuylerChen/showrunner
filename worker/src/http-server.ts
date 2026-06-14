@@ -18,7 +18,7 @@ function json(res: http.ServerResponse, status: number, data: any) {
   res.end(JSON.stringify(data))
 }
 
-export function startHttpServer(port = 3001) {
+export function startHttpServer(port = 3001, host = '127.0.0.1') {
   const server = http.createServer(async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*')
 
@@ -87,8 +87,8 @@ export function startHttpServer(port = 3001) {
     }
   })
 
-  server.listen(port, '0.0.0.0', () => {
-    console.log(`[http-server] Worker API 监听 http://0.0.0.0:${port}`)
+  server.listen(port, host, () => {
+    console.log(`[http-server] Worker API 监听 http://${host}:${port}`)
   })
 
   return server
