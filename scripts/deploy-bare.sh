@@ -98,7 +98,7 @@ if [ "${TARGET}" = "web" ] || [ "${TARGET}" = "all" ]; then
   npm ci --quiet
   npm run build
   echo "▶  重载 Web（零停机）..."
-  pm2 reload showrunner-web
+  pm2 reload showrunner-web --update-env
   echo "✓  Web 已更新"
 fi
 
@@ -109,7 +109,7 @@ if [ "${TARGET}" = "worker" ] || [ "${TARGET}" = "all" ]; then
   cd ${REMOTE_DIR}/worker
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci --quiet
   echo "▶  重启 Worker..."
-  pm2 restart showrunner-worker
+  pm2 restart showrunner-worker --update-env
   echo "✓  Worker 已更新"
 fi
 

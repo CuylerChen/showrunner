@@ -4,13 +4,7 @@
 
 ## 推荐路径
 
-新服务器优先使用 Docker 部署：
-
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/CuylerChen/showrunner/main/scripts/setup.sh)
-```
-
-不使用 Docker 时，参考 [裸机部署文档](./bare-metal-deploy.md)：
+新服务器使用裸机部署，不使用 Docker。参考 [裸机部署文档](./bare-metal-deploy.md)：
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/CuylerChen/showrunner/main/scripts/setup-bare.sh)
@@ -41,19 +35,18 @@ Worker
 项目根目录 `.env`：
 
 ```env
-MYSQL_ROOT_PASSWORD=change_this_root_password
-MYSQL_HOST=mysql
+MYSQL_HOST=127.0.0.1
 MYSQL_PORT=3306
 MYSQL_USER=showrunner
 MYSQL_PASSWORD=change_this_password
 MYSQL_DATABASE=showrunner
 
 JWT_SECRET=change_this_to_random_32_char_string
-REDIS_URL=redis://redis:6379
+REDIS_URL=redis://127.0.0.1:6379
 
 OPENAI_API_KEY=sk-...
-OPENAI_BASE_URL=https://api.openai.com/v1
-OPENAI_MODEL=gpt-4o-mini
+OPENAI_BASE_URL=https://sub.sharellm.uk/v1
+OPENAI_MODEL=gpt-5.5
 
 TTS_PROVIDER=kokoro
 # OPENAI_TTS_API_KEY=sk-...
@@ -63,7 +56,15 @@ TTS_PROVIDER=kokoro
 # OPENAI_TTS_SPEED=0.95
 
 NEXT_PUBLIC_APP_URL=https://your-domain.com
-VIDEO_DIR=/data/videos
+WORKER_INTERNAL_URL=http://127.0.0.1:3001
+
+PADDLE_ENVIRONMENT=production
+PADDLE_API_KEY=
+PADDLE_WEBHOOK_SECRET=
+PADDLE_STARTER_PRICE_ID=
+PADDLE_PRO_PRICE_ID=
+
+VIDEO_DIR=/opt/showrunner/videos
 ```
 
 可选视频对象存储：
@@ -87,13 +88,7 @@ GITHUB_CLIENT_SECRET=your_github_client_secret
 
 ## 数据库初始化
 
-Docker 部署会自动挂载并执行：
-
-```text
-database/schema.sql -> /docker-entrypoint-initdb.d/schema.sql
-```
-
-裸机部署可手动导入：
+`setup-bare.sh` 会自动创建数据库并导入结构。手动部署时可执行：
 
 ```bash
 mysql -u showrunner -p showrunner < /opt/showrunner/database/schema.sql
@@ -102,9 +97,12 @@ mysql -u showrunner -p showrunner < /opt/showrunner/database/schema.sql
 ## 验证
 
 ```bash
-docker compose ps
-docker compose logs -f web
-docker compose logs -f worker
+systemctl status mysql
+systemctl status redis-server
+systemctl status nginx
+pm2 status
+pm2 logs showrunner-web --lines 30
+pm2 logs showrunner-worker --lines 30
 ```
 
 访问 `NEXT_PUBLIC_APP_URL`，注册账号后创建 demo。Worker 日志中应能看到 parse、tts、merge 阶段执行记录。
