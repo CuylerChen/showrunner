@@ -2,6 +2,9 @@
 
 /* ── 设计系统 Tokens（浅色） ─────────────────────────────── */
 :root {
+  --font-inter: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-space-grotesk: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
   /* 背景层级 */
   --bg-base:     #FFFFFF;
   --bg-surface:  #F8FAFC;

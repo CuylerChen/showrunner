@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:security": "tsx scripts/test-safe-url.ts && tsx scripts/test-db-errors.ts && tsx scripts/test-paddle-billing.ts && tsx scripts/test-home-pricing.ts && tsx scripts/test-subscription-schema.ts"
+    "test:security": "tsx scripts/test-safe-url.ts && tsx scripts/test-db-errors.ts && tsx scripts/test-paddle-billing.ts && tsx scripts/test-home-pricing.ts && tsx scripts/test-subscription-schema.ts && tsx scripts/test-next-build-conventions.ts && tsx scripts/test-queue-lazy.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
