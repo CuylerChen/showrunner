@@ -1,7 +1,7 @@
 import { Worker, Job } from 'bullmq'
 import { connection } from '../utils/redis'
 import { db, demos, jobs } from '../utils/db'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { generateNarration } from '../services/tts'
 import { mergeQueue } from '../queues'
 import { Paths } from '../utils/paths'
@@ -19,8 +19,9 @@ async function processJob(job: Job<TtsJobData>) {
   const { demoId, steps, videoPath, renderMode } = job.data
   console.log(`[tts] 开始生成旁白 demo=${demoId}`)
 
+  const jobId = crypto.randomUUID()
   await db.insert(jobs).values({
-    id:         crypto.randomUUID(),
+    id:         jobId,
     demo_id:    demoId,
     type:       'tts',
     status:     'running',
@@ -39,24 +40,39 @@ async function processJob(job: Job<TtsJobData>) {
     ttsStepTimestamps.push({ stepId: steps[i].id, start, end })
   }
 
+  try {
+    await mergeQueue.add('merge', {
+      demoId,
+      videoPath,
+      audioPaths,
+      stepTimestamps: ttsStepTimestamps,   // 使用 TTS 时间轴时间戳
+      recordTimestamps: job.data.stepTimestamps,  // 录屏原始时间戳（用于视频切割）
+      totalDuration,
+      steps,
+      renderMode: renderMode ?? (videoPath ? 'recording' : 'promotional'),
+    }, {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 2000 },
+    })
+  } catch (queueError) {
+    const message = `MERGE_QUEUE_FAILED: ${(queueError as Error).message}`
+    await db
+      .update(demos)
+      .set({ status: 'failed', error_message: message })
+      .where(eq(demos.id, demoId))
+
+    await db
+      .update(jobs)
+      .set({ status: 'failed', error_message: message, completed_at: new Date() })
+      .where(eq(jobs.id, jobId))
+
+    throw new Error(message)
+  }
+
   await db
     .update(jobs)
     .set({ status: 'completed', completed_at: new Date() })
-    .where(eq(jobs.demo_id, demoId))
-
-  await mergeQueue.add('merge', {
-    demoId,
-    videoPath,
-    audioPaths,
-    stepTimestamps: ttsStepTimestamps,   // 使用 TTS 时间轴时间戳
-    recordTimestamps: job.data.stepTimestamps,  // 录屏原始时间戳（用于视频切割）
-    totalDuration,
-    steps,
-    renderMode: renderMode ?? (videoPath ? 'recording' : 'promotional'),
-  }, {
-    attempts: 3,
-    backoff: { type: 'exponential', delay: 2000 },
-  })
+    .where(eq(jobs.id, jobId))
 
   console.log(`[tts] 完成 demo=${demoId}，${audioPaths.length} 段旁白`)
 }
@@ -65,16 +81,23 @@ async function onFailed(job: Job<TtsJobData> | undefined, err: Error) {
   if (!job) return
   const { demoId } = job.data
   console.error(`[tts] 失败 demo=${demoId}:`, err.message)
+  const message = err.message.startsWith('MERGE_QUEUE_FAILED:')
+    ? err.message
+    : `TTS 生成失败: ${err.message}`
 
   await db
     .update(demos)
-    .set({ status: 'failed', error_message: `TTS 生成失败: ${err.message}` })
+    .set({ status: 'failed', error_message: message })
     .where(eq(demos.id, demoId))
 
   await db
     .update(jobs)
     .set({ status: 'failed', error_message: err.message, completed_at: new Date() })
-    .where(eq(jobs.demo_id, demoId))
+    .where(and(
+      eq(jobs.demo_id, demoId),
+      eq(jobs.type, 'tts'),
+      eq(jobs.status, 'running'),
+    ))
 }
 
 export function startTtsWorker() {

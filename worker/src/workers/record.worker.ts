@@ -1,7 +1,7 @@
 import { Worker, Job } from 'bullmq'
 import { connection } from '../utils/redis'
 import { db, demos, steps, jobs } from '../utils/db'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { recordDemo } from '../services/recorder'
 import { ttsQueue } from '../queues'
 import { Paths } from '../utils/paths'
@@ -19,8 +19,9 @@ async function processJob(job: Job<RecordJobData>) {
   // 1. 更新状态为 recording
   await db.update(demos).set({ status: 'recording' }).where(eq(demos.id, demoId))
 
+  const jobId = crypto.randomUUID()
   await db.insert(jobs).values({
-    id:         crypto.randomUUID(),
+    id:         jobId,
     demo_id:    demoId,
     type:       'record',
     status:     'running',
@@ -58,7 +59,7 @@ async function processJob(job: Job<RecordJobData>) {
     await db
       .update(jobs)
       .set({ status: 'failed', error_message: (err as Error).message, completed_at: new Date() })
-      .where(eq(jobs.demo_id, demoId))
+      .where(eq(jobs.id, jobId))
 
     throw err
   }
@@ -71,28 +72,53 @@ async function processJob(job: Job<RecordJobData>) {
       .where(eq(steps.id, ts.stepId))
   }
 
-  // 4. 标记 job 完成，入队 tts-queue
+  // 4. 入队 tts-queue，成功后再标记 record job 完成
+  try {
+    await ttsQueue.add('tts', {
+      demoId,
+      steps: jobSteps,
+      videoPath,
+      stepTimestamps,
+    }, {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 2000 },
+    })
+  } catch (queueError) {
+    const message = `TTS_QUEUE_FAILED: ${(queueError as Error).message}`
+    await db
+      .update(demos)
+      .set({ status: 'failed', error_message: message })
+      .where(eq(demos.id, demoId))
+
+    await db
+      .update(jobs)
+      .set({ status: 'failed', error_message: message, completed_at: new Date() })
+      .where(eq(jobs.id, jobId))
+
+    throw new Error(message)
+  }
+
   await db
     .update(jobs)
     .set({ status: 'completed', completed_at: new Date() })
-    .where(eq(jobs.demo_id, demoId))
-
-  await ttsQueue.add('tts', {
-    demoId,
-    steps: jobSteps,
-    videoPath,
-    stepTimestamps,
-  }, {
-    attempts: 3,
-    backoff: { type: 'exponential', delay: 2000 },
-  })
+    .where(eq(jobs.id, jobId))
 
   console.log(`[record] 完成 demo=${demoId}，视频: ${videoPath}`)
 }
 
 async function onFailed(job: Job<RecordJobData> | undefined, err: Error) {
   if (!job) return
-  console.error(`[record] 失败 demo=${job.data.demoId}:`, err.message)
+  const { demoId } = job.data
+  console.error(`[record] 失败 demo=${demoId}:`, err.message)
+
+  await db
+    .update(jobs)
+    .set({ status: 'failed', error_message: err.message, completed_at: new Date() })
+    .where(and(
+      eq(jobs.demo_id, demoId),
+      eq(jobs.type, 'record'),
+      eq(jobs.status, 'running'),
+    ))
 }
 
 export function startRecordWorker() {

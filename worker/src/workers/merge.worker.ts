@@ -1,7 +1,7 @@
 import { Worker, Job } from 'bullmq'
 import { connection } from '../utils/redis'
 import { db, demos, steps, jobs } from '../utils/db'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { mergeDemo } from '../services/merger'
 import { renderPromotionalVideo } from '../services/hyperframes'
 import { Paths } from '../utils/paths'
@@ -119,8 +119,9 @@ async function processJob(job: Job<MergeJobData>) {
   // 1. 更新状态为 processing
   await db.update(demos).set({ status: 'processing' }).where(eq(demos.id, demoId))
 
+  const jobId = crypto.randomUUID()
   await db.insert(jobs).values({
-    id:         crypto.randomUUID(),
+    id:         jobId,
     demo_id:    demoId,
     type:       'merge',
     status:     'running',
@@ -225,7 +226,7 @@ async function processJob(job: Job<MergeJobData>) {
   await db
     .update(jobs)
     .set({ status: 'completed', completed_at: new Date() })
-    .where(eq(jobs.demo_id, demoId))
+    .where(eq(jobs.id, jobId))
 
   // 7. 清理本地临时文件
   Paths.cleanup(demoId)
@@ -251,7 +252,11 @@ async function onFailed(job: Job<MergeJobData> | undefined, err: Error) {
     await db
       .update(jobs)
       .set({ status: 'failed', error_message: err.message, completed_at: new Date() })
-      .where(eq(jobs.demo_id, demoId))
+      .where(and(
+        eq(jobs.demo_id, demoId),
+        eq(jobs.type, 'merge'),
+        eq(jobs.status, 'running'),
+      ))
 
     Paths.cleanup(demoId)
   }

@@ -39,6 +39,10 @@ type DuplicateEntryError = {
   cause?: unknown
 }
 
+type EventInsertDatabase = {
+  insert: typeof db.insert
+}
+
 function isDuplicateEntryError(error: unknown): boolean {
   const current = error as DuplicateEntryError | undefined
   if (!current) return false
@@ -76,9 +80,12 @@ function isSubscriptionEvent(event: PaddleEvent): boolean {
   return typeof event.event_type === 'string' && event.event_type.startsWith('subscription.')
 }
 
-async function insertEventOnce(event: PaddleEvent): Promise<'inserted' | 'duplicate'> {
+async function insertEventOnce(
+  database: EventInsertDatabase,
+  event: PaddleEvent,
+): Promise<'inserted' | 'duplicate'> {
   try {
-    await db.insert(schema.paddleEvents).values({
+    await database.insert(schema.paddleEvents).values({
       id: event.event_id!,
       event_type: event.event_type ?? 'unknown',
       occurred_at: parseDate(event.occurred_at),
@@ -160,12 +167,12 @@ export async function POST(req: NextRequest) {
     return err('VALIDATION_ERROR', 'Invalid Paddle webhook payload')
   }
 
-  const eventInsert = await insertEventOnce(event)
-  if (eventInsert === 'duplicate') {
-    return ok({ duplicate: true })
-  }
-
   if (!isSubscriptionEvent(event)) {
+    const eventInsert = await insertEventOnce(db, event)
+    if (eventInsert === 'duplicate') {
+      return ok({ duplicate: true })
+    }
+
     return ok({ ignored: true })
   }
 
@@ -185,10 +192,20 @@ export async function POST(req: NextRequest) {
     resetToFree: statusMapping?.resetToFree ?? false,
   })
 
-  await db
-    .update(schema.subscriptions)
-    .set(update)
-    .where(and(eq(schema.subscriptions.user_id, userId)))
+  const result = await db.transaction(async tx => {
+    const eventInsert = await insertEventOnce(tx, event)
+    if (eventInsert === 'duplicate') return 'duplicate' as const
+
+    await tx.update(schema.subscriptions)
+      .set(update)
+      .where(and(eq(schema.subscriptions.user_id, userId)))
+
+    return 'processed' as const
+  })
+
+  if (result === 'duplicate') {
+    return ok({ duplicate: true })
+  }
 
   return ok({ processed: true })
 }

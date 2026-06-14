@@ -1,7 +1,7 @@
 import { Worker, Job } from 'bullmq'
 import { connection } from '../utils/redis'
 import { db, demos, steps, jobs } from '../utils/db'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { parseProductStory, productStorySceneMetadata, type ParseStepsOptions } from '../services/parser'
 
 export interface ParseJobData {
@@ -31,8 +31,9 @@ async function processJob(job: Job<ParseJobData>) {
   await db.update(demos).set({ status: 'parsing' }).where(eq(demos.id, demoId))
 
   // 2. 记录 job 开始
+  const jobId = crypto.randomUUID()
   await db.insert(jobs).values({
-    id:         crypto.randomUUID(),
+    id:         jobId,
     demo_id:    demoId,
     type:       'parse',
     status:     'running',
@@ -89,7 +90,7 @@ async function processJob(job: Job<ParseJobData>) {
   await db
     .update(jobs)
     .set({ status: 'completed', completed_at: new Date() })
-    .where(eq(jobs.demo_id, demoId))
+    .where(eq(jobs.id, jobId))
 
   console.log(`[parse] 完成 demo=${demoId}，生成 ${rawSteps.length} 个推广视频场景，等待用户确认`)
 }
@@ -107,7 +108,11 @@ async function onFailed(job: Job<ParseJobData> | undefined, err: Error) {
   await db
     .update(jobs)
     .set({ status: 'failed', error_message: err.message, completed_at: new Date() })
-    .where(eq(jobs.demo_id, demoId))
+    .where(and(
+      eq(jobs.demo_id, demoId),
+      eq(jobs.type, 'parse'),
+      eq(jobs.status, 'running'),
+    ))
 }
 
 export function startParseWorker() {
