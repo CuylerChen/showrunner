@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm'
 import { signJwt } from '@/lib/jwt'
 import { ok, err } from '@/lib/api'
 import { databaseUnavailableMessage, isDatabaseConnectionError } from '@/lib/db/errors'
+import { getPlanLimit } from '@/lib/billing/paddle'
 import { cookies } from 'next/headers'
 
 const RegisterSchema = z.object({
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
       plan:    'free',
       status:  'active',
       demos_used_this_month: 0,
-      demos_limit:           3,
+      demos_limit:           getPlanLimit('free'),
     })
 
     // 签发 JWT，写入 cookie

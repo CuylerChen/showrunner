@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   plan                  ENUM('free','starter','pro')          NOT NULL DEFAULT 'free',
   status                ENUM('active','cancelled','expired')  NOT NULL DEFAULT 'active',
   demos_used_this_month INT                                   NOT NULL DEFAULT 0,
-  demos_limit           INT                                   NOT NULL DEFAULT 3,
+  demos_limit           INT                                   NOT NULL DEFAULT 1,
   current_period_end    TIMESTAMP                             NULL,
   paddle_customer_id    VARCHAR(64)                           NULL,
   paddle_subscription_id VARCHAR(64)                          NULL,

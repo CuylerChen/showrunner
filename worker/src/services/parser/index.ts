@@ -3,9 +3,13 @@ import { assertSafePublicUrl, resolveSafeRedirectUrl } from '../../utils/safe-ur
 import { captureWebsiteScreenshots, type ScreenshotAsset } from './assets'
 import {
   generateProductStoryScenes,
+  normalizeProductCategory,
+  type ProductCategory,
   type ProductStoryInput,
   type ProductStoryScene,
 } from './scenes'
+
+export type { ProductCategory } from './scenes'
 
 const MAX_PAGES = 6
 const MAX_PAGE_TEXT = 2600
@@ -18,10 +22,18 @@ export interface PageData {
   text: string
 }
 
+export interface BrandProfile {
+  name: string
+  colors: string[]
+  primaryColor: string | null
+}
+
 export interface WebsiteAnalysis {
   pages: PageData[]
   urls: string[]
   sourceSummary: string
+  brandProfile: BrandProfile
+  productCategory: ProductCategory
 }
 
 export interface ParseStepsOptions {
@@ -36,6 +48,8 @@ export interface ParseProductStoryResult {
   steps: ProductStoryScene[]
   sourceSummary: string
   thumbnailUrl: string | null
+  brandProfile: BrandProfile
+  productCategory: ProductCategory
 }
 
 function stripHtml(html: string): string {
@@ -75,6 +89,106 @@ function extractTitle(html: string): string {
   if (ogTitle) return ogTitle
   const match = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
   return match?.[1] ? stripHtml(match[1]).slice(0, 160) : ''
+}
+
+function normalizeHexColor(value: string): string | null {
+  const color = value.trim()
+  const short = color.match(/^#([0-9a-f]{3})$/i)
+  if (short) {
+    return `#${short[1].split('').map(char => `${char}${char}`).join('')}`.toUpperCase()
+  }
+
+  const full = color.match(/^#([0-9a-f]{6})$/i)
+  return full ? `#${full[1].toUpperCase()}` : null
+}
+
+function fallbackBrandName(productUrl: string): string {
+  try {
+    return new URL(productUrl).hostname.replace(/^www\./, '')
+  } catch {
+    return 'Product'
+  }
+}
+
+function cleanBrandName(value: string, productUrl: string): string {
+  const candidate = value
+    .split(/\s+[|·•]\s+|\s+-\s+|\s+–\s+|\s+—\s+/)[0]
+    ?.replace(/\s+/g, ' ')
+    .trim()
+
+  return (candidate || fallbackBrandName(productUrl)).slice(0, 80)
+}
+
+type ProductCategorySignal = {
+  pattern: RegExp
+  weight: number
+}
+
+const PRODUCT_CATEGORY_SIGNALS: Record<Exclude<ProductCategory, 'generic'>, ProductCategorySignal[]> = {
+  ecommerce: [
+    { pattern: /\b(cart|checkout|catalog|shipping|discounts?|coupons?|orders?|buy|shop|store|commerce|ecommerce|inventory)\b/i, weight: 2 },
+    { pattern: /\b(product catalog|online store|add to cart|free shipping|payment methods?)\b/i, weight: 3 },
+  ],
+  developer_tool: [
+    { pattern: /\b(api|sdk|docs?|webhooks?|endpoints?|cli|github|npm|openapi|graphql|developers?)\b/i, weight: 2 },
+    { pattern: /\b(api keys?|developer tools?|code examples?|client libraries?)\b/i, weight: 3 },
+  ],
+  local_service: [
+    { pattern: /\b(clinic|dental|dentist|salon|repair|restaurant|studio|law firm|agency|consultations?)\b/i, weight: 2 },
+    { pattern: /\b(appointments?|service area|book online|near me|business hours|visit us|local service)\b/i, weight: 3 },
+  ],
+  content: [
+    { pattern: /\b(newsletters?|articles?|courses?|episodes?|membership|blog|podcast|creator|publication|lessons?)\b/i, weight: 2 },
+    { pattern: /\b(content library|online course|paid membership|creator community)\b/i, weight: 3 },
+  ],
+  saas: [
+    { pattern: /\b(dashboard|workflow|analytics|collaboration|crm|automation|workspace|platform|software|reports?|integrations?)\b/i, weight: 2 },
+    { pattern: /\b(team dashboard|workflow automation|customer relationship|project management|business software)\b/i, weight: 3 },
+  ],
+}
+
+function productUrlText(productUrl: string): string {
+  try {
+    const url = new URL(productUrl)
+    return `${url.hostname} ${url.pathname.replace(/[/-]+/g, ' ')}`
+  } catch {
+    return productUrl
+  }
+}
+
+export function inferProductCategory(input: {
+  productUrl: string
+  description?: string | null
+  sourceSummary?: string | null
+}): ProductCategory {
+  const text = [
+    productUrlText(input.productUrl),
+    input.description ?? '',
+    input.sourceSummary ?? '',
+  ].join('\n').toLowerCase()
+
+  const scores = Object.entries(PRODUCT_CATEGORY_SIGNALS).map(([category, signals]) => ({
+    category: normalizeProductCategory(category),
+    score: signals.reduce((sum, signal) => sum + (signal.pattern.test(text) ? signal.weight : 0), 0),
+  })).sort((left, right) => right.score - left.score)
+
+  const winner = scores[0]
+  return winner && winner.score >= 2 ? winner.category : 'generic'
+}
+
+export function extractBrandProfileFromHtml(html: string, productUrl: string): BrandProfile {
+  const explicitName = matchMeta(html, ['og:site_name', 'application-name', 'apple-mobile-web-app-title'])
+  const title = explicitName || extractTitle(html)
+  const name = cleanBrandName(title, productUrl)
+  const colors = [
+    matchMeta(html, ['theme-color', 'msapplication-TileColor']),
+  ].map(color => normalizeHexColor(color)).filter((color): color is string => Boolean(color))
+
+  return {
+    name,
+    colors: [...new Set(colors)],
+    primaryColor: colors[0] ?? null,
+  }
 }
 
 function extractHeadings(html: string): string[] {
@@ -134,19 +248,27 @@ async function fetchHtml(url: string, redirectDepth = 0): Promise<string> {
   return await resp.text()
 }
 
-function summarizePages(pages: PageData[]): string {
-  return pages.map((page, index) => [
+function summarizePages(pages: PageData[], brandProfile: BrandProfile): string {
+  const brandSummary = [
+    `Brand: ${brandProfile.name}`,
+    brandProfile.primaryColor ? `Primary color: ${brandProfile.primaryColor}` : '',
+  ].filter(Boolean).join('\n')
+
+  const pageSummary = pages.map((page, index) => [
     `PAGE ${index + 1}: ${page.url}`,
     page.title ? `Title: ${page.title}` : '',
     page.description ? `Description: ${page.description}` : '',
     page.headings.length ? `Headings: ${page.headings.join(' | ')}` : '',
     `Text: ${page.text}`,
   ].filter(Boolean).join('\n')).join('\n\n')
+
+  return [brandSummary, pageSummary].filter(Boolean).join('\n\n')
 }
 
 export async function analyzePublicWebsite(productUrl: string): Promise<WebsiteAnalysis> {
   const safeHome = await resolveSafeRedirectUrl(productUrl)
   const homeHtml = await fetchHtml(safeHome.toString())
+  const brandProfile = extractBrandProfileFromHtml(homeHtml, safeHome.toString())
   const urls = Array.from(new Set([
     safeHome.toString(),
     ...extractLinks(homeHtml, safeHome.toString()),
@@ -168,10 +290,17 @@ export async function analyzePublicWebsite(productUrl: string): Promise<WebsiteA
     }
   }
 
+  const sourceSummary = summarizePages(pages, brandProfile)
+
   return {
     pages,
     urls,
-    sourceSummary: summarizePages(pages),
+    sourceSummary,
+    brandProfile,
+    productCategory: inferProductCategory({
+      productUrl: safeHome.toString(),
+      sourceSummary,
+    }),
   }
 }
 
@@ -181,7 +310,7 @@ function toStep(scene: ProductStoryScene): Omit<Step, 'id' | 'demo_id' | 'status
     title: scene.title,
     action_type: 'wait',
     selector: null,
-    value: '3000',
+    value: productStorySceneMetadata(scene, null),
     narration: scene.narration,
     visual_type: scene.visual_type,
     visual_asset_url: scene.visual_asset_url,
@@ -194,10 +323,15 @@ function buildInput(
   description: string | null,
   sourceSummary: string,
   options: ParseStepsOptions,
+  brandProfile: BrandProfile,
+  productCategory: ProductCategory,
 ): ProductStoryInput {
   return {
     productUrl,
     description: description ?? '',
+    brandName: brandProfile.name,
+    brandColors: brandProfile.colors,
+    productCategory,
     audience: options.audience,
     keyPoints: options.keyPoints,
     brandTone: options.brandTone,
@@ -205,6 +339,18 @@ function buildInput(
     ctaUrl: options.ctaUrl,
     sourceSummary,
   }
+}
+
+export function productStorySceneMetadata(scene: ProductStoryScene, brandProfile: BrandProfile | null): string {
+  return JSON.stringify({
+    durationMs: 3000,
+    kicker: scene.kicker ?? null,
+    proofPoints: scene.proof_points ?? [],
+    ctaHeadline: scene.cta_headline ?? null,
+    visualStyle: scene.visual_style ?? null,
+    brandColor: brandProfile?.primaryColor ?? null,
+    productType: scene.product_type ?? 'generic',
+  })
 }
 
 export async function parseProductStory(
@@ -215,7 +361,13 @@ export async function parseProductStory(
 ): Promise<ParseProductStoryResult> {
   console.log('[parser] 分析公开网页并生成 Product Story 场景...')
 
-  let analysis: WebsiteAnalysis = { pages: [], urls: [productUrl], sourceSummary: '' }
+  let analysis: WebsiteAnalysis = {
+    pages: [],
+    urls: [productUrl],
+    sourceSummary: '',
+    brandProfile: extractBrandProfileFromHtml('', productUrl),
+    productCategory: inferProductCategory({ productUrl, description }),
+  }
   try {
     analysis = await analyzePublicWebsite(productUrl)
     console.log(`[parser] 完成网页分析，共 ${analysis.pages.length} 个页面`)
@@ -231,7 +383,12 @@ export async function parseProductStory(
     console.warn(`[parser] 网页截图失败，继续使用模板画面: ${(err as Error).message}`)
   }
 
-  const input = buildInput(productUrl, description, analysis.sourceSummary, options)
+  const productCategory = inferProductCategory({
+    productUrl,
+    description,
+    sourceSummary: analysis.sourceSummary,
+  })
+  const input = buildInput(productUrl, description, analysis.sourceSummary, options, analysis.brandProfile, productCategory)
   const steps = await generateProductStoryScenes(input, assets)
   console.log(`[parser] Product Story 脚本生成完成，共 ${steps.length} 个场景`)
 
@@ -239,6 +396,8 @@ export async function parseProductStory(
     steps,
     sourceSummary: analysis.sourceSummary,
     thumbnailUrl: assets[0]?.publicUrl ?? null,
+    brandProfile: analysis.brandProfile,
+    productCategory,
   }
 }
 
@@ -247,14 +406,25 @@ export async function parseSteps(
   description: string | null,
   options: ParseStepsOptions = {},
 ): Promise<Omit<Step, 'id' | 'demo_id' | 'status' | 'timestamp_start' | 'timestamp_end'>[]> {
-  let analysis: WebsiteAnalysis = { pages: [], urls: [productUrl], sourceSummary: '' }
+  let analysis: WebsiteAnalysis = {
+    pages: [],
+    urls: [productUrl],
+    sourceSummary: '',
+    brandProfile: extractBrandProfileFromHtml('', productUrl),
+    productCategory: inferProductCategory({ productUrl, description }),
+  }
   try {
     analysis = await analyzePublicWebsite(productUrl)
   } catch (err) {
     console.warn(`[parser] 网页分析失败，使用用户描述继续: ${(err as Error).message}`)
   }
 
-  const input = buildInput(productUrl, description, analysis.sourceSummary, options)
+  const productCategory = inferProductCategory({
+    productUrl,
+    description,
+    sourceSummary: analysis.sourceSummary,
+  })
+  const input = buildInput(productUrl, description, analysis.sourceSummary, options, analysis.brandProfile, productCategory)
   const scenes = await generateProductStoryScenes(input, [])
   return scenes.map(toStep)
 }

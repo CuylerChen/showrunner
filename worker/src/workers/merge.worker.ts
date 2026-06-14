@@ -9,6 +9,7 @@ import { uploadToR2 } from '../utils/r2'
 import fs from 'fs'
 import path from 'path'
 import { Step } from '../types'
+import { normalizeProductCategory, type ProductCategory } from '../services/parser/scenes'
 
 export interface MergeJobData {
   demoId: string
@@ -22,6 +23,94 @@ export interface MergeJobData {
 }
 
 const VIDEO_DIR = process.env.VIDEO_DIR ?? '/data/videos'
+
+interface PromotionalDemoMetadata {
+  title: string | null
+  product_url: string | null
+  cta_text: string | null
+  cta_url: string | null
+  brand_tone: string | null
+}
+
+interface BuildPromotionalScenesInput {
+  steps: Step[]
+  audioPaths: string[]
+  stepTimestamps: { stepId: string; start: number; end: number }[]
+  demo: PromotionalDemoMetadata
+}
+
+interface PromotionalStepMetadata {
+  kicker?: string | null
+  proofPoints?: string[]
+  ctaHeadline?: string | null
+  visualStyle?: string | null
+  brandColor?: string | null
+  productType?: ProductCategory | null
+}
+
+function inferBrandName(demo: PromotionalDemoMetadata): string {
+  const title = demo.title?.trim()
+  if (title) return title.slice(0, 80)
+
+  try {
+    const hostname = new URL(demo.product_url ?? '').hostname.replace(/^www\./, '')
+    if (hostname) return hostname.slice(0, 80)
+  } catch {}
+
+  return 'Product'
+}
+
+function parsePromotionalStepMetadata(value: string | null | undefined): PromotionalStepMetadata {
+  if (!value?.trim()?.startsWith('{')) return {}
+
+  try {
+    const parsed = JSON.parse(value) as PromotionalStepMetadata
+    return {
+      kicker: typeof parsed.kicker === 'string' ? parsed.kicker : null,
+      proofPoints: Array.isArray(parsed.proofPoints)
+        ? parsed.proofPoints.map(point => String(point)).filter(Boolean).slice(0, 4)
+        : [],
+      ctaHeadline: typeof parsed.ctaHeadline === 'string' ? parsed.ctaHeadline : null,
+      visualStyle: typeof parsed.visualStyle === 'string' ? parsed.visualStyle : null,
+      brandColor: typeof parsed.brandColor === 'string' ? parsed.brandColor : null,
+      productType: typeof parsed.productType === 'string'
+        ? normalizeProductCategory(parsed.productType)
+        : null,
+    }
+  } catch {
+    return {}
+  }
+}
+
+export function buildPromotionalScenes(input: BuildPromotionalScenesInput) {
+  const brandName = inferBrandName(input.demo)
+  const ctaUrl = input.demo.cta_url ?? input.demo.product_url ?? null
+
+  return input.steps.map((step, index) => {
+    const timestamp = input.stepTimestamps[index]
+    const rawDuration = timestamp ? timestamp.end - timestamp.start : 4
+    const metadata = parsePromotionalStepMetadata(step.value)
+
+    return {
+      title: step.title,
+      narration: step.narration,
+      audioPath: input.audioPaths[index] || undefined,
+      duration: Math.max(2, rawDuration || 4),
+      brandName,
+      visualType: step.visual_type ?? 'template',
+      visualAssetPath: step.visual_asset_url ?? null,
+      ctaText: input.demo.cta_text ?? null,
+      ctaUrl,
+      brandTone: input.demo.brand_tone ?? null,
+      kicker: metadata.kicker ?? null,
+      proofPoints: metadata.proofPoints ?? [],
+      ctaHeadline: metadata.ctaHeadline ?? null,
+      visualStyle: metadata.visualStyle ?? null,
+      brandColor: metadata.brandColor ?? null,
+      productType: metadata.productType ?? null,
+    }
+  })
+}
 
 async function processJob(job: Job<MergeJobData>) {
   const { demoId, videoPath, audioPaths, stepTimestamps, recordTimestamps, steps: demoSteps, renderMode } = job.data
@@ -44,23 +133,30 @@ async function processJob(job: Job<MergeJobData>) {
 
   if ((renderMode === 'promotional' || !videoPath) && demoSteps?.length) {
     const demoRow = await db
-      .select({ cta_text: demos.cta_text, cta_url: demos.cta_url, brand_tone: demos.brand_tone })
+      .select({
+        title: demos.title,
+        product_url: demos.product_url,
+        cta_text: demos.cta_text,
+        cta_url: demos.cta_url,
+        brand_tone: demos.brand_tone,
+      })
       .from(demos)
       .where(eq(demos.id, demoId))
       .then(rows => rows[0] ?? null)
 
     const rendered = await renderPromotionalVideo(
-      demoSteps.map((step, index) => ({
-        title: step.title,
-        narration: step.narration,
-        audioPath: audioPaths[index],
-        duration: Math.max(2, stepTimestamps[index]?.end - stepTimestamps[index]?.start || 4),
-        visualType: step.visual_type ?? 'template',
-        visualAssetPath: step.visual_asset_url ?? null,
-        ctaText: demoRow?.cta_text ?? null,
-        ctaUrl: demoRow?.cta_url ?? null,
-        brandTone: demoRow?.brand_tone ?? null,
-      })),
+      buildPromotionalScenes({
+        steps: demoSteps,
+        audioPaths,
+        stepTimestamps,
+        demo: demoRow ?? {
+          title: null,
+          product_url: null,
+          cta_text: null,
+          cta_url: null,
+          brand_tone: null,
+        },
+      }),
       Paths.finalDir(demoId),
     )
     outputPath = rendered.outputPath

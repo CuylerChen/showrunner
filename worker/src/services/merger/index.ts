@@ -1,26 +1,19 @@
 import ffmpeg from 'fluent-ffmpeg'
-import ffmpegInstaller from '@ffmpeg-installer/ffmpeg'
 import path from 'path'
 import fs from 'fs'
 import { execSync } from 'child_process'
 import { MergeResult, Step } from '../../types'
 import { HyperframesClip, renderHyperframesDemo, stepsToClipMetadata } from '../hyperframes'
+import { resolveMediaToolPath } from '../../utils/media-tools'
 
-// 优先使用系统 FFmpeg（apt 安装，功能完整）；找不到时回退到打包版
 function resolveFFmpegPath(): string {
-  for (const p of ['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg']) {
-    if (fs.existsSync(p)) return p
-  }
-  return ffmpegInstaller.path
+  return resolveMediaToolPath('ffmpeg')
 }
 ffmpeg.setFfmpegPath(resolveFFmpegPath())
+ffmpeg.setFfprobePath(resolveMediaToolPath('ffprobe'))
 
 function resolveFFprobePath(): string {
-  for (const p of ['/usr/bin/ffprobe', '/usr/local/bin/ffprobe']) {
-    if (fs.existsSync(p)) return p
-  }
-  const ffmpegBin = resolveFFmpegPath()
-  return ffmpegBin.replace(/ffmpeg$/, 'ffprobe')
+  return resolveMediaToolPath('ffprobe')
 }
 
 // 用 ffprobe 获取媒体文件时长（秒）

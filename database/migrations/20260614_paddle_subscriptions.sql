@@ -54,6 +54,10 @@ CALL showrunner_add_column_if_missing('subscriptions', 'paddle_price_id', 'paddl
 CALL showrunner_add_column_if_missing('subscriptions', 'paddle_status', 'paddle_status VARCHAR(40) NULL AFTER paddle_price_id');
 CALL showrunner_add_column_if_missing('subscriptions', 'paddle_updated_at', 'paddle_updated_at TIMESTAMP NULL AFTER paddle_status');
 
+ALTER TABLE subscriptions MODIFY COLUMN demos_limit INT NOT NULL DEFAULT 1;
+
+UPDATE subscriptions SET demos_limit = 1 WHERE plan = 'free' AND demos_limit = 3;
+
 CALL showrunner_add_index_if_missing(
   'subscriptions',
   'uq_sub_paddle_subscription',

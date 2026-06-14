@@ -2,7 +2,7 @@ import { Worker, Job } from 'bullmq'
 import { connection } from '../utils/redis'
 import { db, demos, steps, jobs } from '../utils/db'
 import { eq } from 'drizzle-orm'
-import { parseProductStory, type ParseStepsOptions } from '../services/parser'
+import { parseProductStory, productStorySceneMetadata, type ParseStepsOptions } from '../services/parser'
 
 export interface ParseJobData {
   demoId: string
@@ -67,7 +67,7 @@ async function processJob(job: Job<ParseJobData>) {
     title:             s.title,
     action_type:       'wait' as const,
     selector:          null,
-    value:             '3000',
+    value:             productStorySceneMetadata(s, result.brandProfile),
     narration:         s.narration ?? null,
     visual_type:       s.visual_type,
     visual_asset_url:  s.visual_asset_url ?? null,
@@ -80,6 +80,7 @@ async function processJob(job: Job<ParseJobData>) {
   // 5. 更新 demo 状态为 review
   await db.update(demos).set({
     status: 'review',
+    title: result.brandProfile.name,
     source_summary: result.sourceSummary,
     thumbnail_url: result.thumbnailUrl,
   }).where(eq(demos.id, demoId))

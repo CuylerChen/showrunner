@@ -47,7 +47,7 @@ create table subscriptions (
   plan                    enum('free','starter','pro') not null default 'free',
   status                  enum('active','cancelled','expired') not null default 'active',
   demos_used_this_month   int not null default 0,
-  demos_limit             int not null default 3,     -- free=3, starter=10, pro=-1(无限)
+  demos_limit             int not null default 1,     -- free=1, starter=10, pro=-1(无限)
   current_period_end      timestamp null,             -- 当前计费周期结束时间
   paddle_customer_id      varchar(64) null,           -- Paddle customer ID
   paddle_subscription_id  varchar(64) null,           -- Paddle subscription ID
@@ -65,7 +65,7 @@ create table subscriptions (
 ```
 demos_limit = -1  → 无限（Pro）
 demos_limit = 10  → Starter
-demos_limit = 3   → Free
+demos_limit = 1   → Free
 ```
 
 ---

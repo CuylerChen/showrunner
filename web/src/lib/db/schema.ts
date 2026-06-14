@@ -23,7 +23,7 @@ export const subscriptions = mysqlTable('subscriptions', {
   plan:                  mysqlEnum('plan', ['free', 'starter', 'pro']).default('free').notNull(),
   status:                mysqlEnum('status', ['active', 'cancelled', 'expired']).default('active').notNull(),
   demos_used_this_month: int('demos_used_this_month').default(0).notNull(),
-  demos_limit:           int('demos_limit').default(3).notNull(),
+  demos_limit:           int('demos_limit').default(1).notNull(),
   current_period_end:    timestamp('current_period_end'),
   paddle_customer_id:     varchar('paddle_customer_id', { length: 64 }),
   paddle_subscription_id: varchar('paddle_subscription_id', { length: 64 }).unique(),

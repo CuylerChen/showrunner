@@ -46,7 +46,7 @@ export function isPaidPlan(value: unknown): value is PaidPlan {
 export function getPlanLimit(plan: AppPlan): number {
   switch (plan) {
     case 'free':
-      return 3
+      return 1
     case 'starter':
       return 10
     case 'pro':

@@ -16,7 +16,7 @@ In scope:
 - Server-side Paddle checkout creation for `starter` and `pro`.
 - Paddle webhook signature verification and idempotent event handling.
 - Local subscription updates for active, trialing, paused, past due, canceled, and expired subscription states.
-- Plan limits aligned with the existing product model: `free = 3`, `starter = 10`, `pro = -1`.
+- Plan limits aligned with the existing product model: `free = 1`, `starter = 10`, `pro = -1`.
 - Minimal UI and API copy so quota exhaustion can send users to a real checkout path.
 - Environment configuration for Paddle without Docker-specific deployment changes.
 - Focused tests for plan mapping, checkout request construction, webhook signature verification, and webhook subscription updates.
@@ -183,7 +183,7 @@ When a canceled/expired event is processed, set:
 
 - `plan = free`
 - `status = cancelled` or `expired`
-- `demos_limit = 3`
+- `demos_limit = 1`
 - Paddle metadata fields retained for audit
 
 ## UI Behavior

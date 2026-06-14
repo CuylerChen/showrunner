@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { db, schema } from '@/lib/db'
 import { eq, and } from 'drizzle-orm'
 import { signJwt } from '@/lib/jwt'
+import { getPlanLimit } from '@/lib/billing/paddle'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl
@@ -94,7 +95,7 @@ export async function GET(req: NextRequest) {
         plan:                  'free',
         status:                'active',
         demos_used_this_month: 0,
-        demos_limit:           3,
+        demos_limit:           getPlanLimit('free'),
       })
     }
   }

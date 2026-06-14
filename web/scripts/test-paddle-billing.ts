@@ -18,7 +18,7 @@ const env = {
   PADDLE_PRO_PRICE_ID: 'pri_pro',
 }
 
-assert.equal(getPlanLimit('free'), 3)
+assert.equal(getPlanLimit('free'), 1)
 assert.equal(getPlanLimit('starter'), 10)
 assert.equal(getPlanLimit('pro'), -1)
 

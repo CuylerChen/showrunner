@@ -2,6 +2,7 @@ import path from 'path'
 import fs from 'fs'
 import { execSync } from 'child_process'
 import { Step, TtsResult } from '../../types'
+import { resolveMediaToolPath } from '../../utils/media-tools'
 
 type OpenAITtsConfig = {
   apiKey: string
@@ -54,30 +55,14 @@ export function resolveTtsConfig(env: NodeJS.ProcessEnv = process.env): TtsConfi
 
 // 使用系统 ffprobe 测量音频文件的实际时长（秒）
 function getAudioDuration(filePath: string): number {
-  const probePaths = ['/usr/bin/ffprobe', '/usr/local/bin/ffprobe']
-  for (const probePath of probePaths) {
-    if (!fs.existsSync(probePath)) continue
-    try {
-      const out = execSync(
-        `"${probePath}" -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${filePath}"`,
-        { stdio: ['pipe', 'pipe', 'pipe'] }
-      )
-      const dur = parseFloat(out.toString().trim())
-      if (!isNaN(dur) && dur > 0) return dur
-    } catch {}
-  }
-  // fallback：用 @ffmpeg-installer 附带的 ffprobe（与 ffmpeg 同目录）
+  const ffprobePath = resolveMediaToolPath('ffprobe')
   try {
-    const ffmpegPath: string = require('@ffmpeg-installer/ffmpeg').path
-    const ffprobePath = ffmpegPath.replace(/ffmpeg$/, 'ffprobe')
-    if (fs.existsSync(ffprobePath)) {
-      const out = execSync(
-        `"${ffprobePath}" -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${filePath}"`,
-        { stdio: ['pipe', 'pipe', 'pipe'] }
-      )
-      const dur = parseFloat(out.toString().trim())
-      if (!isNaN(dur) && dur > 0) return dur
-    }
+    const out = execSync(
+      `"${ffprobePath}" -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${filePath}"`,
+      { stdio: ['pipe', 'pipe', 'pipe'] }
+    )
+    const dur = parseFloat(out.toString().trim())
+    if (!isNaN(dur) && dur > 0) return dur
   } catch {}
   // 最终兜底：使用估算值
   return 3
@@ -155,7 +140,7 @@ async function generateWithKokoro(text: string, outputPath: string): Promise<boo
 
 // Fallback：用 FFmpeg 生成静音音频
 function generateSilence(durationSec: number, outputPath: string): void {
-  const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path
+  const ffmpegPath = resolveMediaToolPath('ffmpeg')
   execSync(
     `"${ffmpegPath}" -f lavfi -i anullsrc=r=44100:cl=mono -t ${durationSec} -q:a 9 -acodec libmp3lame "${outputPath}" -y`,
     { stdio: 'pipe' }

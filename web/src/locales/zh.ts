@@ -12,7 +12,7 @@ export const zh = {
     sub: '输入产品网址和介绍资料，AI 分析卖点、生成文案、合成旁白，\n输出专业的可分享产品推广视频。',
     ctaStart: '免费开始使用',
     ctaSignIn: '已有账号登录',
-    ctaNote: '免费生成 3 条视频 · 无需信用卡',
+    ctaNote: '免费生成 1 条视频 · 无需信用卡',
     stats: [
       { value: '< 5min', label: '平均生成时长' },
       { value: '100%', label: 'AI 自动分镜' },
@@ -25,8 +25,47 @@ export const zh = {
       { title: '自动生成分镜', desc: '生成 Hook、功能亮点、价值主张和 CTA 场景' },
       { title: '一键分享', desc: 'HyperFrames 合成专属视频，带章节导航的分享页' },
     ] as { title: string; desc: string }[],
+    pricingTitle: '价格简单，随生成规模升级',
+    pricingSub: '从免费试用开始，需要更多生成额度时再升级。',
+    pricingCta: '开始生成',
+    pricingFeatured: '推荐',
+    pricingPlans: [
+      {
+        name: 'Free',
+        price: '$0',
+        period: '永久',
+        quota: '1 条视频',
+        description: '适合验证产品视频生成流程。',
+        features: ['1 条免费视频额度', 'AI 分镜与旁白生成', '公开视频分享页'],
+      },
+      {
+        name: 'Starter',
+        price: '$19',
+        period: '/ 月',
+        quota: '10 条视频 / 月',
+        description: '适合稳定制作产品推广视频。',
+        features: ['每月 10 条视频', '完整视频生成流程', '可分享视频页面'],
+        highlighted: true,
+      },
+      {
+        name: 'Pro',
+        price: '$49',
+        period: '/ 月',
+        quota: '无限视频',
+        description: '适合团队持续生产营销素材。',
+        features: ['不限视频生成次数', '品牌定制能力', '适合多产品线内容生产'],
+      },
+    ] as {
+      name: string
+      price: string
+      period: string
+      quota: string
+      description: string
+      features: string[]
+      highlighted?: boolean
+    }[],
     ctaTitle: '开始生成你的第一条推广视频',
-    ctaSub: '免费注册，3 条视频无需信用卡',
+    ctaSub: '免费注册，1 条视频无需信用卡',
     ctaBtn: '立即免费开始',
     footer: '© 2025 Showrunner · All rights reserved',
   },
