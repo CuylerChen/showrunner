@@ -235,6 +235,7 @@ TTS_PROVIDER=kokoro
 # ── 应用地址 ──────────────────────────────────────────────
 NEXT_PUBLIC_APP_URL=${APP_URL}
 WORKER_INTERNAL_URL=http://127.0.0.1:3001
+WORKER_PORT=3001
 
 # ── Paddle Billing 订阅支付 ───────────────────────────────
 PADDLE_ENVIRONMENT=${PADDLE_ENVIRONMENT}
@@ -347,6 +348,7 @@ const env = {
   OPENAI_TTS_INSTRUCTIONS: process.env.OPENAI_TTS_INSTRUCTIONS,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   WORKER_INTERNAL_URL: process.env.WORKER_INTERNAL_URL || 'http://127.0.0.1:3001',
+  WORKER_PORT: process.env.WORKER_PORT || '3001',
   PADDLE_ENVIRONMENT: process.env.PADDLE_ENVIRONMENT || 'production',
   PADDLE_API_KEY: process.env.PADDLE_API_KEY,
   PADDLE_WEBHOOK_SECRET: process.env.PADDLE_WEBHOOK_SECRET,

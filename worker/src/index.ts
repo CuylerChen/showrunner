@@ -5,6 +5,18 @@ import { startTtsWorker }    from './workers/tts.worker'
 import { startMergeWorker }  from './workers/merge.worker'
 import { startHttpServer }   from './http-server'
 
+function resolveWorkerPort() {
+  const rawPort = process.env.WORKER_PORT
+  if (!rawPort) return 3001
+
+  const parsed = Number.parseInt(rawPort, 10)
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 65535) {
+    throw new Error(`Invalid WORKER_PORT: ${rawPort}`)
+  }
+
+  return parsed
+}
+
 async function main() {
   console.log('='.repeat(50))
   console.log('Showrunner Worker 启动中...')
@@ -17,7 +29,7 @@ async function main() {
     startMergeWorker(),
   ]
 
-  const httpServer = startHttpServer(3001)
+  const httpServer = startHttpServer(resolveWorkerPort())
 
   console.log('\n✅ 所有 Worker 已就绪，等待任务...\n')
 

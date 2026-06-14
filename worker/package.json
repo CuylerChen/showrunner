@@ -7,7 +7,7 @@
     "test:full": "npx tsx scripts/test-full-pipeline.ts",
     "dev": "npx tsx src/index.ts",
     "build": "npx tsc",
-    "test:security": "npx tsx scripts/test-safe-url.ts && npx tsx scripts/test-brand-profile.ts && npx tsx scripts/test-product-category.ts && npx tsx scripts/test-openai-compatible-scenes.ts && npx tsx scripts/test-screenshot-readiness.ts && npx tsx scripts/test-tts-config.ts && npx tsx scripts/test-media-tools.ts && npx tsx scripts/test-promotional-scenes.ts && npx tsx scripts/test-hyperframes-composition.ts && npx tsx scripts/test-worker-job-state.ts && node ../scripts/test-bare-deploy-config.mjs"
+    "test:security": "npx tsx scripts/test-safe-url.ts && npx tsx scripts/test-brand-profile.ts && npx tsx scripts/test-product-category.ts && npx tsx scripts/test-openai-compatible-scenes.ts && npx tsx scripts/test-screenshot-readiness.ts && npx tsx scripts/test-tts-config.ts && npx tsx scripts/test-media-tools.ts && npx tsx scripts/test-promotional-scenes.ts && npx tsx scripts/test-hyperframes-composition.ts && npx tsx scripts/test-worker-job-state.ts && npx tsx scripts/test-worker-http-port.ts && node ../scripts/test-bare-deploy-config.mjs"
   },
   "engines": {
     "node": ">=22.0.0"

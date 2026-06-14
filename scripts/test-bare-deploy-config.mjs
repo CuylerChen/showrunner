@@ -19,6 +19,7 @@ const bareMetalDoc = read('docs/bare-metal-deploy.md')
 
 const requiredRuntimeKeys = [
   'WORKER_INTERNAL_URL',
+  'WORKER_PORT',
   'PADDLE_ENVIRONMENT',
   'PADDLE_API_KEY',
   'PADDLE_WEBHOOK_SECRET',
@@ -56,12 +57,14 @@ assert.match(rootPm2, /function loadEnvFile/, 'root PM2 config should load .env 
 assert.match(setupBare, /function loadEnvFile/, 'generated PM2 config should load .env without external dependencies')
 assert.match(rootPm2, /cwd:\s*'\/opt\/showrunner\/web'/, 'root PM2 config should target /opt/showrunner/web')
 assert.match(rootPm2, /WORKER_INTERNAL_URL:\s*process\.env\.WORKER_INTERNAL_URL/, 'root PM2 config should pass WORKER_INTERNAL_URL')
+assert.match(rootPm2, /WORKER_PORT:\s*process\.env\.WORKER_PORT/, 'root PM2 config should pass WORKER_PORT')
 assert.match(rootPm2, /PADDLE_API_KEY:\s*process\.env\.PADDLE_API_KEY/, 'root PM2 config should pass Paddle settings')
 
 assert.doesNotMatch(webEnvExample, /CLERK_|SUPABASE_|LEMONSQUEEZY_|OPENROUTER_/i, 'web env example should not document removed providers')
 assert.match(webEnvExample, /^MYSQL_HOST=127\.0\.0\.1$/m, 'web env example should document current MySQL config')
 assert.match(webEnvExample, /^PADDLE_ENVIRONMENT=production$/m, 'web env example should document Paddle production config')
 assert.match(webEnvExample, /^WORKER_INTERNAL_URL=http:\/\/127\.0\.0\.1:3001$/m, 'web env example should document bare-metal worker URL')
+assert.match(envExample, /^WORKER_PORT=3001$/m, '.env.example should document worker HTTP port')
 
 assert.match(deploymentDoc, /推荐路径[\s\S]*setup-bare\.sh/, 'deployment guide should lead with bare-metal deployment')
 assert.doesNotMatch(deploymentDoc, /新服务器优先使用 Docker 部署/, 'deployment guide should not recommend Docker first')
