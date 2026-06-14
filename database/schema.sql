@@ -24,9 +24,23 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   demos_used_this_month INT                                   NOT NULL DEFAULT 0,
   demos_limit           INT                                   NOT NULL DEFAULT 3,
   current_period_end    TIMESTAMP                             NULL,
+  paddle_customer_id    VARCHAR(64)                           NULL,
+  paddle_subscription_id VARCHAR(64)                          NULL,
+  paddle_price_id       VARCHAR(64)                           NULL,
+  paddle_status         VARCHAR(40)                           NULL,
+  paddle_updated_at     TIMESTAMP                             NULL,
   created_at            TIMESTAMP                             NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at            TIMESTAMP                             NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_sub_paddle_subscription (paddle_subscription_id),
   CONSTRAINT fk_sub_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Paddle webhook event idempotency
+CREATE TABLE IF NOT EXISTS paddle_events (
+  id           VARCHAR(64) NOT NULL PRIMARY KEY,
+  event_type   VARCHAR(80) NOT NULL,
+  occurred_at  TIMESTAMP   NULL,
+  processed_at TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Demo 主表
