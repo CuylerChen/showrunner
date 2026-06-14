@@ -16,6 +16,15 @@ warn()    { echo -e "${YELLOW}[WARN]${RESET}  $1"; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1"; exit 1; }
 step()    { echo -e "\n${BOLD}── $1${RESET}"; }
 
+syncNextStandaloneAssets() {
+  mkdir -p ".next/standalone/.next"
+  rm -rf ".next/standalone/.next/static" ".next/standalone/public"
+  cp -R ".next/static" ".next/standalone/.next/static"
+  if [ -d "public" ]; then
+    cp -R "public" ".next/standalone/public"
+  fi
+}
+
 # ── 配置变量 ──────────────────────────────────────────────
 REPO_URL="https://github.com/CuylerChen/showrunner.git"
 INSTALL_DIR="/opt/showrunner"
@@ -284,6 +293,7 @@ info "安装 Web 依赖并构建..."
 cd "$INSTALL_DIR/web"
 npm ci --quiet
 npm run build
+syncNextStandaloneAssets
 success "Web 构建完成"
 
 info "安装 Worker 依赖..."

@@ -244,6 +244,12 @@ VIDEO_DIR=/opt/showrunner/videos
 cd /opt/showrunner/web
 npm ci
 npm run build
+
+# Next standalone 不会自动复制静态资源，需要手动同步
+mkdir -p .next/standalone/.next
+rm -rf .next/standalone/.next/static .next/standalone/public
+cp -R .next/static .next/standalone/.next/static
+cp -R public .next/standalone/public
 ```
 
 构建完成后，运行文件在 `.next/standalone/` 目录。

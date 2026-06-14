@@ -85,6 +85,15 @@ ssh "$SSH_HOST" bash << REMOTE_SCRIPT
 set -e
 cd ${REMOTE_DIR}
 
+syncNextStandaloneAssets() {
+  mkdir -p ".next/standalone/.next"
+  rm -rf ".next/standalone/.next/static" ".next/standalone/public"
+  cp -R ".next/static" ".next/standalone/.next/static"
+  if [ -d "public" ]; then
+    cp -R "public" ".next/standalone/public"
+  fi
+}
+
 echo "▶  拉取最新代码..."
 git pull origin ${BRANCH}
 PULLED_HASH=\$(git rev-parse --short HEAD)
@@ -97,6 +106,7 @@ if [ "${TARGET}" = "web" ] || [ "${TARGET}" = "all" ]; then
   cd ${REMOTE_DIR}/web
   npm ci --quiet
   npm run build
+  syncNextStandaloneAssets
   echo "▶  重载 Web（零停机）..."
   pm2 reload showrunner-web --update-env
   echo "✓  Web 已更新"

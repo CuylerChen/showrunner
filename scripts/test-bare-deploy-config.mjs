@@ -50,6 +50,10 @@ assert.match(envExample, /^OPENAI_MODEL=gpt-5\.5$/m, '.env.example should use gp
 
 assert.match(deployBare, /pm2 reload showrunner-web --update-env/, 'web deploy should refresh PM2 environment variables')
 assert.match(deployBare, /pm2 restart showrunner-worker --update-env/, 'worker deploy should refresh PM2 environment variables')
+assert.match(deployBare, /syncNextStandaloneAssets/, 'web deploy should sync Next standalone static assets')
+assert.match(deployBare, /mkdir -p "\.next\/standalone\/\.next"/, 'web deploy should create standalone .next directory before syncing static assets')
+assert.match(deployBare, /cp -R "\.next\/static" "\.next\/standalone\/\.next\/static"/, 'web deploy should copy .next/static into standalone output')
+assert.match(deployBare, /cp -R "public" "\.next\/standalone\/public"/, 'web deploy should copy public assets into standalone output')
 
 assert.doesNotMatch(rootPm2, /\/root\/\.openclaw\/workspace\/showrunner/, 'root PM2 config must not contain stale local workspace paths')
 assert.doesNotMatch(rootPm2, /require\('dotenv'\)/, 'root PM2 config should not depend on root-level dotenv')
@@ -61,6 +65,11 @@ assert.match(rootPm2, /WORKER_INTERNAL_URL:\s*process\.env\.WORKER_INTERNAL_URL/
 assert.match(rootPm2, /WORKER_PORT:\s*process\.env\.WORKER_PORT/, 'root PM2 config should pass WORKER_PORT')
 assert.match(rootPm2, /WORKER_HOST:\s*process\.env\.WORKER_HOST/, 'root PM2 config should pass WORKER_HOST')
 assert.match(rootPm2, /PADDLE_API_KEY:\s*process\.env\.PADDLE_API_KEY/, 'root PM2 config should pass Paddle settings')
+
+assert.match(setupBare, /syncNextStandaloneAssets/, 'bare-metal setup should sync Next standalone static assets')
+assert.match(setupBare, /mkdir -p "\.next\/standalone\/\.next"/, 'bare-metal setup should create standalone .next directory before syncing static assets')
+assert.match(setupBare, /cp -R "\.next\/static" "\.next\/standalone\/\.next\/static"/, 'bare-metal setup should copy .next/static into standalone output')
+assert.match(setupBare, /cp -R "public" "\.next\/standalone\/public"/, 'bare-metal setup should copy public assets into standalone output')
 
 assert.doesNotMatch(webEnvExample, /CLERK_|SUPABASE_|LEMONSQUEEZY_|OPENROUTER_/i, 'web env example should not document removed providers')
 assert.match(webEnvExample, /^MYSQL_HOST=127\.0\.0\.1$/m, 'web env example should document current MySQL config')
