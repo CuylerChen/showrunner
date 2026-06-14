@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import {
   buildPaddleTransactionPayload,
   getPlanLimit,
+  getPaddlePriceIdForPlan,
   resolvePaddleConfig,
   resolvePaddlePlanFromEvent,
   signPaddleWebhookPayload,
@@ -14,7 +15,7 @@ const env = {
   PADDLE_WEBHOOK_SECRET: 'test-secret',
   PADDLE_STARTER_PRICE_ID: 'pri_starter',
   PADDLE_PRO_PRICE_ID: 'pri_pro',
-} as NodeJS.ProcessEnv
+}
 
 assert.equal(getPlanLimit('free'), 3)
 assert.equal(getPlanLimit('starter'), 10)
@@ -23,6 +24,9 @@ assert.equal(getPlanLimit('pro'), -1)
 const config = resolvePaddleConfig(env)
 assert.equal(config.apiBaseUrl, 'https://sandbox-api.paddle.com')
 assert.equal(config.priceIds.starter, 'pri_starter')
+assert.equal(getPaddlePriceIdForPlan('starter', config), 'pri_starter')
+assert.equal(getPaddlePriceIdForPlan('pro', config), 'pri_pro')
+assert.equal(getPaddlePriceIdForPlan('starter', { ...config, priceIds: { ...config.priceIds, starter: '' } }), null)
 
 const payload = buildPaddleTransactionPayload({
   plan: 'starter',

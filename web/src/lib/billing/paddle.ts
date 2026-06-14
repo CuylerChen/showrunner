@@ -49,7 +49,7 @@ export function getPlanLimit(plan: AppPlan): number {
   }
 }
 
-export function resolvePaddleConfig(env: NodeJS.ProcessEnv = process.env): PaddleConfig {
+export function resolvePaddleConfig(env: Record<string, string | undefined> = process.env): PaddleConfig {
   const environment = cleanEnv(env.PADDLE_ENVIRONMENT) === 'production' ? 'production' : 'sandbox'
 
   return {
@@ -64,6 +64,10 @@ export function resolvePaddleConfig(env: NodeJS.ProcessEnv = process.env): Paddl
       pro: cleanEnv(env.PADDLE_PRO_PRICE_ID),
     },
   }
+}
+
+export function getPaddlePriceIdForPlan(plan: PaidPlan, config: PaddleConfig): string | null {
+  return config.priceIds[plan] || null
 }
 
 export function buildPaddleTransactionPayload(input: {

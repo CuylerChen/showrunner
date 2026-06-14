@@ -7,6 +7,7 @@ type ErrorCode =
   | 'QUOTA_EXCEEDED'
   | 'DEMO_NOT_READY'
   | 'VALIDATION_ERROR'
+  | 'PAYMENT_PROVIDER_ERROR'
   | 'INTERNAL_ERROR'
 
 const STATUS_MAP: Record<ErrorCode, number> = {
@@ -16,6 +17,7 @@ const STATUS_MAP: Record<ErrorCode, number> = {
   QUOTA_EXCEEDED:   402,
   DEMO_NOT_READY:   409,
   VALIDATION_ERROR: 422,
+  PAYMENT_PROVIDER_ERROR: 502,
   INTERNAL_ERROR:   500,
 }
 
