@@ -80,7 +80,8 @@ export function getPlanLimit(plan: AppPlan): number {
 }
 
 export function resolvePaddleConfig(env: Record<string, string | undefined> = process.env): PaddleConfig {
-  const environment = cleanEnv(env.PADDLE_ENVIRONMENT) === 'production' ? 'production' : 'sandbox'
+  const rawEnvironment = cleanEnv(env.PADDLE_ENVIRONMENT)
+  const environment = rawEnvironment === 'production' || rawEnvironment === 'live' ? 'production' : 'sandbox'
 
   return {
     environment,

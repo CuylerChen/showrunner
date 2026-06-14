@@ -28,6 +28,8 @@ assert.equal(config.priceIds.starter, 'pri_starter')
 assert.equal(getPaddlePriceIdForPlan('starter', config), 'pri_starter')
 assert.equal(getPaddlePriceIdForPlan('pro', config), 'pri_pro')
 assert.equal(getPaddlePriceIdForPlan('starter', { ...config, priceIds: { ...config.priceIds, starter: '' } }), null)
+assert.equal(resolvePaddleConfig({ PADDLE_ENVIRONMENT: 'production' }).apiBaseUrl, 'https://api.paddle.com')
+assert.equal(resolvePaddleConfig({ PADDLE_ENVIRONMENT: 'live' }).apiBaseUrl, 'https://api.paddle.com')
 
 const payload = buildPaddleTransactionPayload({
   plan: 'starter',
