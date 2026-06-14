@@ -1,9 +1,11 @@
 import { NextRequest } from 'next/server'
+import fs from 'fs/promises'
 import { z } from 'zod'
 import { db, schema } from '@/lib/db'
 import { eq, and } from 'drizzle-orm'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, getSubscription } from '@/lib/auth'
 import { ok, err } from '@/lib/api'
+import { canUsePerSceneVoice, isTtsVoiceId } from '@/lib/plans'
 
 type Params = { params: Promise<{ id: string }> }
 type StepVisualType = 'screenshot' | 'template' | 'cta'
@@ -11,6 +13,7 @@ type StepUpdates = {
   position: number
   title: string
   narration: string | null
+  tts_voice_id?: string | null
   visual_type?: StepVisualType
   visual_asset_url?: string | null
 }
@@ -21,6 +24,7 @@ const UpdateStepsSchema = z.object({
     position:         z.number().int().min(1),
     title:            z.string().min(1).max(255),
     narration:        z.string().max(1000).nullable().optional(),
+    tts_voice_id:     z.string().max(40).nullable().optional(),
     visual_type:      z.enum(['screenshot', 'template', 'cta']).optional(),
     visual_asset_url: z.string().max(2048).nullable().optional(),
   })).min(1),
@@ -47,21 +51,60 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
   if (!demo) return err('NOT_FOUND', 'Demo 不存在或无权访问')
   if (demo.status !== 'review') return err('DEMO_NOT_READY', '只能在 review 状态下编辑步骤')
+  const subscription = await getSubscription(user.id)
+  if (!subscription) return err('SUBSCRIPTION_NOT_FOUND', '订阅信息不存在')
 
-  await Promise.all(parsed.data.steps.map(s => {
-    const updates: StepUpdates = {
-      position: s.position,
-      title: s.title,
-      narration: s.narration ?? null,
+  for (const step of parsed.data.steps) {
+    const voiceId = step.tts_voice_id ?? null
+    if (!voiceId) continue
+    if (!isTtsVoiceId(voiceId)) return err('VALIDATION_ERROR', '请选择有效的旁白声音')
+    if (voiceId !== 'default' && !canUsePerSceneVoice(subscription.plan, voiceId)) {
+      return err('PLAN_RESTRICTED', '当前套餐不支持为每个分镜设置不同人物声音')
     }
-    if (s.visual_type !== undefined) updates.visual_type = s.visual_type
-    if (s.visual_asset_url !== undefined) updates.visual_asset_url = s.visual_asset_url
+  }
 
-    return db
-      .update(schema.steps)
-      .set(updates)
-      .where(and(eq(schema.steps.id, s.id), eq(schema.steps.demo_id, id)))
-  }))
+  const existingSteps = await db
+    .select({
+      id: schema.steps.id,
+      custom_audio_path: schema.steps.custom_audio_path,
+    })
+    .from(schema.steps)
+    .where(eq(schema.steps.demo_id, id))
+
+  const existingStepIds = new Set(existingSteps.map(step => step.id))
+  for (const step of parsed.data.steps) {
+    if (!existingStepIds.has(step.id)) return err('NOT_FOUND', '分镜不存在或无权访问')
+  }
+
+  const submittedStepIds = new Set(parsed.data.steps.map(step => step.id))
+  const deletedSteps = existingSteps.filter(step => !submittedStepIds.has(step.id))
+
+  await db.transaction(async tx => {
+    for (const step of deletedSteps) {
+      await tx.delete(schema.steps).where(and(eq(schema.steps.id, step.id), eq(schema.steps.demo_id, id)))
+    }
+
+    for (const [index, s] of parsed.data.steps.entries()) {
+      const updates: StepUpdates = {
+        position: index + 1,
+        title: s.title,
+        narration: s.narration ?? null,
+      }
+      if (s.tts_voice_id !== undefined) updates.tts_voice_id = s.tts_voice_id || null
+      if (s.visual_type !== undefined) updates.visual_type = s.visual_type
+      if (s.visual_asset_url !== undefined) updates.visual_asset_url = s.visual_asset_url
+
+      await tx
+        .update(schema.steps)
+        .set(updates)
+        .where(and(eq(schema.steps.id, s.id), eq(schema.steps.demo_id, id)))
+    }
+  })
+
+  await Promise.all(deletedSteps
+    .map(step => step.custom_audio_path)
+    .filter((filePath): filePath is string => Boolean(filePath))
+    .map(filePath => fs.unlink(filePath).catch(() => undefined)))
 
   return ok({ updated: parsed.data.steps.length })
 }

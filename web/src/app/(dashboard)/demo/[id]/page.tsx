@@ -5,9 +5,11 @@ import { useParams, useRouter } from 'next/navigation'
 import { StatusBadge } from '@/components/demo/status-badge'
 import { useDemoRealtime } from '@/hooks/use-demo-realtime'
 import { useTranslation } from '@/lib/i18n'
-import type { Demo, Step } from '@/types'
+import { TTS_VOICES } from '@/lib/plans'
+import { moveSceneStep, removeSceneStep, toSceneStepsPayload } from '@/lib/scene-steps'
+import type { Demo, PlanType, Step } from '@/types'
 
-type DemoWithSteps = Demo & { steps: Step[]; has_session?: boolean }
+type DemoWithSteps = Demo & { steps: Step[]; has_session?: boolean; subscription_plan?: PlanType }
 
 export default function DemoDetailPage() {
   const { id }  = useParams<{ id: string }>()
@@ -18,6 +20,8 @@ export default function DemoDetailPage() {
   const [steps, setSteps]     = useState<Step[]>([])
   const [loading, setLoading] = useState(true)
   const [starting, setStarting] = useState(false)
+  const [uploadingAudioStepId, setUploadingAudioStepId] = useState<string | null>(null)
+  const [audioError, setAudioError] = useState<string | null>(null)
 
   const { status, errorMessage } = useDemoRealtime(id, demo?.status ?? 'pending')
   const prevStatusRef = useRef<string>('')
@@ -52,15 +56,77 @@ export default function DemoDetailPage() {
     setStarting(false)
   }
 
-  function updateStep(stepId: string, field: 'title' | 'narration', value: string) {
+  function updateStep(stepId: string, field: 'title' | 'narration' | 'tts_voice_id', value: string | null) {
     setSteps(prev => prev.map(s => s.id === stepId ? { ...s, [field]: value } : s))
+  }
+
+  function moveStep(stepId: string, direction: -1 | 1) {
+    setSteps(prev => moveSceneStep(prev, stepId, direction))
+  }
+
+  function deleteStep(stepId: string) {
+    setSteps(prev => removeSceneStep(prev, stepId))
+  }
+
+  async function uploadStepAudio(stepId: string, file: File | null) {
+    if (!file) return
+    setAudioError(null)
+    setUploadingAudioStepId(stepId)
+
+    try {
+      const form = new FormData()
+      form.append('audio', file)
+      const res = await fetch(`/api/demos/${id}/steps/${stepId}/audio`, {
+        method: 'POST',
+        body: form,
+      })
+      const data = await res.json()
+      if (!data.success) {
+        setAudioError(data.error?.message ?? dd.customAudioError)
+        return
+      }
+      setSteps(prev => prev.map(step => step.id === stepId
+        ? {
+            ...step,
+            custom_audio_path: data.data.custom_audio_path,
+            custom_audio_name: data.data.custom_audio_name,
+          }
+        : step
+      ))
+    } catch {
+      setAudioError(dd.customAudioError)
+    } finally {
+      setUploadingAudioStepId(null)
+    }
+  }
+
+  async function removeStepAudio(stepId: string) {
+    setAudioError(null)
+    setUploadingAudioStepId(stepId)
+
+    try {
+      const res = await fetch(`/api/demos/${id}/steps/${stepId}/audio`, { method: 'DELETE' })
+      const data = await res.json()
+      if (!data.success) {
+        setAudioError(data.error?.message ?? dd.customAudioError)
+        return
+      }
+      setSteps(prev => prev.map(step => step.id === stepId
+        ? { ...step, custom_audio_path: null, custom_audio_name: null }
+        : step
+      ))
+    } catch {
+      setAudioError(dd.customAudioError)
+    } finally {
+      setUploadingAudioStepId(null)
+    }
   }
 
   async function saveSteps() {
     await fetch(`/api/demos/${id}/steps`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ steps: steps.map(s => ({ id: s.id, position: s.position, title: s.title, narration: s.narration })) }),
+      body: JSON.stringify({ steps: toSceneStepsPayload(steps) }),
     })
   }
 
@@ -82,6 +148,7 @@ export default function DemoDetailPage() {
   const isPaused  = status === 'paused'
   const isReview  = status === 'review'
   const isRunning = ['processing', 'parsing'].includes(status)
+  const canEditSceneVoices = demo.subscription_plan === 'pro'
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -137,6 +204,16 @@ export default function DemoDetailPage() {
             </button>
           )}
         </div>
+        {isReview && !canEditSceneVoices && (
+          <p className="mb-3 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+            {dd.sceneVoiceLocked}
+          </p>
+        )}
+        {audioError && (
+          <p className="mb-3 text-xs leading-relaxed" style={{ color: '#FCA5A5' }}>
+            {audioError}
+          </p>
+        )}
 
         {steps.map((step, idx) => (
           <div key={step.id}
@@ -179,6 +256,47 @@ export default function DemoDetailPage() {
                         {step.visual_type === 'screenshot' ? dd.visualScreenshot : step.visual_type === 'cta' ? dd.visualCta : dd.visualTemplate}
                       </span>
                     )}
+                    <div className="ml-auto flex flex-shrink-0 items-center gap-1">
+                      <button
+                        type="button"
+                        aria-label={dd.moveSceneUp}
+                        title={dd.moveSceneUp}
+                        disabled={idx === 0}
+                        onClick={() => moveStep(step.id, -1)}
+                        className="flex h-7 w-7 items-center justify-center rounded-md transition-opacity disabled:cursor-not-allowed disabled:opacity-30"
+                        style={{ color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                      >
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+                          <path d="M4 10l4-4 4 4" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={dd.moveSceneDown}
+                        title={dd.moveSceneDown}
+                        disabled={idx === steps.length - 1}
+                        onClick={() => moveStep(step.id, 1)}
+                        className="flex h-7 w-7 items-center justify-center rounded-md transition-opacity disabled:cursor-not-allowed disabled:opacity-30"
+                        style={{ color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                      >
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+                          <path d="M4 6l4 4 4-4" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={dd.deleteScene}
+                        title={dd.deleteScene}
+                        disabled={steps.length <= 1}
+                        onClick={() => deleteStep(step.id)}
+                        className="flex h-7 w-7 items-center justify-center rounded-md transition-opacity disabled:cursor-not-allowed disabled:opacity-30"
+                        style={{ color: '#FCA5A5', border: '1px solid rgba(252,165,165,0.35)' }}
+                      >
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+                          <path d="M5 5l6 6M11 5l-6 6" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
@@ -195,13 +313,71 @@ export default function DemoDetailPage() {
 
                 {/* 旁白 */}
                 {isReview ? (
-                  <textarea
-                    value={step.narration ?? ''}
-                    onChange={e => updateStep(step.id, 'narration', e.target.value)}
-                    rows={2}
-                    placeholder={dd.narrationPlaceholder}
-                    className="input-dark mt-2 w-full rounded-lg px-2.5 py-1.5 text-xs resize-none"
-                  />
+                  <>
+                    <textarea
+                      value={step.narration ?? ''}
+                      onChange={e => updateStep(step.id, 'narration', e.target.value)}
+                      rows={2}
+                      placeholder={dd.narrationPlaceholder}
+                      className="input-dark mt-2 w-full rounded-lg px-2.5 py-1.5 text-xs resize-none"
+                    />
+                    {canEditSceneVoices && (
+                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                        <label className="block">
+                          <span className="mb-1 block text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>
+                            {dd.sceneVoiceLabel}
+                          </span>
+                          <select
+                            value={step.tts_voice_id ?? ''}
+                            onChange={e => updateStep(step.id, 'tts_voice_id', e.target.value || null)}
+                            className="input-dark w-full rounded-lg px-2.5 py-2 text-xs"
+                          >
+                            <option value="">{dd.inheritVideoVoice}</option>
+                            {TTS_VOICES.map(voice => (
+                              <option key={voice.id} value={voice.id}>
+                                {t.createForm.ttsVoices[voice.id].label}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <div>
+                          <span className="mb-1 block text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>
+                            {dd.customAudioLabel}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <label className="btn-outline min-h-9 flex-1 rounded-lg px-3 py-2 text-center text-xs cursor-pointer">
+                              {uploadingAudioStepId === step.id ? dd.customAudioUploading : dd.customAudioUpload}
+                              <input
+                                type="file"
+                                accept="audio/mpeg,audio/wav,audio/x-wav,audio/mp4,.mp3,.wav,.m4a"
+                                className="hidden"
+                                disabled={uploadingAudioStepId === step.id}
+                                onChange={e => {
+                                  uploadStepAudio(step.id, e.target.files?.[0] ?? null)
+                                  e.target.value = ''
+                                }}
+                              />
+                            </label>
+                            {step.custom_audio_name && (
+                              <button
+                                type="button"
+                                onClick={() => removeStepAudio(step.id)}
+                                disabled={uploadingAudioStepId === step.id}
+                                className="btn-outline min-h-9 rounded-lg px-3 py-2 text-xs disabled:opacity-60"
+                              >
+                                {dd.customAudioRemove}
+                              </button>
+                            )}
+                          </div>
+                          {step.custom_audio_name && (
+                            <p className="mt-1 truncate text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                              {dd.customAudioUsing(step.custom_audio_name)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   step.narration && (
                     <p className="mt-1.5 text-xs italic" style={{ color: 'var(--text-muted)' }}>

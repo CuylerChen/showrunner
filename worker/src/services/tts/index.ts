@@ -3,6 +3,12 @@ import fs from 'fs'
 import { execSync } from 'child_process'
 import { Step, TtsResult } from '../../types'
 import { resolveMediaToolPath } from '../../utils/media-tools'
+import {
+  resolveKokoroVoice,
+  resolveOpenAiVoice,
+  resolveStepTtsVoiceId,
+  speechSpeedFromPercent,
+} from './voices'
 
 type OpenAITtsConfig = {
   apiKey: string
@@ -68,15 +74,31 @@ function getAudioDuration(filePath: string): number {
   return 3
 }
 
+function copyCustomAudio(step: Step, outputDir: string): string | null {
+  const customAudioPath = step.custom_audio_path?.trim()
+  if (!customAudioPath || !fs.existsSync(customAudioPath)) return null
+
+  const ext = path.extname(customAudioPath).toLowerCase() || '.mp3'
+  const outputPath = path.join(outputDir, `step_${step.position}_custom${ext}`)
+  fs.copyFileSync(customAudioPath, outputPath)
+  return outputPath
+}
+
 // ── OpenAI TTS-compatible speech endpoint（可选高质量旁白）────────
-async function generateWithOpenAI(text: string, outputPath: string, config: OpenAITtsConfig): Promise<boolean> {
+async function generateWithOpenAI(
+  text: string,
+  outputPath: string,
+  config: OpenAITtsConfig,
+  voice: string,
+  speed: number,
+): Promise<boolean> {
   try {
     const body: Record<string, unknown> = {
       model: config.model,
       input: text,
-      voice: config.voice,
+      voice,
       response_format: 'mp3',
-      speed: config.speed,
+      speed,
     }
     if (config.instructions) body.instructions = config.instructions
 
@@ -124,12 +146,12 @@ async function getKokoro() {
   return kokoro
 }
 
-async function generateWithKokoro(text: string, outputPath: string): Promise<boolean> {
+async function generateWithKokoro(text: string, outputPath: string, voice: string): Promise<boolean> {
   const instance = await getKokoro()
   if (!instance) return false
 
   try {
-    const audio = await instance.generate(text, { voice: 'af_heart' })
+    const audio = await instance.generate(text, { voice })
     await audio.save(outputPath)
     return true
   } catch (err) {
@@ -158,7 +180,8 @@ function estimateDuration(text: string): number {
 
 export async function generateNarration(
   steps: Step[],
-  outputDir: string
+  outputDir: string,
+  options: { ttsVoiceId?: string | null; ttsSpeed?: number | null } = {},
 ): Promise<TtsResult> {
   fs.mkdirSync(outputDir, { recursive: true })
   const ttsConfig = resolveTtsConfig()
@@ -169,6 +192,24 @@ export async function generateNarration(
 
   for (const step of steps) {
     const narration = step.narration?.trim() || step.title
+    const customAudioPath = copyCustomAudio(step, outputDir)
+    if (customAudioPath) {
+      console.log(`[tts] Step ${step.position}: 使用自定义音频 ${step.custom_audio_name ?? path.basename(customAudioPath)}`)
+      audioPaths.push(customAudioPath)
+      const actualDuration = getAudioDuration(customAudioPath)
+      stepDurations.push(actualDuration)
+      totalDuration += actualDuration
+      continue
+    }
+
+    const voiceId = resolveStepTtsVoiceId(step.tts_voice_id, options.ttsVoiceId)
+    const openAiVoice = ttsConfig.provider === 'openai'
+      ? resolveOpenAiVoice(voiceId, ttsConfig.openai.voice)
+      : null
+    const kokoroVoice = resolveKokoroVoice(voiceId)
+    const speechSpeed = ttsConfig.provider === 'openai'
+      ? speechSpeedFromPercent(options.ttsSpeed, ttsConfig.openai.speed)
+      : 1
     const outputPathMp3 = path.join(outputDir, `step_${step.position}.mp3`)
     const outputPathWav = path.join(outputDir, `step_${step.position}.wav`)
     const estimatedDuration = estimateDuration(narration)
@@ -179,14 +220,14 @@ export async function generateNarration(
     let success = false
 
     if (ttsConfig.provider === 'openai') {
-      success = await generateWithOpenAI(narration, outputPathMp3, ttsConfig.openai)
+      success = await generateWithOpenAI(narration, outputPathMp3, ttsConfig.openai, openAiVoice!, speechSpeed)
     }
 
     if (success) {
       finalPath = outputPathMp3
     } else {
       // 使用 Kokoro TTS（免费本地方案），fallback 到静音
-      success = await generateWithKokoro(narration, outputPathWav)
+      success = await generateWithKokoro(narration, outputPathWav, kokoroVoice)
       if (success) {
         finalPath = outputPathWav
       } else {

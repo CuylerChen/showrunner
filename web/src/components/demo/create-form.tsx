@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from '@/lib/i18n'
+import { getAllowedTtsVoices, getPlanCapabilities, TTS_SPEED_DEFAULT, TTS_VOICES, type TtsVoiceId } from '@/lib/plans'
+import type { PlanType } from '@/types'
 
 /* ── 图标 ──────────────────────────────────────────────── */
 function IconSparkle() {
@@ -44,10 +46,17 @@ const EXAMPLES = [
 
 
 /* ── 主组件 ─────────────────────────────────────────────── */
-export function CreateForm() {
+interface CreateFormProps {
+  plan: PlanType
+}
+
+export function CreateForm({ plan }: CreateFormProps) {
   const router = useRouter()
   const { t } = useTranslation()
   const cf = t.createForm
+  const allowedVoices = getAllowedTtsVoices(plan)
+  const allowedVoiceIds = new Set(allowedVoices.map(voice => voice.id))
+  const capabilities = getPlanCapabilities(plan)
 
   const [url, setUrl]           = useState('')
   const [desc, setDesc]         = useState('')
@@ -56,6 +65,8 @@ export function CreateForm() {
   const [brandTone, setBrandTone] = useState('')
   const [ctaText, setCtaText] = useState('')
   const [ctaUrl, setCtaUrl] = useState('')
+  const [ttsVoiceId, setTtsVoiceId] = useState<TtsVoiceId>('default')
+  const [ttsSpeed, setTtsSpeed] = useState(TTS_SPEED_DEFAULT)
   const [loading, setLoading]   = useState(false)
   const [success, setSuccess]   = useState(false)
   const [error, setError]       = useState<string | null>(null)
@@ -78,6 +89,8 @@ export function CreateForm() {
           brand_tone: brandTone || null,
           cta_text: ctaText || null,
           cta_url: ctaUrl || null,
+          tts_voice_id: ttsVoiceId,
+          tts_speed: ttsSpeed,
         }),
       })
       const data = await res.json()
@@ -90,6 +103,8 @@ export function CreateForm() {
       setBrandTone('')
       setCtaText('')
       setCtaUrl('')
+      setTtsVoiceId('default')
+      setTtsSpeed(TTS_SPEED_DEFAULT)
       // 2 秒后跳转到视频列表
       setTimeout(() => {
         setSuccess(false)
@@ -209,6 +224,53 @@ export function CreateForm() {
 
           {/* Marketing brief */}
           <div className="grid gap-3 sm:grid-cols-2">
+            <label className="space-y-1.5 sm:col-span-2">
+              <span className="text-xs font-medium" style={{ color: '#64748B' }}>{cf.ttsVoiceLabel}</span>
+              <select
+                value={ttsVoiceId}
+                onChange={e => setTtsVoiceId(e.target.value as TtsVoiceId)}
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+                style={{
+                  background: '#F8FAFC',
+                  border: '1.5px solid #E2E8F0',
+                  color: '#0F172A',
+                }}
+              >
+                {TTS_VOICES.map(voice => {
+                  const locked = !allowedVoiceIds.has(voice.id)
+                  const copy = cf.ttsVoices[voice.id]
+                  return (
+                    <option key={voice.id} value={voice.id} disabled={locked}>
+                      {copy.label}{locked ? ` · ${voice.starter ? cf.ttsStarterLocked : cf.ttsProLocked}` : ''}
+                    </option>
+                  )
+                })}
+              </select>
+              <p className="text-xs leading-relaxed" style={{ color: '#64748B' }}>
+                {plan === 'free' ? cf.ttsFreeHint : plan === 'starter' ? cf.ttsStarterHint : cf.ttsProHint}
+              </p>
+            </label>
+            <label className="space-y-1.5 sm:col-span-2">
+              <span className="text-xs font-medium" style={{ color: '#64748B' }}>{cf.ttsSpeedLabel}</span>
+              <select
+                value={ttsSpeed}
+                onChange={e => setTtsSpeed(Number(e.target.value))}
+                disabled={!capabilities.ttsSpeedControl}
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none disabled:opacity-60"
+                style={{
+                  background: '#F8FAFC',
+                  border: '1.5px solid #E2E8F0',
+                  color: '#0F172A',
+                }}
+              >
+                <option value={90}>{cf.ttsSpeedSlow}</option>
+                <option value={100}>{cf.ttsSpeedNormal}</option>
+                <option value={110}>{cf.ttsSpeedFast}</option>
+              </select>
+              <p className="text-xs leading-relaxed" style={{ color: '#64748B' }}>
+                {capabilities.ttsSpeedControl ? cf.ttsSpeedHint : cf.ttsSpeedLockedHint}
+              </p>
+            </label>
             <label className="space-y-1.5">
               <span className="text-xs font-medium" style={{ color: '#64748B' }}>{cf.audienceLabel}</span>
               <input

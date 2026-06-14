@@ -12,6 +12,9 @@ export interface Step {
   selector: string | null
   value: string | null
   narration: string | null
+  tts_voice_id?: string | null
+  custom_audio_path?: string | null
+  custom_audio_name?: string | null
   visual_type?: VisualType
   visual_asset_url?: string | null
   wait_for_selector: string | null  // 步骤完成的标志元素（方案C）

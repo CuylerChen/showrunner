@@ -2,15 +2,16 @@ import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { db, schema } from '@/lib/db'
 import { eq, and, asc } from 'drizzle-orm'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, getSubscription } from '@/lib/auth'
 import { ok, err } from '@/lib/api'
+import { getVideoStorageDir } from '@/lib/video-storage'
 import fs from 'fs'
 import path from 'path'
 
 type Params = { params: Promise<{ id: string }> }
 type UpdateResult = { affectedRows?: number }
 
-const VIDEO_DIR = process.env.VIDEO_DIR ?? '/data/videos'
+const VIDEO_DIR = getVideoStorageDir()
 
 // GET /api/demos/[id] — 获取 Demo 详情（含 steps）
 export async function GET(_req: NextRequest, { params }: Params) {
@@ -32,8 +33,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
     .from(schema.steps)
     .where(eq(schema.steps.demo_id, id))
     .orderBy(asc(schema.steps.position))
+  const subscription = await getSubscription(user.id)
 
-  return ok({ ...demo, steps })
+  return ok({ ...demo, steps, subscription_plan: subscription?.plan ?? 'free' })
 }
 
 // PATCH /api/demos/[id] — 更新 Demo 标题 / CTA 设置

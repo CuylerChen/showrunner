@@ -10,6 +10,7 @@ import fs from 'fs'
 import path from 'path'
 import { Step } from '../types'
 import { normalizeProductCategory, type ProductCategory } from '../services/parser/scenes'
+import { getVideoStorageDir } from '../utils/video-storage'
 
 export interface MergeJobData {
   demoId: string
@@ -22,7 +23,7 @@ export interface MergeJobData {
   renderMode?: 'recording' | 'promotional'
 }
 
-const VIDEO_DIR = process.env.VIDEO_DIR ?? '/data/videos'
+const VIDEO_DIR = getVideoStorageDir()
 
 interface PromotionalDemoMetadata {
   title: string | null

@@ -5,6 +5,7 @@ import { eq, count } from 'drizzle-orm'
 import { CreateForm } from '@/components/demo/create-form'
 import { UpgradePanel } from '@/components/subscription/upgrade-panel'
 import { getT } from '@/lib/i18n-server'
+import { getSubscription } from '@/lib/auth'
 import Link from 'next/link'
 
 async function getTotalCount(userId: string) {
@@ -15,19 +16,6 @@ async function getTotalCount(userId: string) {
   return row?.total ?? 0
 }
 
-async function getSubscriptionSummary(userId: string) {
-  const [row] = await db
-    .select({
-      plan: schema.subscriptions.plan,
-      status: schema.subscriptions.status,
-      demos_used_this_month: schema.subscriptions.demos_used_this_month,
-      demos_limit: schema.subscriptions.demos_limit,
-    })
-    .from(schema.subscriptions)
-    .where(eq(schema.subscriptions.user_id, userId))
-  return row ?? null
-}
-
 export default async function DashboardPage() {
   const headersList = await headers()
   const userId = headersList.get('x-user-id')
@@ -35,7 +23,7 @@ export default async function DashboardPage() {
 
   const [total, subscription, { t }] = await Promise.all([
     getTotalCount(userId),
-    getSubscriptionSummary(userId),
+    getSubscription(userId),
     getT(),
   ])
   const d = t.dashboard
@@ -63,7 +51,11 @@ export default async function DashboardPage() {
         />
       )}
 
-      <CreateForm />
+      {subscription ? (
+        <CreateForm plan={subscription.plan} />
+      ) : (
+        <CreateForm plan="free" />
+      )}
 
       {/* ── 快捷入口：已有导览 ─────────────────────────────── */}
       {total > 0 && (

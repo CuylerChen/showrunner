@@ -5,6 +5,7 @@ import { promisify } from 'util'
 import { pathToFileURL } from 'url'
 import { Step } from '../../types'
 import { createMediaToolEnv } from '../../utils/media-tools'
+import { getVideoStorageDir } from '../../utils/video-storage'
 import { normalizeProductCategory, type ProductCategory } from '../parser/scenes'
 
 const execFileAsync = promisify(execFile)
@@ -103,7 +104,7 @@ function createStaticTimelineScript(totalDuration: number): string {
 function resolveVisualAsset(value?: string | null): string | null {
   if (!value) return null
   if (value.startsWith('/videos/')) {
-    const videoDir = process.env.VIDEO_DIR ?? '/data/videos'
+    const videoDir = getVideoStorageDir()
     return path.join(videoDir, value.replace(/^\/videos\//, ''))
   }
   if (fs.existsSync(value)) return value

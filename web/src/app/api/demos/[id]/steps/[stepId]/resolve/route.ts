@@ -3,8 +3,9 @@ import { z } from 'zod'
 import { db, schema } from '@/lib/db'
 import { eq, and, asc, ne } from 'drizzle-orm'
 import { recordQueue } from '@/lib/queue'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, getSubscription } from '@/lib/auth'
 import { ok, err } from '@/lib/api'
+import { getTtsQueuePriority } from '@/lib/plans'
 
 type Params = { params: Promise<{ id: string; stepId: string }> }
 
@@ -35,6 +36,8 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   if (!demo)                    return err('NOT_FOUND',      'Demo 不存在或无权访问')
   if (demo.status !== 'paused') return err('DEMO_NOT_READY', '只能对 paused 状态的 Demo 进行介入')
+  const subscription = await getSubscription(user.id)
+  if (!subscription) return err('SUBSCRIPTION_NOT_FOUND', '订阅信息不存在')
 
   const { action } = parsed.data
 
@@ -77,6 +80,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       .where(eq(schema.demos.id, id))
 
     await recordQueue.add('record', { demoId: id, steps: remainingSteps }, {
+      priority: getTtsQueuePriority(subscription.plan),
       attempts: 1,
       removeOnComplete: true,
     })

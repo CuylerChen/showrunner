@@ -2,8 +2,9 @@ import { NextRequest } from 'next/server'
 import { db, schema } from '@/lib/db'
 import { eq, and, asc } from 'drizzle-orm'
 import { ttsQueue } from '@/lib/queue'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, getSubscription } from '@/lib/auth'
 import { ok, err } from '@/lib/api'
+import { getTtsQueuePriority } from '@/lib/plans'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -15,7 +16,12 @@ export async function POST(_req: NextRequest, { params }: Params) {
   const { id } = await params
 
   const demo = await db
-    .select({ id: schema.demos.id, status: schema.demos.status })
+    .select({
+      id: schema.demos.id,
+      status: schema.demos.status,
+      tts_voice_id: schema.demos.tts_voice_id,
+      tts_speed: schema.demos.tts_speed,
+    })
     .from(schema.demos)
     .where(and(eq(schema.demos.id, id), eq(schema.demos.user_id, user.id)))
     .then(rows => rows[0] ?? null)
@@ -35,6 +41,8 @@ export async function POST(_req: NextRequest, { params }: Params) {
   if (!steps.length) {
     return err('DEMO_NOT_READY', '没有可生成的视频场景，请先等待 AI 分析完成')
   }
+  const subscription = await getSubscription(user.id)
+  if (!subscription) return err('SUBSCRIPTION_NOT_FOUND', '订阅信息不存在')
 
   try {
     await db
@@ -42,7 +50,14 @@ export async function POST(_req: NextRequest, { params }: Params) {
       .set({ status: 'processing', error_message: null })
       .where(eq(schema.demos.id, id))
 
-    await ttsQueue.add('tts', { demoId: id, steps, renderMode: 'promotional' }, {
+    await ttsQueue.add('tts', {
+      demoId: id,
+      steps,
+      ttsVoiceId: demo.tts_voice_id ?? 'default',
+      ttsSpeed: demo.tts_speed ?? 100,
+      renderMode: 'promotional',
+    }, {
+      priority: getTtsQueuePriority(subscription.plan),
       attempts: 3,
       backoff: { type: 'exponential', delay: 2000 },
       removeOnComplete: true,

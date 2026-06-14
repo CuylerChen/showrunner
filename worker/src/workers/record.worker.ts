@@ -80,6 +80,7 @@ async function processJob(job: Job<RecordJobData>) {
       videoPath,
       stepTimestamps,
     }, {
+      priority: job.opts.priority,
       attempts: 3,
       backoff: { type: 'exponential', delay: 2000 },
     })

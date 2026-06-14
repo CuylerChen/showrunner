@@ -12,11 +12,13 @@ export interface TtsJobData {
   steps: Step[]
   videoPath?: string
   stepTimestamps?: { stepId: string; start: number; end: number }[]
+  ttsVoiceId?: string | null
+  ttsSpeed?: number | null
   renderMode?: 'recording' | 'promotional'
 }
 
 async function processJob(job: Job<TtsJobData>) {
-  const { demoId, steps, videoPath, renderMode } = job.data
+  const { demoId, steps, videoPath, renderMode, ttsVoiceId, ttsSpeed } = job.data
   console.log(`[tts] 开始生成旁白 demo=${demoId}`)
 
   const jobId = crypto.randomUUID()
@@ -28,7 +30,10 @@ async function processJob(job: Job<TtsJobData>) {
     started_at: new Date(),
   })
 
-  const { audioPaths, stepDurations, totalDuration } = await generateNarration(steps, Paths.ttsDir(demoId))
+  const { audioPaths, stepDurations, totalDuration } = await generateNarration(steps, Paths.ttsDir(demoId), {
+    ttsVoiceId,
+    ttsSpeed,
+  })
 
   // 用 TTS 音频实际时长计算章节时间戳（替换录制时间轴，避免超时等待造成偏差）
   const ttsStepTimestamps: { stepId: string; start: number; end: number }[] = []
@@ -51,6 +56,7 @@ async function processJob(job: Job<TtsJobData>) {
       steps,
       renderMode: renderMode ?? (videoPath ? 'recording' : 'promotional'),
     }, {
+      priority: job.opts.priority,
       attempts: 3,
       backoff: { type: 'exponential', delay: 2000 },
     })

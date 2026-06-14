@@ -1,9 +1,10 @@
 import path from 'path'
 import fs from 'fs'
+import { getVideoStorageDir } from './video-storage'
 
 // 使用持久化 volume 目录，避免容器重启后临时文件丢失导致 merge 失败
 // /data/videos 是 docker-compose 中挂载的 named volume
-const VIDEO_BASE = process.env.VIDEO_DIR ?? '/data/videos'
+const VIDEO_BASE = getVideoStorageDir()
 const ROOT = path.join(VIDEO_BASE, '_tmp')
 
 export const Paths = {

@@ -2,8 +2,9 @@ import fs from 'fs/promises'
 import path from 'path'
 import { chromium, type Page } from 'playwright'
 import { assertSafePublicUrl, resolveSafeRedirectUrl } from '../../utils/safe-url'
+import { getVideoStorageDir } from '../../utils/video-storage'
 
-const VIDEO_DIR = process.env.VIDEO_DIR ?? '/data/videos'
+const VIDEO_DIR = getVideoStorageDir()
 
 export interface ScreenshotAsset {
   url: string

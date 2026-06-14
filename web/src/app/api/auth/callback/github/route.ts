@@ -4,6 +4,7 @@ import { db, schema } from '@/lib/db'
 import { eq, and } from 'drizzle-orm'
 import { signJwt } from '@/lib/jwt'
 import { getPlanLimit } from '@/lib/billing/paddle'
+import { addMonthlyPeriod } from '@/lib/subscription-period'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl
@@ -116,6 +117,7 @@ export async function GET(req: NextRequest) {
         status:                'active',
         demos_used_this_month: 0,
         demos_limit:           getPlanLimit('free'),
+        current_period_end:    addMonthlyPeriod(new Date()),
       })
     }
   }

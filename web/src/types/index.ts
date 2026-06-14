@@ -27,6 +27,8 @@ export interface Demo {
   audience?: string | null
   key_points?: string | null
   brand_tone?: string | null
+  tts_voice_id?: string | null
+  tts_speed?: number | null
   source_summary?: string | null
   thumbnail_url?: string | null
   status: DemoStatus
@@ -52,6 +54,9 @@ export interface Step {
   selector: string | null
   value: string | null
   narration: string | null
+  tts_voice_id?: string | null
+  custom_audio_path?: string | null
+  custom_audio_name?: string | null
   visual_type: VisualType
   visual_asset_url?: string | null
   wait_for_selector: string | null

@@ -3,9 +3,10 @@ import { z } from 'zod'
 import { db, schema } from '@/lib/db'
 import { eq, and, desc, sql, or, gt } from 'drizzle-orm'
 import { parseQueue } from '@/lib/queue'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, getSubscription } from '@/lib/auth'
 import { ok, err } from '@/lib/api'
 import { assertSafePublicUrl } from '@/lib/security/safe-url'
+import { canUseTtsSpeed, canUseVideoVoice, getTtsQueuePriority, isTtsVoiceId, normalizeTtsSpeed, TTS_SPEED_DEFAULT } from '@/lib/plans'
 
 type UpdateResult = { affectedRows?: number }
 
@@ -17,6 +18,8 @@ const CreateDemoSchema = z.object({
   brand_tone: z.string().max(80).nullable().optional(),
   cta_text: z.string().max(100).nullable().optional(),
   cta_url: z.string().url('请输入有效的 CTA URL').max(2048).nullable().optional().or(z.literal('')),
+  tts_voice_id: z.string().max(40).nullable().optional(),
+  tts_speed: z.number().int().nullable().optional(),
 })
 
 // GET /api/demos — 获取当前用户的 Demo 列表
@@ -71,6 +74,22 @@ export async function POST(req: NextRequest) {
     return err('VALIDATION_ERROR', parsed.error.issues.map(e => e.message).join(', '))
   }
   const { product_url, description, audience, key_points, brand_tone, cta_text, cta_url } = parsed.data
+  const tts_voice_id = parsed.data.tts_voice_id ?? 'default'
+  const tts_speed = normalizeTtsSpeed(parsed.data.tts_speed ?? TTS_SPEED_DEFAULT)
+  if (tts_speed === null) {
+    return err('VALIDATION_ERROR', '请选择有效的旁白语速')
+  }
+  if (!isTtsVoiceId(tts_voice_id)) {
+    return err('VALIDATION_ERROR', '请选择有效的旁白声音')
+  }
+  const subscription = await getSubscription(userId)
+  if (!subscription) return err('SUBSCRIPTION_NOT_FOUND', '订阅信息不存在')
+  if (!canUseVideoVoice(subscription.plan, tts_voice_id)) {
+    return err('PLAN_RESTRICTED', '当前套餐不支持选择该旁白声音')
+  }
+  if (!canUseTtsSpeed(subscription.plan, tts_speed)) {
+    return err('PLAN_RESTRICTED', '当前套餐不支持调整旁白语速')
+  }
   const normalizedCtaUrl = cta_url === '' ? null : cta_url ?? null
   let safeProductUrl: URL
   try {
@@ -96,7 +115,7 @@ export async function POST(req: NextRequest) {
 
   const reservedRows = (reserved[0] as UpdateResult | undefined)?.affectedRows ?? 0
   if (reservedRows === 0) {
-    return err('QUOTA_EXCEEDED', '本月免费额度已用完。当前版本暂不支持自助升级，请联系管理员增加额度。')
+    return err('QUOTA_EXCEEDED', '本月生成额度已用完。请在 Dashboard 选择 Starter 或 Pro 升级后继续生成。')
   }
 
   // 创建 Demo 记录
@@ -124,6 +143,8 @@ export async function POST(req: NextRequest) {
       audience:    audience ?? null,
       key_points:  key_points ?? null,
       brand_tone:  brand_tone ?? null,
+      tts_voice_id: tts_voice_id ?? 'default',
+      tts_speed:    tts_speed,
       cta_text:    cta_text ?? null,
       cta_url:     normalizedCtaUrl,
       status:      'pending',
@@ -141,6 +162,7 @@ export async function POST(req: NextRequest) {
       ctaText: cta_text ?? null,
       ctaUrl: normalizedCtaUrl,
     }, {
+      priority: getTtsQueuePriority(subscription.plan),
       attempts: 3,
       backoff: { type: 'exponential', delay: 2000 },
     })

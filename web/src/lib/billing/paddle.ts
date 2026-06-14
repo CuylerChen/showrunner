@@ -22,12 +22,37 @@ export interface PaddleTransactionPayload {
   }
 }
 
+export interface PaddlePortalSessionPayload {
+  subscription_ids?: string[]
+}
+
+export interface PaddlePortalLinks {
+  portalUrl: string | null
+  cancelUrl: string | null
+  updatePaymentMethodUrl: string | null
+}
+
 export interface PaddlePlanEventLike {
   custom_data?: Record<string, unknown> | null
   items?: Array<{
     price_id?: string | null
     price?: { id?: string | null } | null
   }> | null
+}
+
+type PaddlePortalSessionResponseLike = {
+  data?: {
+    urls?: {
+      general?: {
+        overview?: string | null
+      } | null
+      subscriptions?: Array<{
+        id?: string | null
+        cancel_subscription?: string | null
+        update_subscription_payment_method?: string | null
+      }> | null
+    } | null
+  } | null
 }
 
 export interface PaddleStatusMapping {
@@ -87,6 +112,26 @@ export function buildPaddleTransactionPayload(input: {
       user_id: input.user.id,
       plan: input.plan,
     },
+  }
+}
+
+export function buildPaddlePortalSessionPayload(subscriptionId: string | null | undefined): PaddlePortalSessionPayload {
+  return subscriptionId ? { subscription_ids: [subscriptionId] } : {}
+}
+
+export function resolvePaddlePortalLinks(
+  response: PaddlePortalSessionResponseLike,
+  subscriptionId: string | null | undefined,
+): PaddlePortalLinks {
+  const urls = response.data?.urls
+  const subscriptionUrls = urls?.subscriptions?.find(item => item.id === subscriptionId)
+    ?? urls?.subscriptions?.[0]
+    ?? null
+
+  return {
+    portalUrl: urls?.general?.overview ?? null,
+    cancelUrl: subscriptionUrls?.cancel_subscription ?? null,
+    updatePaymentMethodUrl: subscriptionUrls?.update_subscription_payment_method ?? null,
   }
 }
 
