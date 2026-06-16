@@ -261,8 +261,7 @@ export async function mergeDemo(
     try {
       const rendered = await renderHyperframesDemo(hyperframesClips, outputDir)
 
-      // 清理 TTS 和中间片段，最终文件保留到上传完成后由上层清理目录。
-      audioPaths.forEach(p => { try { fs.unlinkSync(p) } catch {} })
+      // 中间片段可立即清理；TTS 音频由上层在整个 job 成功或最终失败后清理，便于重试复用。
       clipPaths.forEach(p => { try { fs.unlinkSync(p) } catch {} })
       try { fs.unlinkSync(loginMp4Path) } catch {}
 
@@ -294,7 +293,6 @@ export async function mergeDemo(
         fs.renameSync(demoMp4Path, outputPath)
       }
 
-      audioPaths.forEach(p => { try { fs.unlinkSync(p) } catch {} })
       clipPaths.forEach(p => { try { fs.unlinkSync(p) } catch {} })
 
       const totalDuration = Math.round(loginDuration + getMediaDuration(outputPath))
@@ -312,7 +310,6 @@ export async function mergeDemo(
 
   await mergeVideoWithAudio(videoPath, concatAudioPath, demoMp4Path, audioDuration)
   fs.unlinkSync(concatAudioPath)
-  audioPaths.forEach(p => { try { fs.unlinkSync(p) } catch {} })
 
   let loginDuration = 0
   if (loginVideoWebmPath && fs.existsSync(loginVideoWebmPath)) {

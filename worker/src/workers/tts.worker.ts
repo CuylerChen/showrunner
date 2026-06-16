@@ -6,6 +6,7 @@ import { generateNarration } from '../services/tts'
 import { mergeQueue } from '../queues'
 import { Paths } from '../utils/paths'
 import { Step } from '../types'
+import { singleLongRunningWorkerOptions } from '../utils/worker-options'
 
 export interface TtsJobData {
   demoId: string
@@ -109,7 +110,7 @@ async function onFailed(job: Job<TtsJobData> | undefined, err: Error) {
 export function startTtsWorker() {
   const worker = new Worker<TtsJobData>('tts-queue', processJob, {
     connection,
-    concurrency: 2,
+    ...singleLongRunningWorkerOptions,
   })
 
   worker.on('failed', onFailed)

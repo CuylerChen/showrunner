@@ -106,6 +106,7 @@ async function muxTimedAudioTracks(
   tracks: TimedAudioTrack[],
   totalDuration: number,
   label: string,
+  options: { requireAudio?: boolean } = {},
 ): Promise<boolean> {
   const usableTracks = tracks.filter(track => (
     track.audioPath &&
@@ -120,14 +121,21 @@ async function muxTimedAudioTracks(
       .filter(track => !track.audioPath || !fs.existsSync(track.audioPath))
       .map(track => track.audioPath || '<empty>')
     if (missing.length > 0) {
-      console.warn(`[hyperframes] ${label} 音频文件缺失，无法写入这些音轨: ${missing.join(', ')}`)
+      const message = `${label} 音频文件缺失，无法写入这些音轨: ${missing.join(', ')}`
+      if (options.requireAudio) throw new Error(message)
+      console.warn(`[hyperframes] ${message}`)
     }
   }
 
-  if (usableTracks.length === 0) return false
+  if (usableTracks.length === 0) {
+    if (options.requireAudio) throw new Error(`${label} 没有可写入的音轨`)
+    return false
+  }
 
   if (!await canProbeMedia(videoPath)) {
-    console.warn(`[hyperframes] ${label} 跳过音频后处理：无法探测视频文件 ${videoPath}`)
+    const message = `${label} 跳过音频后处理：无法探测视频文件 ${videoPath}`
+    if (options.requireAudio) throw new Error(message)
+    console.warn(`[hyperframes] ${message}`)
     return false
   }
 
@@ -1243,6 +1251,7 @@ ${createPromotionalTimelineScript(views, totalDuration)}
 export async function renderPromotionalVideo(
   scenes: PromotionalScene[],
   outputDir: string,
+  options: { requireAudio?: boolean } = {},
 ): Promise<HyperframesRenderResult> {
   if (scenes.length === 0) {
     throw new Error('没有可渲染的推广视频场景')
@@ -1277,6 +1286,7 @@ export async function renderPromotionalVideo(
     scenesToTimedAudioTracks(scenes),
     totalDuration,
     '推广视频',
+    options,
   )
 
   return { outputPath, duration: Math.round(totalDuration) }

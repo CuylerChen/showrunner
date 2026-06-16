@@ -41,5 +41,17 @@ const ttsComplete = ttsWorker.indexOf(".update(jobs)\n    .set({ status: 'comple
 assert.ok(ttsQueueAdd >= 0, 'tts worker should enqueue merge after narration generation')
 assert.ok(ttsComplete > ttsQueueAdd, 'tts worker should mark TTS job completed only after merge enqueue succeeds')
 assert.match(ttsWorker, /MERGE_QUEUE_FAILED/, 'tts worker should persist a clear error when merge enqueue fails')
+assert.match(ttsWorker, /singleLongRunningWorkerOptions/, 'tts worker should use long lock settings for slow narration jobs')
+
+const mergeWorker = read('src/workers/merge.worker.ts')
+assert.match(mergeWorker, /singleLongRunningWorkerOptions/, 'merge worker should use long lock settings for slow render jobs')
+assert.match(mergeWorker, /readCompletedDemo/, 'merge worker should skip duplicate jobs once a demo is completed')
+assert.match(mergeWorker, /assertAudioFilesReady/, 'merge worker should fail before uploading when narration audio is missing')
+assert.match(mergeWorker, /createMergeOutputDir/, 'merge worker should isolate render output by job attempt')
+assert.match(mergeWorker, /requireAudio:\s*true/, 'promotional merge must require muxed audio')
+
+const workerOptions = read('src/utils/worker-options.ts')
+assert.match(workerOptions, /lockDuration:\s*30 \* 60 \* 1000/, 'long-running jobs should keep locks long enough for TTS/rendering')
+assert.match(workerOptions, /concurrency:\s*1/, 'long-running TTS/render workers should default to single concurrency')
 
 console.log('worker job state tests passed')
