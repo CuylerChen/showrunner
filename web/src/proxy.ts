@@ -3,6 +3,9 @@ import { verifyJwt } from './lib/jwt'
 
 const PUBLIC_PATHS = [
   '/',
+  '/terms-of-service',
+  '/privacy-policy',
+  '/refund-policy',
   '/sign-in',
   '/sign-up',
 ]

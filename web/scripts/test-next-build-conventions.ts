@@ -31,5 +31,8 @@ assert.equal(fs.existsSync(proxyPath), true, 'src/proxy.ts should provide the re
 const proxySource = fs.readFileSync(proxyPath, 'utf8')
 assert.match(proxySource, /export\s+async\s+function\s+proxy\(/, 'src/proxy.ts should export async function proxy')
 assert.match(proxySource, /export\s+const\s+config\s*=/, 'src/proxy.ts should export matcher config')
+assert.match(proxySource, /'\/terms-of-service'/, 'Terms page should be publicly accessible')
+assert.match(proxySource, /'\/privacy-policy'/, 'Privacy page should be publicly accessible')
+assert.match(proxySource, /'\/refund-policy'/, 'Refund page should be publicly accessible')
 
 console.log('next build convention tests passed')
