@@ -25,11 +25,26 @@ assert.equal(getPlanLimit('pro'), -1)
 const config = resolvePaddleConfig(env)
 assert.equal(config.apiBaseUrl, 'https://sandbox-api.paddle.com')
 assert.equal(config.priceIds.starter, 'pri_starter')
+assert.equal(config.priceIds.pro, 'pri_pro')
 assert.equal(getPaddlePriceIdForPlan('starter', config), 'pri_starter')
 assert.equal(getPaddlePriceIdForPlan('pro', config), 'pri_pro')
 assert.equal(getPaddlePriceIdForPlan('starter', { ...config, priceIds: { ...config.priceIds, starter: '' } }), null)
 assert.equal(resolvePaddleConfig({ PADDLE_ENVIRONMENT: 'production' }).apiBaseUrl, 'https://api.paddle.com')
 assert.equal(resolvePaddleConfig({ PADDLE_ENVIRONMENT: 'live' }).apiBaseUrl, 'https://api.paddle.com')
+assert.deepEqual(
+  resolvePaddleConfig({
+    PADDLE_PRICE_ID: 'legacy_single_price',
+    PADDLE_STARTER_PRICE_ID: 'pri_starter',
+    PADDLE_PRO_PRICE_ID: 'pri_pro',
+  }).priceIds,
+  { starter: 'pri_starter', pro: 'pri_pro' },
+  'Starter and Pro must use separate Paddle price ids',
+)
+assert.deepEqual(
+  resolvePaddleConfig({ PADDLE_PRICE_ID: 'legacy_single_price' }).priceIds,
+  { starter: '', pro: '' },
+  'A single legacy Paddle price id must not be reused for both paid plans',
+)
 
 const payload = buildPaddleTransactionPayload({
   plan: 'starter',

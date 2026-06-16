@@ -4,7 +4,7 @@ import { execFile } from 'child_process'
 import { promisify } from 'util'
 import { pathToFileURL } from 'url'
 import { Step } from '../../types'
-import { createMediaToolEnv } from '../../utils/media-tools'
+import { createMediaToolEnv, resolveMediaToolPath } from '../../utils/media-tools'
 import { getVideoStorageDir } from '../../utils/video-storage'
 import { normalizeProductCategory, type ProductCategory } from '../parser/scenes'
 
@@ -65,6 +65,162 @@ function formatDuration(seconds: number): string {
 
 function formatTimestamp(seconds: number): string {
   return Math.max(0, seconds).toFixed(3)
+}
+
+interface TimedAudioTrack {
+  audioPath: string
+  start: number
+  duration: number
+}
+
+function compactExecError(error: unknown): string {
+  if (!(error instanceof Error)) return String(error)
+
+  const withOutput = error as Error & { stderr?: string; stdout?: string }
+  const detail = (withOutput.stderr || withOutput.stdout || '').trim()
+  if (!detail) return error.message
+
+  return `${error.message}\n${detail.split(/\r?\n/).slice(-8).join('\n')}`
+}
+
+async function canProbeMedia(filePath: string): Promise<boolean> {
+  try {
+    await execFileAsync(resolveMediaToolPath('ffprobe'), [
+      '-v', 'error',
+      '-show_entries', 'format=duration',
+      '-of', 'default=noprint_wrappers=1:nokey=1',
+      filePath,
+    ], {
+      timeout: 15000,
+      maxBuffer: 1024 * 256,
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function muxTimedAudioTracks(
+  videoPath: string,
+  outputPath: string,
+  tracks: TimedAudioTrack[],
+  totalDuration: number,
+  label: string,
+): Promise<boolean> {
+  const usableTracks = tracks.filter(track => (
+    track.audioPath &&
+    fs.existsSync(track.audioPath) &&
+    Number.isFinite(track.start) &&
+    Number.isFinite(track.duration) &&
+    track.duration > 0
+  ))
+
+  if (usableTracks.length !== tracks.length) {
+    const missing = tracks
+      .filter(track => !track.audioPath || !fs.existsSync(track.audioPath))
+      .map(track => track.audioPath || '<empty>')
+    if (missing.length > 0) {
+      console.warn(`[hyperframes] ${label} 音频文件缺失，无法写入这些音轨: ${missing.join(', ')}`)
+    }
+  }
+
+  if (usableTracks.length === 0) return false
+
+  if (!await canProbeMedia(videoPath)) {
+    console.warn(`[hyperframes] ${label} 跳过音频后处理：无法探测视频文件 ${videoPath}`)
+    return false
+  }
+
+  const ffmpegPath = resolveMediaToolPath('ffmpeg')
+  const outputDir = path.dirname(outputPath)
+  const audioMixPath = path.join(outputDir, `${path.basename(outputPath, path.extname(outputPath))}.mixed-audio.aac`)
+  const muxOutputPath = path.join(outputDir, `${path.basename(outputPath, path.extname(outputPath))}.with-audio${path.extname(outputPath) || '.mp4'}`)
+  const duration = formatDuration(totalDuration)
+  const mixInputs = usableTracks.flatMap(track => ['-i', track.audioPath])
+  const filterParts = usableTracks.map((track, index) => {
+    const delayMs = Math.max(0, Math.round(track.start * 1000))
+    return `[${index}:a]atrim=0:${formatDuration(track.duration)},asetpts=PTS-STARTPTS,adelay=${delayMs}|${delayMs},apad=whole_dur=${duration}[a${index}]`
+  })
+  const mixLabels = usableTracks.map((_, index) => `[a${index}]`).join('')
+  filterParts.push(`${mixLabels}amix=inputs=${usableTracks.length}:duration=longest:dropout_transition=0:normalize=0[mixed]`)
+
+  try {
+    await execFileAsync(ffmpegPath, [
+      ...mixInputs,
+      '-filter_complex', filterParts.join(';'),
+      '-map', '[mixed]',
+      '-c:a', 'aac',
+      '-b:a', '192k',
+      '-t', duration,
+      '-y', audioMixPath,
+    ], {
+      env: createMediaToolEnv(),
+      timeout: Math.max(120000, Math.ceil(totalDuration * 4000)),
+      maxBuffer: 1024 * 1024 * 8,
+    })
+
+    await execFileAsync(ffmpegPath, [
+      '-i', videoPath,
+      '-i', audioMixPath,
+      '-map', '0:v:0',
+      '-map', '1:a:0',
+      '-c:v', 'copy',
+      '-c:a', 'aac',
+      '-b:a', '192k',
+      '-shortest',
+      '-movflags', '+faststart',
+      '-y', muxOutputPath,
+    ], {
+      env: createMediaToolEnv(),
+      timeout: Math.max(120000, Math.ceil(totalDuration * 4000)),
+      maxBuffer: 1024 * 1024 * 8,
+    })
+
+    fs.renameSync(muxOutputPath, outputPath)
+    console.log(`[hyperframes] ${label} 已写入音轨: ${usableTracks.length} 段`)
+    return true
+  } catch (error) {
+    throw new Error(`${label} 音频合成失败: ${compactExecError(error)}`)
+  } finally {
+    try { fs.unlinkSync(audioMixPath) } catch {}
+    try { fs.unlinkSync(muxOutputPath) } catch {}
+  }
+}
+
+function clipsToTimedAudioTracks(clips: HyperframesClip[]): TimedAudioTrack[] {
+  let current = 0
+  const tracks: TimedAudioTrack[] = []
+
+  for (const clip of clips) {
+    if (clip.audioPath) {
+      tracks.push({
+        audioPath: clip.audioPath,
+        start: current,
+        duration: clip.duration,
+      })
+    }
+    current += clip.duration
+  }
+
+  return tracks
+}
+
+function scenesToTimedAudioTracks(scenes: PromotionalScene[]): TimedAudioTrack[] {
+  let current = 0
+  const tracks: TimedAudioTrack[] = []
+
+  for (const scene of scenes) {
+    if (scene.audioPath) {
+      tracks.push({
+        audioPath: scene.audioPath,
+        start: current,
+        duration: scene.duration,
+      })
+    }
+    current += scene.duration
+  }
+
+  return tracks
 }
 
 function createStaticTimelineScript(totalDuration: number): string {
@@ -340,6 +496,14 @@ export async function renderHyperframesDemo(
   if (!fs.existsSync(outputPath)) {
     throw new Error(`HyperFrames 渲染完成但未找到输出文件: ${outputPath}`)
   }
+
+  await muxTimedAudioTracks(
+    outputPath,
+    outputPath,
+    clipsToTimedAudioTracks(clips),
+    totalDuration,
+    '分步视频',
+  )
 
   return { outputPath, duration: Math.round(totalDuration) }
 }
@@ -1106,6 +1270,14 @@ export async function renderPromotionalVideo(
   if (!fs.existsSync(outputPath)) {
     throw new Error(`HyperFrames 渲染完成但未找到输出文件: ${outputPath}`)
   }
+
+  await muxTimedAudioTracks(
+    outputPath,
+    outputPath,
+    scenesToTimedAudioTracks(scenes),
+    totalDuration,
+    '推广视频',
+  )
 
   return { outputPath, duration: Math.round(totalDuration) }
 }

@@ -54,6 +54,11 @@ services:
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
       VIDEO_DIR:         /data/videos
       WORKER_INTERNAL_URL: http://worker:3001
+      PADDLE_ENVIRONMENT: ${PADDLE_ENVIRONMENT:-production}
+      PADDLE_API_KEY:    ${PADDLE_API_KEY:-}
+      PADDLE_WEBHOOK_SECRET: ${PADDLE_WEBHOOK_SECRET:-}
+      PADDLE_STARTER_PRICE_ID: ${PADDLE_STARTER_PRICE_ID:-}
+      PADDLE_PRO_PRICE_ID: ${PADDLE_PRO_PRICE_ID:-}
     volumes:
       - video_data:/data/videos
     expose:

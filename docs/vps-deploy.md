@@ -158,6 +158,13 @@ TTS_PROVIDER=kokoro
 
 # ── 应用地址（填写你的域名或 IP）──────────────────────────
 NEXT_PUBLIC_APP_URL=https://your-domain.com
+
+# ── Paddle Billing 订阅支付 ───────────────────────────────
+PADDLE_ENVIRONMENT=production
+PADDLE_API_KEY=
+PADDLE_WEBHOOK_SECRET=
+PADDLE_STARTER_PRICE_ID=
+PADDLE_PRO_PRICE_ID=
 ```
 
 生成随机密码的命令：
