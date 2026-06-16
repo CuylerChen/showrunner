@@ -120,8 +120,12 @@ export function buildPaddleTransactionPayload(input: {
   }
 }
 
-export function buildShowrunnerCheckoutUrl(requestUrl: string, transactionId: string): string {
-  const checkoutUrl = new URL('/paddle-checkout', requestUrl)
+export function buildShowrunnerCheckoutUrl(
+  requestUrl: string,
+  transactionId: string,
+  appUrl: string | undefined = process.env.NEXT_PUBLIC_APP_URL,
+): string {
+  const checkoutUrl = new URL('/paddle-checkout', cleanEnv(appUrl) || requestUrl)
   checkoutUrl.searchParams.set('_ptxn', transactionId)
   return checkoutUrl.toString()
 }

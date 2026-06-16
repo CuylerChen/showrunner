@@ -24,6 +24,10 @@ function dashboardUrl(origin: string, billing: 'success' | 'processing'): string
 }
 
 async function requestOrigin(): Promise<string> {
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, '')
+  }
+
   const headerList = await headers()
   const host = headerList.get('x-forwarded-host') ?? headerList.get('host') ?? 'showrunner.cuylerchen.uk'
   const proto = headerList.get('x-forwarded-proto') ?? 'https'

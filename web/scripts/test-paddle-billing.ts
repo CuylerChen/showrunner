@@ -63,6 +63,10 @@ assert.equal(
   buildShowrunnerCheckoutUrl('https://showrunner.cuylerchen.uk/api/subscription/checkout', 'txn_123'),
   'https://showrunner.cuylerchen.uk/paddle-checkout?_ptxn=txn_123',
 )
+assert.equal(
+  buildShowrunnerCheckoutUrl('https://localhost:3100/api/subscription/checkout', 'txn_123', 'https://showrunner.cuylerchen.uk'),
+  'https://showrunner.cuylerchen.uk/paddle-checkout?_ptxn=txn_123',
+)
 
 const rawBody = JSON.stringify({ event_id: 'evt_1' })
 const timestamp = 1770883200
