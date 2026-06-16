@@ -1,15 +1,73 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
+import { LangToggle } from '@/components/lang-toggle'
 import { ShowrunnerLogo } from '@/components/logo'
 
-export function LegalPage({
-  title,
-  lastUpdated,
-  children,
-}: {
+type LegalContent = {
   title: string
+  intro: string[]
+  sections: Array<{
+    title: string
+    paragraphs: string[]
+    items?: string[]
+  }>
+}
+
+type LegalLabels = {
+  lastUpdatedLabel: string
   lastUpdated: string
-  children: ReactNode
+  footer: string
+  links: {
+    terms: string
+    privacy: string
+    refund: string
+  }
+  nav: {
+    signIn: string
+    signUp: string
+  }
+}
+
+function linkedText(text: string): ReactNode[] {
+  const linkPattern = /(https:\/\/www\.paddle\.com\/legal\/invoiced-consumer-terms|chenkaileyxy@gmail\.com)/g
+
+  return text.split(linkPattern).map((part, index) => {
+    if (part === 'https://www.paddle.com/legal/invoiced-consumer-terms') {
+      return (
+        <a
+          key={`${part}-${index}`}
+          href={part}
+          className="font-medium hover:underline"
+          style={{ color: '#16A34A' }}
+        >
+          {part}
+        </a>
+      )
+    }
+
+    if (part === 'chenkaileyxy@gmail.com') {
+      return (
+        <a
+          key={`${part}-${index}`}
+          href={`mailto:${part}`}
+          className="font-medium hover:underline"
+          style={{ color: '#16A34A' }}
+        >
+          {part}
+        </a>
+      )
+    }
+
+    return part
+  })
+}
+
+export function LegalPage({
+  page,
+  labels,
+}: {
+  page: LegalContent
+  labels: LegalLabels
 }) {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-base)' }}>
@@ -26,11 +84,12 @@ export function LegalPage({
             <ShowrunnerLogo size={28} />
           </Link>
           <nav className="flex items-center gap-2.5">
+            <LangToggle />
             <Link href="/sign-in" className="btn-outline rounded-lg px-4 py-2 text-sm">
-              Sign in
+              {labels.nav.signIn}
             </Link>
             <Link href="/sign-up" className="btn-brand rounded-lg px-4 py-2 text-sm">
-              Get started
+              {labels.nav.signUp}
             </Link>
           </nav>
         </div>
@@ -39,17 +98,37 @@ export function LegalPage({
       <main className="flex-1 px-6 py-12">
         <article className="mx-auto max-w-3xl">
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl" style={{ color: 'var(--text-primary)' }}>
-            {title}
+            {page.title}
           </h1>
           <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>
-            Last updated: {lastUpdated}
+            {labels.lastUpdatedLabel}: {labels.lastUpdated}
           </p>
 
           <div
             className="mt-8 space-y-6 text-sm leading-relaxed"
             style={{ color: 'var(--text-secondary)' }}
           >
-            {children}
+            {page.intro.map((paragraph) => (
+              <p key={paragraph}>{linkedText(paragraph)}</p>
+            ))}
+
+            {page.sections.map((section) => (
+              <section key={section.title} className="space-y-3">
+                <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  {section.title}
+                </h2>
+                {section.paragraphs.map((paragraph) => (
+                  <p key={paragraph}>{linkedText(paragraph)}</p>
+                ))}
+                {section.items && (
+                  <ul className="list-disc space-y-1 pl-5">
+                    {section.items.map((item) => (
+                      <li key={item}>{linkedText(item)}</li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            ))}
           </div>
         </article>
       </main>
@@ -59,25 +138,14 @@ export function LegalPage({
         style={{ color: 'var(--text-muted)', borderTop: '1px solid var(--border)' }}
       >
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 px-6 sm:flex-row">
-          <span>© 2026 Showrunner</span>
+          <span>{labels.footer}</span>
           <div className="flex items-center gap-5">
-            <Link href="/terms-of-service" className="hover:underline">Terms</Link>
-            <Link href="/privacy-policy" className="hover:underline">Privacy</Link>
-            <Link href="/refund-policy" className="hover:underline">Refund</Link>
+            <Link href="/terms-of-service" className="hover:underline">{labels.links.terms}</Link>
+            <Link href="/privacy-policy" className="hover:underline">{labels.links.privacy}</Link>
+            <Link href="/refund-policy" className="hover:underline">{labels.links.refund}</Link>
           </div>
         </div>
       </footer>
     </div>
-  )
-}
-
-export function LegalSection({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="space-y-3">
-      <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-        {title}
-      </h2>
-      {children}
-    </section>
   )
 }

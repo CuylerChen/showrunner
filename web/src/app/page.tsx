@@ -319,9 +319,9 @@ export default async function HomePage() {
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 sm:flex-row">
           <span>{h.footer}</span>
           <div className="flex items-center gap-5">
-            <Link href="/terms-of-service" className="hover:underline">Terms</Link>
-            <Link href="/privacy-policy" className="hover:underline">Privacy</Link>
-            <Link href="/refund-policy" className="hover:underline">Refund</Link>
+            <Link href="/terms-of-service" className="hover:underline">{t.legal.links.terms}</Link>
+            <Link href="/privacy-policy" className="hover:underline">{t.legal.links.privacy}</Link>
+            <Link href="/refund-policy" className="hover:underline">{t.legal.links.refund}</Link>
           </div>
         </div>
       </footer>

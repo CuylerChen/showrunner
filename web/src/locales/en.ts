@@ -63,6 +63,225 @@ export const en: typeof zh = {
     ctaBtn: 'Start for free now',
     footer: '© 2025 Showrunner · All rights reserved',
   },
+  legal: {
+    lastUpdatedLabel: 'Last updated',
+    lastUpdated: 'June 17, 2026',
+    footer: '© 2026 Showrunner',
+    links: {
+      terms: 'Terms',
+      privacy: 'Privacy',
+      refund: 'Refund',
+    },
+    terms: {
+      title: 'Terms of Service',
+      metaDescription: 'Terms that govern access to and use of Showrunner.',
+      intro: [
+        'These Terms of Service ("Terms") govern your access to and use of Showrunner\'s website, video generation tools, hosted share pages, and related services (collectively, the "Services"). By accessing or using the Services, you agree to be bound by these Terms.',
+      ],
+      sections: [
+        {
+          title: '1. Use of the Services',
+          paragraphs: [
+            'Showrunner helps users generate product promotional videos from product URLs, written context, AI-generated scripts, narration, and rendered video scenes. You may use the Services only in compliance with applicable laws and these Terms. You are responsible for your account, credentials, input content, and activity under your account.',
+          ],
+        },
+        {
+          title: '2. Customer Content',
+          paragraphs: [
+            'You retain ownership of product URLs, briefs, text, screenshots, assets, and other content that you submit to the Services ("Customer Content"). You grant Showrunner the rights needed to process, transform, host, and display Customer Content solely to provide and improve the Services. You represent that you have the necessary rights to submit Customer Content and to use any resulting videos.',
+          ],
+        },
+        {
+          title: '3. AI-generated Output',
+          paragraphs: [
+            'The Services may use AI systems to analyze websites, draft scripts, create storyboards, generate narration, and render videos. AI output may be inaccurate or incomplete. You are responsible for reviewing and approving generated videos before publishing or relying on them.',
+          ],
+        },
+        {
+          title: '4. Payment and Subscriptions',
+          paragraphs: [
+            'Paid plans are billed in advance on a subscription basis. Payments are processed by Paddle.com Market Ltd ("Paddle"), which acts as the merchant of record for Showrunner and is responsible for payment processing, invoicing, tax calculation, and refunds. You may cancel a subscription at any time; access to paid features generally remains available until the end of the current billing period. Refunds, where available, are handled in accordance with Paddle\'s terms and our Refund Policy.',
+          ],
+        },
+        {
+          title: '5. Acceptable Use',
+          paragraphs: [
+            'You agree not to misuse the Services, including by attempting to disrupt the platform, bypass security controls, scrape private or unauthorized content, infringe third-party rights, submit unlawful material, or use the Services for fraudulent, harmful, or deceptive purposes.',
+          ],
+        },
+        {
+          title: '6. Service Availability',
+          paragraphs: [
+            'We work to keep the Services reliable, but we do not guarantee that the Services will be uninterrupted, error-free, or available at all times. Features, limits, models, voices, and rendering behavior may change as the product evolves.',
+          ],
+        },
+        {
+          title: '7. Disclaimer and Limitation of Liability',
+          paragraphs: [
+            'The Services are provided on an "as is" and "as available" basis without warranties of any kind, whether express or implied. To the maximum extent permitted by law, Showrunner will not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Services.',
+          ],
+        },
+        {
+          title: '8. Changes to These Terms',
+          paragraphs: [
+            'We may update these Terms from time to time. If we make material changes, we will provide notice by updating the date above or by other reasonable means. Your continued use of the Services after changes take effect constitutes acceptance of the updated Terms.',
+          ],
+        },
+        {
+          title: '9. Contact',
+          paragraphs: [
+            'If you have any questions about these Terms, contact us at chenkaileyxy@gmail.com.',
+          ],
+        },
+      ],
+    },
+    privacy: {
+      title: 'Privacy Policy',
+      metaDescription: 'How Showrunner collects, uses, and protects information.',
+      intro: [
+        'This Privacy Policy explains how Showrunner ("we", "us", or "our") collects, uses, discloses, and protects information when you use our website, video generation tools, hosted share pages, and related services (the "Services").',
+      ],
+      sections: [
+        {
+          title: '1. Information We Collect',
+          paragraphs: ['We may collect the following categories of information:'],
+          items: [
+            'Account information, such as email address and authentication details.',
+            'Product URLs, prompts, briefs, audience notes, brand tone, CTA text, and other content you submit.',
+            'Generated scripts, storyboards, audio, rendered videos, share links, and related metadata.',
+            'Usage information, such as video generation counts, plan limits, feature usage, logs, and timestamps.',
+            'Billing and subscription information processed through Paddle.',
+            'Technical information, such as IP address, browser type, device information, cookies, and session data.',
+          ],
+        },
+        {
+          title: '2. How We Use Information',
+          paragraphs: ['We use information to:'],
+          items: [
+            'Provide, operate, secure, and maintain the Services.',
+            'Analyze product pages, generate scripts, create narration, render videos, and host share pages.',
+            'Manage accounts, authentication, subscriptions, plan limits, and customer support.',
+            'Improve product quality, reliability, and safety.',
+            'Communicate with you about service updates, billing, security, and support requests.',
+            'Comply with legal obligations and enforce our agreements.',
+          ],
+        },
+        {
+          title: '3. Service Providers and Sharing',
+          paragraphs: [
+            'We do not sell your personal data. We may share information with trusted service providers that help us operate the Services, including hosting providers, database providers, AI model providers, text-to-speech or rendering services, analytics or logging tools, and Paddle for billing and subscription management. These providers are authorized to use information only as needed to provide services to us.',
+          ],
+        },
+        {
+          title: '4. Payment Processing',
+          paragraphs: [
+            'Payments are processed by Paddle. Paddle may collect billing details, payment method information, tax information, and transaction records as the merchant of record. We receive subscription status, plan, customer, and transaction information needed to manage your Showrunner account.',
+          ],
+        },
+        {
+          title: '5. Cookies and Sessions',
+          paragraphs: [
+            'We use cookies and similar technologies to keep you signed in, remember preferences, protect sessions, and understand basic usage patterns. You can control cookies through your browser settings, but some features may not work correctly without them.',
+          ],
+        },
+        {
+          title: '6. Data Security',
+          paragraphs: [
+            'We use reasonable technical and organizational measures to protect your information. However, no method of transmission or storage is completely secure, and we cannot guarantee absolute security.',
+          ],
+        },
+        {
+          title: '7. Data Retention',
+          paragraphs: [
+            'We retain information for as long as necessary to provide the Services, maintain business records, comply with legal obligations, resolve disputes, and enforce our agreements. You may request deletion of your account or certain personal data by contacting us.',
+          ],
+        },
+        {
+          title: '8. Your Rights',
+          paragraphs: [
+            'Depending on your jurisdiction, you may have rights to access, correct, delete, export, or object to certain processing of your personal data. To exercise these rights, contact us using the email below.',
+          ],
+        },
+        {
+          title: '9. Children',
+          paragraphs: [
+            'The Services are not directed to children under 13, and we do not knowingly collect personal information from children under 13.',
+          ],
+        },
+        {
+          title: '10. Changes to This Policy',
+          paragraphs: [
+            'We may update this Privacy Policy from time to time. We will notify you of material changes by updating the date above or by other reasonable means.',
+          ],
+        },
+        {
+          title: '11. Contact',
+          paragraphs: [
+            'If you have questions about this Privacy Policy, contact us at chenkaileyxy@gmail.com.',
+          ],
+        },
+      ],
+    },
+    refund: {
+      title: 'Refund Policy',
+      metaDescription: 'Refund and cancellation policy for Showrunner subscriptions.',
+      intro: [
+        'This Refund Policy explains how refunds for paid Showrunner subscriptions are handled. All payments are processed by Paddle.com Market Ltd ("Paddle"), which acts as the merchant of record for Showrunner.',
+      ],
+      sections: [
+        {
+          title: '1. Merchant of Record',
+          paragraphs: [
+            'Showrunner subscriptions are sold through Paddle. Paddle is responsible for payment processing, invoicing, tax calculation, and issuing refunds for purchases made through our checkout. Your purchase and any refund are also governed by Paddle\'s Invoiced Consumer Terms, available at https://www.paddle.com/legal/invoiced-consumer-terms.',
+          ],
+        },
+        {
+          title: '2. 14-day Refund Window',
+          paragraphs: [
+            'Consumers may cancel a purchase and request a refund within 14 days of completing the transaction, subject to Paddle\'s terms and applicable law. For subscriptions, this 14-day period generally runs from the date of the initial subscription charge or, where applicable, the first charge of a renewed term.',
+          ],
+        },
+        {
+          title: '3. Refunds After 14 Days',
+          paragraphs: [
+            'After the 14-day period has passed, refunds are not guaranteed. Refund requests outside this window are handled by Paddle on a case-by-case basis in accordance with Paddle\'s policies, our terms, and applicable law.',
+          ],
+        },
+        {
+          title: '4. Subscriptions and Cancellations',
+          paragraphs: [
+            'Subscriptions renew automatically until cancelled. You may cancel your subscription at any time. When you cancel, your paid access generally remains active until the end of the current billing period, and future renewals stop. Cancellation does not automatically create a refund for amounts already charged except as required by Paddle\'s terms or applicable law.',
+          ],
+        },
+        {
+          title: '5. Usage of Digital Services',
+          paragraphs: [
+            'Showrunner provides digital services, including AI-generated scripts, narration, rendered videos, and hosted share pages. Refund eligibility may be limited where digital services have already been accessed, generated, downloaded, or consumed, as described in Paddle\'s terms and applicable consumer protection laws.',
+          ],
+        },
+        {
+          title: '6. How to Request a Refund',
+          paragraphs: ['If you believe you are eligible for a refund, you can:'],
+          items: [
+            'use the link in your Paddle purchase confirmation email to manage your order and submit a refund request directly to Paddle; or',
+            'contact us at chenkaileyxy@gmail.com with your order details so we can help route your request.',
+          ],
+        },
+        {
+          title: '7. Your Legal Rights',
+          paragraphs: [
+            'Nothing in this Refund Policy limits rights you may have under applicable consumer protection law, including rights related to products or services that are not as described, faulty, or not fit for purpose.',
+          ],
+        },
+        {
+          title: '8. Changes to This Policy',
+          paragraphs: [
+            'We may update this Refund Policy from time to time. If we make material changes, we will notify you by updating the date above or by other reasonable means.',
+          ],
+        },
+      ],
+    },
+  },
   dashboard: {
     title: 'Video Workspace',
     subtitle: 'Paste a product URL and AI will generate a shareable product promo video',
