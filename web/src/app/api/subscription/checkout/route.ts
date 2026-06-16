@@ -4,6 +4,7 @@ import { err, ok } from '@/lib/api'
 import { getCurrentUser } from '@/lib/auth'
 import {
   buildPaddleTransactionPayload,
+  buildShowrunnerCheckoutUrl,
   getPaddlePriceIdForPlan,
   resolvePaddleConfig,
 } from '@/lib/billing/paddle'
@@ -33,6 +34,9 @@ export async function POST(req: NextRequest) {
   const config = resolvePaddleConfig()
   if (!config.apiKey) {
     return err('INTERNAL_ERROR', 'Paddle API key is not configured')
+  }
+  if (!config.clientToken) {
+    return err('INTERNAL_ERROR', 'Paddle client token is not configured')
   }
 
   const priceId = getPaddlePriceIdForPlan(parsed.data.plan, config)
@@ -68,14 +72,13 @@ export async function POST(req: NextRequest) {
 
   const payload = await paddleRes.json() as PaddleTransactionResponse
   const transaction = payload.data ?? payload
-  const checkoutUrl = transaction.checkout?.url
-  if (!transaction.id || !checkoutUrl) {
-    console.error('[paddle] checkout API response missing transaction id or checkout URL')
+  if (!transaction.id) {
+    console.error('[paddle] checkout API response missing transaction id')
     return err('PAYMENT_PROVIDER_ERROR', '无法创建 Paddle 结账，请稍后重试')
   }
 
   return ok({
-    checkout_url: checkoutUrl,
+    checkout_url: buildShowrunnerCheckoutUrl(req.url, transaction.id),
     transaction_id: transaction.id,
   })
 }

@@ -8,6 +8,7 @@ export type LocalSubscriptionStatus = 'active' | 'cancelled' | 'expired'
 export interface PaddleConfig {
   environment: PaddleEnvironment
   apiKey: string
+  clientToken: string
   webhookSecret: string
   apiBaseUrl: string
   priceIds: Record<PaidPlan, string>
@@ -17,6 +18,7 @@ export interface PaddleTransactionPayload {
   items: Array<{ price_id: string; quantity: number }>
   collection_mode: 'automatic'
   custom_data: {
+    app: 'showrunner'
     user_id: string
     plan: PaidPlan
   }
@@ -86,6 +88,7 @@ export function resolvePaddleConfig(env: Record<string, string | undefined> = pr
   return {
     environment,
     apiKey: cleanEnv(env.PADDLE_API_KEY),
+    clientToken: cleanEnv(env.PADDLE_CLIENT_TOKEN ?? env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN),
     webhookSecret: cleanEnv(env.PADDLE_WEBHOOK_SECRET),
     apiBaseUrl: environment === 'production'
       ? 'https://api.paddle.com'
@@ -110,10 +113,17 @@ export function buildPaddleTransactionPayload(input: {
     items: [{ price_id: input.priceId, quantity: 1 }],
     collection_mode: 'automatic',
     custom_data: {
+      app: 'showrunner',
       user_id: input.user.id,
       plan: input.plan,
     },
   }
+}
+
+export function buildShowrunnerCheckoutUrl(requestUrl: string, transactionId: string): string {
+  const checkoutUrl = new URL('/paddle-checkout', requestUrl)
+  checkoutUrl.searchParams.set('_ptxn', transactionId)
+  return checkoutUrl.toString()
 }
 
 export function buildPaddlePortalSessionPayload(subscriptionId: string | null | undefined): PaddlePortalSessionPayload {
@@ -189,6 +199,9 @@ export function resolvePaddlePlanFromEvent(
   event: PaddlePlanEventLike,
   config: PaddleConfig,
 ): PaidPlan | null {
+  const app = event.custom_data?.app
+  if (typeof app === 'string' && app && app !== 'showrunner') return null
+
   const customPlan = event.custom_data?.plan
   if (isPaidPlan(customPlan)) return customPlan
 
@@ -205,6 +218,13 @@ export function resolvePaddlePlanFromEvent(
   }
 
   return null
+}
+
+export function isShowrunnerPaddleEvent(event: PaddlePlanEventLike, config: PaddleConfig): boolean {
+  const app = event.custom_data?.app
+  if (typeof app === 'string' && app) return app === 'showrunner'
+
+  return resolvePaddlePlanFromEvent(event, config) !== null
 }
 
 export function mapPaddleSubscriptionStatus(status: string | null | undefined): PaddleStatusMapping | null {

@@ -34,5 +34,6 @@ assert.match(proxySource, /export\s+const\s+config\s*=/, 'src/proxy.ts should ex
 assert.match(proxySource, /'\/terms-of-service'/, 'Terms page should be publicly accessible')
 assert.match(proxySource, /'\/privacy-policy'/, 'Privacy page should be publicly accessible')
 assert.match(proxySource, /'\/refund-policy'/, 'Refund page should be publicly accessible')
+assert.match(proxySource, /'\/paddle-checkout'/, 'Paddle checkout bridge should be publicly accessible')
 
 console.log('next build convention tests passed')

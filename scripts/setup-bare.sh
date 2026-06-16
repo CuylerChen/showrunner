@@ -185,6 +185,7 @@ else
   read -rp "  Paddle 环境（production/sandbox，默认 production）: " PADDLE_ENVIRONMENT
   [ -z "$PADDLE_ENVIRONMENT" ] && PADDLE_ENVIRONMENT="production"
   read -rp "  Paddle API Key（可选）: " PADDLE_API_KEY
+  read -rp "  Paddle Client Token（可选，用于本域名结账页）: " PADDLE_CLIENT_TOKEN
   read -rp "  Paddle Webhook Secret（可选）: " PADDLE_WEBHOOK_SECRET
   read -rp "  Paddle Starter Price ID（可选）: " PADDLE_STARTER_PRICE_ID
   read -rp "  Paddle Pro Price ID（可选）: " PADDLE_PRO_PRICE_ID
@@ -250,6 +251,7 @@ WORKER_HOST=127.0.0.1
 # ── Paddle Billing 订阅支付 ───────────────────────────────
 PADDLE_ENVIRONMENT=${PADDLE_ENVIRONMENT}
 PADDLE_API_KEY=${PADDLE_API_KEY}
+PADDLE_CLIENT_TOKEN=${PADDLE_CLIENT_TOKEN}
 PADDLE_WEBHOOK_SECRET=${PADDLE_WEBHOOK_SECRET}
 PADDLE_STARTER_PRICE_ID=${PADDLE_STARTER_PRICE_ID}
 PADDLE_PRO_PRICE_ID=${PADDLE_PRO_PRICE_ID}
@@ -363,6 +365,7 @@ const env = {
   WORKER_HOST: process.env.WORKER_HOST || '127.0.0.1',
   PADDLE_ENVIRONMENT: process.env.PADDLE_ENVIRONMENT || 'production',
   PADDLE_API_KEY: process.env.PADDLE_API_KEY,
+  PADDLE_CLIENT_TOKEN: process.env.PADDLE_CLIENT_TOKEN,
   PADDLE_WEBHOOK_SECRET: process.env.PADDLE_WEBHOOK_SECRET,
   PADDLE_STARTER_PRICE_ID: process.env.PADDLE_STARTER_PRICE_ID,
   PADDLE_PRO_PRICE_ID: process.env.PADDLE_PRO_PRICE_ID,

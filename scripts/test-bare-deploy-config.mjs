@@ -25,6 +25,7 @@ const requiredRuntimeKeys = [
   'WORKER_HOST',
   'PADDLE_ENVIRONMENT',
   'PADDLE_API_KEY',
+  'PADDLE_CLIENT_TOKEN',
   'PADDLE_WEBHOOK_SECRET',
   'PADDLE_STARTER_PRICE_ID',
   'PADDLE_PRO_PRICE_ID',
@@ -67,8 +68,10 @@ assert.match(rootPm2, /WORKER_INTERNAL_URL:\s*process\.env\.WORKER_INTERNAL_URL/
 assert.match(rootPm2, /WORKER_PORT:\s*process\.env\.WORKER_PORT/, 'root PM2 config should pass WORKER_PORT')
 assert.match(rootPm2, /WORKER_HOST:\s*process\.env\.WORKER_HOST/, 'root PM2 config should pass WORKER_HOST')
 assert.match(rootPm2, /PADDLE_API_KEY:\s*process\.env\.PADDLE_API_KEY/, 'root PM2 config should pass Paddle settings')
+assert.match(rootPm2, /PADDLE_CLIENT_TOKEN:\s*process\.env\.PADDLE_CLIENT_TOKEN/, 'root PM2 config should pass Paddle client token')
 assert.match(rootPm2, /PADDLE_STARTER_PRICE_ID:\s*process\.env\.PADDLE_STARTER_PRICE_ID/, 'root PM2 config should pass Starter Paddle price id')
 assert.match(rootPm2, /PADDLE_PRO_PRICE_ID:\s*process\.env\.PADDLE_PRO_PRICE_ID/, 'root PM2 config should pass Pro Paddle price id')
+assert.match(dockerCompose, /PADDLE_CLIENT_TOKEN:\s*\$\{PADDLE_CLIENT_TOKEN:-\}/, 'docker-compose web service should pass Paddle client token')
 assert.match(dockerCompose, /PADDLE_STARTER_PRICE_ID:\s*\$\{PADDLE_STARTER_PRICE_ID:-\}/, 'docker-compose web service should pass Starter Paddle price id')
 assert.match(dockerCompose, /PADDLE_PRO_PRICE_ID:\s*\$\{PADDLE_PRO_PRICE_ID:-\}/, 'docker-compose web service should pass Pro Paddle price id')
 
@@ -80,6 +83,7 @@ assert.match(setupBare, /cp -R "public" "\.next\/standalone\/public"/, 'bare-met
 assert.doesNotMatch(webEnvExample, /CLERK_|SUPABASE_|LEMONSQUEEZY_|OPENROUTER_/i, 'web env example should not document removed providers')
 assert.match(webEnvExample, /^MYSQL_HOST=127\.0\.0\.1$/m, 'web env example should document current MySQL config')
 assert.match(webEnvExample, /^PADDLE_ENVIRONMENT=production$/m, 'web env example should document Paddle production config')
+assert.match(webEnvExample, /^PADDLE_CLIENT_TOKEN=$/m, 'web env example should document Paddle client token')
 assert.match(webEnvExample, /^PADDLE_STARTER_PRICE_ID=$/m, 'web env example should document Starter Paddle price id')
 assert.match(webEnvExample, /^PADDLE_PRO_PRICE_ID=$/m, 'web env example should document Pro Paddle price id')
 assert.match(webEnvExample, /^WORKER_INTERNAL_URL=http:\/\/127\.0\.0\.1:3001$/m, 'web env example should document bare-metal worker URL')

@@ -4,6 +4,7 @@ import { db, schema } from '@/lib/db'
 import { err, ok } from '@/lib/api'
 import {
   getPlanLimit,
+  isShowrunnerPaddleEvent,
   mapPaddleSubscriptionStatus,
   resolvePaddleConfig,
   resolvePaddlePlanFromEvent,
@@ -177,6 +178,11 @@ export async function POST(req: NextRequest) {
   }
 
   const data = event.data
+  if (!isShowrunnerPaddleEvent(data, config)) {
+    console.warn(`[paddle] webhook ignored, event is not for Showrunner event=${event.event_id}`)
+    return ok({ ignored: true })
+  }
+
   const userId = await resolveTargetUserId(data)
   if (!userId) {
     console.warn(`[paddle] webhook ignored, subscription owner not found event=${event.event_id}`)

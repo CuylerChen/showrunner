@@ -6,6 +6,7 @@ const PUBLIC_PATHS = [
   '/terms-of-service',
   '/privacy-policy',
   '/refund-policy',
+  '/paddle-checkout',
   '/sign-in',
   '/sign-up',
 ]
