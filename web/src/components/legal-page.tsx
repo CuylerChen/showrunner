@@ -29,7 +29,7 @@ type LegalLabels = {
 }
 
 function linkedText(text: string): ReactNode[] {
-  const linkPattern = /(https:\/\/www\.paddle\.com\/legal\/invoiced-consumer-terms|chenkaileyxy@gmail\.com)/g
+  const linkPattern = /(https:\/\/www\.paddle\.com\/legal\/invoiced-consumer-terms|showrunner@cuylerchen\.uk)/g
 
   return text.split(linkPattern).map((part, index) => {
     if (part === 'https://www.paddle.com/legal/invoiced-consumer-terms') {
@@ -45,7 +45,7 @@ function linkedText(text: string): ReactNode[] {
       )
     }
 
-    if (part === 'chenkaileyxy@gmail.com') {
+    if (part === 'showrunner@cuylerchen.uk') {
       return (
         <a
           key={`${part}-${index}`}

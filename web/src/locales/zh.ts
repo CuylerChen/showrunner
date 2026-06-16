@@ -136,7 +136,7 @@ export const zh = {
         {
           title: '9. 联系我们',
           paragraphs: [
-            '如果你对本条款有任何问题，请通过 chenkaileyxy@gmail.com 联系我们。',
+            '如果你对本条款有任何问题，请通过 showrunner@cuylerchen.uk 联系我们。',
           ],
         },
       ] as { title: string; paragraphs: string[]; items?: string[] }[],
@@ -223,7 +223,7 @@ export const zh = {
         {
           title: '11. 联系我们',
           paragraphs: [
-            '如果你对本隐私政策有任何问题，请通过 chenkaileyxy@gmail.com 联系我们。',
+            '如果你对本隐私政策有任何问题，请通过 showrunner@cuylerchen.uk 联系我们。',
           ],
         },
       ] as { title: string; paragraphs: string[]; items?: string[] }[],
@@ -270,7 +270,7 @@ export const zh = {
           paragraphs: ['如果你认为自己符合退款条件，可以：'],
           items: [
             '使用 Paddle 购买确认邮件中的链接管理订单，并直接向 Paddle 提交退款请求；或',
-            '将订单详情发送至 chenkaileyxy@gmail.com，我们会协助你转交或处理请求。',
+            '将订单详情发送至 showrunner@cuylerchen.uk，我们会协助你转交或处理请求。',
           ],
         },
         {

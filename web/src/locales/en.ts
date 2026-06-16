@@ -130,7 +130,7 @@ export const en: typeof zh = {
         {
           title: '9. Contact',
           paragraphs: [
-            'If you have any questions about these Terms, contact us at chenkaileyxy@gmail.com.',
+            'If you have any questions about these Terms, contact us at showrunner@cuylerchen.uk.',
           ],
         },
       ],
@@ -217,7 +217,7 @@ export const en: typeof zh = {
         {
           title: '11. Contact',
           paragraphs: [
-            'If you have questions about this Privacy Policy, contact us at chenkaileyxy@gmail.com.',
+            'If you have questions about this Privacy Policy, contact us at showrunner@cuylerchen.uk.',
           ],
         },
       ],
@@ -264,7 +264,7 @@ export const en: typeof zh = {
           paragraphs: ['If you believe you are eligible for a refund, you can:'],
           items: [
             'use the link in your Paddle purchase confirmation email to manage your order and submit a refund request directly to Paddle; or',
-            'contact us at chenkaileyxy@gmail.com with your order details so we can help route your request.',
+            'contact us at showrunner@cuylerchen.uk with your order details so we can help route your request.',
           ],
         },
         {
