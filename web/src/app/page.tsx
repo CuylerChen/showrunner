@@ -314,9 +314,16 @@ export default async function HomePage() {
       </main>
 
       {/* ── 页脚 ─────────────────────────────────────────── */}
-      <footer className="flex items-center justify-center py-5 text-xs"
+      <footer className="py-5 text-xs"
         style={{ color: 'var(--text-muted)', borderTop: '1px solid var(--border)' }}>
-        {h.footer}
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 sm:flex-row">
+          <span>{h.footer}</span>
+          <div className="flex items-center gap-5">
+            <Link href="/terms-of-service" className="hover:underline">Terms</Link>
+            <Link href="/privacy-policy" className="hover:underline">Privacy</Link>
+            <Link href="/refund-policy" className="hover:underline">Refund</Link>
+          </div>
+        </div>
       </footer>
     </div>
   )

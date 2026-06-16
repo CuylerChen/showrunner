@@ -318,6 +318,8 @@ export const zh = {
       submitBtn: '创建账号',
       loadingBtn: '注册中...',
       terms: '注册即同意 Showrunner 使用条款',
+      termsBefore: '注册即同意',
+      termsLink: 'Showrunner 使用条款',
       hasAccount: '已有账号？',
       signInLink: '登录',
       errorDefault: '注册失败',

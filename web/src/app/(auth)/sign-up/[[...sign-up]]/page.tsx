@@ -197,7 +197,10 @@ export default function SignUpPage() {
             </form>
 
             <p className="text-center text-xs" style={{ color: 'var(--text-muted)' }}>
-              {su.terms}
+              {su.termsBefore}{' '}
+              <Link href="/terms-of-service" className="font-medium hover:underline" style={{ color: '#16A34A' }}>
+                {su.termsLink}
+              </Link>
             </p>
           </div>
 

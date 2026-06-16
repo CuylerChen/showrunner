@@ -312,6 +312,8 @@ export const en: typeof zh = {
       submitBtn: 'Create account',
       loadingBtn: 'Creating account...',
       terms: 'By signing up, you agree to the Showrunner Terms of Service',
+      termsBefore: 'By signing up, you agree to the',
+      termsLink: 'Showrunner Terms of Service',
       hasAccount: 'Already have an account?',
       signInLink: 'Sign in',
       errorDefault: 'Registration failed',
