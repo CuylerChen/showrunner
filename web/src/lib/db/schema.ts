@@ -50,6 +50,7 @@ export const demos = mysqlTable('demos', {
   audience:       text('audience'),
   key_points:     text('key_points'),
   brand_tone:     varchar('brand_tone', { length: 80 }),
+  video_style:    varchar('video_style', { length: 40 }).default('auto').notNull(),
   tts_voice_id:   varchar('tts_voice_id', { length: 40 }).default('default').notNull(),
   tts_speed:      int('tts_speed').default(100).notNull(),
   source_summary: text('source_summary'),

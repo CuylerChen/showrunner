@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS demos (
   audience      TEXT                                                                                    NULL,
   key_points    TEXT                                                                                    NULL,
   brand_tone    VARCHAR(80)                                                                             NULL,
+  video_style   VARCHAR(40)                                                                             NOT NULL DEFAULT 'auto',
   tts_voice_id   VARCHAR(40)                                                                             NOT NULL DEFAULT 'default',
   tts_speed      INT                                                                                     NOT NULL DEFAULT 100,
   source_summary TEXT                                                                                   NULL,
