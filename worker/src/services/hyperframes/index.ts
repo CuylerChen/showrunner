@@ -843,36 +843,42 @@ function createPromotionalHtml(
       --dark: #020817;
       --style-surface: #f7faff;
       --style-accent: var(--brand-primary);
+      --style-on-accent: #ffffff;
       --style-ink: #061226;
       --style-muted: #53657d;
     }
     .style-bold-launch {
       --style-surface: #fff7ed;
       --style-accent: #f97316;
+      --style-on-accent: #111827;
       --style-ink: #111827;
       --style-muted: #4b5563;
     }
     .style-warm-editorial {
       --style-surface: #fff7ed;
       --style-accent: #7c3a12;
+      --style-on-accent: #ffffff;
       --style-ink: #3f2415;
       --style-muted: #6b4e3d;
     }
     .style-technical-dark {
       --style-surface: #020817;
       --style-accent: #38bdf8;
+      --style-on-accent: #02111f;
       --style-ink: #f8fafc;
       --style-muted: #94a3b8;
     }
     .style-premium-minimal {
       --style-surface: #fafaf9;
       --style-accent: #18181b;
+      --style-on-accent: #ffffff;
       --style-ink: #18181b;
       --style-muted: #71717a;
     }
     .style-creator-social {
       --style-surface: #fdf2f8;
       --style-accent: #db2777;
+      --style-on-accent: #ffffff;
       --style-ink: #1f2937;
       --style-muted: #6b7280;
     }
@@ -899,6 +905,13 @@ function createPromotionalHtml(
     .style-technical-dark .topbar,
     .style-technical-dark .code-card {
       color: #e5eefb;
+    }
+    .style-technical-dark .brand-mark,
+    .style-technical-dark .kicker,
+    .style-technical-dark .final-mark {
+      background: rgba(2, 17, 31, 0.86);
+      color: var(--style-accent);
+      border-color: rgba(56, 189, 248, 0.35);
     }
     .style-bold-launch h1,
     .style-bold-launch h2 {
@@ -973,7 +986,7 @@ function createPromotionalHtml(
       padding: 0 18px;
       border-radius: 8px;
       background: var(--blue);
-      color: white;
+      color: var(--style-on-accent);
       box-shadow: 0 14px 24px rgba(37, 99, 235, 0.25);
     }
     .copy {
@@ -1062,7 +1075,7 @@ function createPromotionalHtml(
       padding: 0 22px;
       border-radius: 9px;
       background: var(--blue);
-      color: white;
+      color: var(--style-on-accent);
       font-size: 17px;
       font-weight: 820;
       box-shadow: 0 18px 34px rgba(37, 99, 235, 0.28);

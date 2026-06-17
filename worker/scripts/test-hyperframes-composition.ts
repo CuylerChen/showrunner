@@ -75,6 +75,8 @@ async function main() {
   assert.ok(html.includes('data-video-style="technical_dark"'), 'composition should expose the selected non-auto video style')
   assert.ok(html.includes('color: var(--style-ink)'), 'copy and headings should use readable style ink tokens')
   assert.ok(html.includes('color: var(--style-muted)'), 'supporting copy should use readable style muted tokens')
+  assert.ok(html.includes('--style-on-accent: #02111f'), 'technical dark should define a readable foreground for cyan accent backgrounds')
+  assert.ok(html.includes('color: var(--style-on-accent)'), 'accent-backed CTAs should use the style contrast token')
 
   assert.match(html, /window\.__timelines\["root"\]/)
   assert.match(html, /createStaticTimeline\(3\.750\)/)
@@ -163,6 +165,8 @@ async function main() {
 
   const genericHtml = fs.readFileSync(path.join(genericOutputDir, 'promo-hyperframes', 'index.html'), 'utf8')
 
+  assert.ok(genericHtml.includes('style-auto'), 'all-auto scenes should emit the default style class')
+  assert.ok(genericHtml.includes('data-video-style="auto"'), 'all-auto scenes should expose the default style id')
   assert.ok(genericHtml.includes('Acme Coffee'), 'generic V2 template should use the requested product brand')
   assert.ok(genericHtml.includes('Fresh beans delivered weekly'), 'generic V2 template should use product-specific scene titles')
   assert.ok(genericHtml.includes('office coffee logistics'), 'generic V2 template should use product-specific narration')
