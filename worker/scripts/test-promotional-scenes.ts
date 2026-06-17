@@ -90,4 +90,36 @@ const titledScenes = buildPromotionalScenes({
 assert.equal(titledScenes[0]?.brandName, 'ShareLLM')
 assert.equal(titledScenes[0]?.ctaUrl, 'https://sub.sharellm.uk/')
 
+const fallbackScenes = buildPromotionalScenes({
+  steps: [
+    {
+      ...steps[0],
+      id: 'step-fallback',
+      value: JSON.stringify({
+        kicker: 'Fallback style',
+      }),
+    },
+    {
+      ...steps[1],
+      id: 'step-invalid',
+      value: JSON.stringify({
+        styleId: 'not_a_real_style',
+      }),
+    },
+  ],
+  audioPaths: [],
+  stepTimestamps: [],
+  demo: {
+    title: 'Fallback Demo',
+    product_url: null,
+    cta_text: null,
+    cta_url: null,
+    brand_tone: null,
+    video_style: 'technical_dark',
+  },
+})
+
+assert.equal(fallbackScenes[0]?.styleId, 'technical_dark', 'missing step style should use demo video_style')
+assert.equal(fallbackScenes[1]?.styleId, 'auto', 'invalid step style should normalize to auto instead of falling back to demo style')
+
 console.log('promotional scene mapping tests passed')

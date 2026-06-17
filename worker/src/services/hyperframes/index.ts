@@ -684,7 +684,9 @@ function createPromotionalHtml(
   const brandPrimary = scenes.map(scene => validHexColor(scene.brandColor)).find(Boolean) ?? '#2563EB'
   const productType = promotionalProductType(scenes)
   const productClass = `product-${productType}`
-  const selectedStyleId = normalizeVideoStyleId(scenes.find(scene => scene.styleId)?.styleId)
+  const selectedStyleId = scenes
+    .map(scene => normalizeVideoStyleId(scene.styleId))
+    .find(styleId => styleId !== 'auto') ?? 'auto'
   const styleDescriptor = getVideoStyleDescriptor(selectedStyleId)
   const styleClass = styleDescriptor.className
   const navLabels = PRODUCT_NAV_LABELS[productType]
@@ -831,11 +833,11 @@ function createPromotionalHtml(
   <style>
     :root {
       --brand-primary: ${brandPrimary};
-      --blue: var(--brand-primary);
+      --blue: var(--style-accent);
       --blue-2: #1d4ed8;
       --mint: #10b981;
-      --ink: #061226;
-      --muted: #53657d;
+      --ink: var(--style-ink);
+      --muted: var(--style-muted);
       --paper: #f7faff;
       --line: #dbe6f4;
       --dark: #020817;
@@ -880,9 +882,9 @@ function createPromotionalHtml(
       height: ${HEIGHT}px;
       margin: 0;
       overflow: hidden;
-      background: var(--paper);
+      background: var(--style-surface);
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: var(--ink);
+      color: var(--style-ink);
     }
     #root {
       position: relative;
@@ -923,7 +925,7 @@ function createPromotionalHtml(
       align-items: center;
       justify-content: space-between;
       z-index: 30;
-      color: #1e2b3d;
+      color: var(--style-ink);
     }
     .brand-lockup {
       display: flex;
@@ -943,7 +945,7 @@ function createPromotionalHtml(
       flex: 0 0 auto;
       border-radius: 8px;
       background: white;
-      color: var(--blue);
+      color: var(--style-accent);
       border: 1px solid #dbe7f5;
       box-shadow: 0 10px 24px rgba(37, 99, 235, 0.12);
       font-size: 13px;
@@ -958,7 +960,7 @@ function createPromotionalHtml(
       display: flex;
       align-items: center;
       gap: 28px;
-      color: #40516a;
+      color: var(--style-muted);
       font-size: 13px;
       font-weight: 720;
     }
@@ -988,7 +990,7 @@ function createPromotionalHtml(
       padding: 0 12px;
       border: 1px solid rgba(37, 99, 235, 0.26);
       border-radius: 999px;
-      color: var(--blue);
+      color: var(--style-accent);
       background: rgba(255, 255, 255, 0.72);
       font-size: 12px;
       line-height: 1;
@@ -998,7 +1000,7 @@ function createPromotionalHtml(
     }
     h1, h2 {
       margin: 20px 0 0;
-      color: #061226;
+      color: var(--style-ink);
       font-weight: 900;
       letter-spacing: 0;
     }
@@ -1017,7 +1019,7 @@ function createPromotionalHtml(
     .lead {
       margin: 20px 0 0;
       max-width: 500px;
-      color: #40516a;
+      color: var(--style-muted);
       font-size: 21px;
       line-height: 1.44;
       font-weight: 520;
@@ -1245,7 +1247,7 @@ function createPromotionalHtml(
       justify-content: center;
       box-shadow: 0 20px 56px rgba(37, 99, 235, 0.16);
       border: 1px solid #dbe7f5;
-      color: var(--blue);
+      color: var(--style-accent);
       font-size: 28px;
       font-weight: 900;
     }
