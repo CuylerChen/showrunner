@@ -7,6 +7,7 @@ import { getCurrentUser, getSubscription } from '@/lib/auth'
 import { ok, err } from '@/lib/api'
 import { assertSafePublicUrl } from '@/lib/security/safe-url'
 import { canUseTtsSpeed, canUseVideoVoice, getTtsQueuePriority, isTtsVoiceId, normalizeTtsSpeed, TTS_SPEED_DEFAULT } from '@/lib/plans'
+import { canUseVideoStyle, normalizeVideoStyleId } from '@/lib/video-styles'
 
 type UpdateResult = { affectedRows?: number }
 
@@ -20,6 +21,7 @@ const CreateDemoSchema = z.object({
   cta_url: z.string().url('请输入有效的 CTA URL').max(2048).nullable().optional().or(z.literal('')),
   tts_voice_id: z.string().max(40).nullable().optional(),
   tts_speed: z.number().int().nullable().optional(),
+  video_style: z.string().max(40).nullable().optional(),
 })
 
 // GET /api/demos — 获取当前用户的 Demo 列表
@@ -74,6 +76,10 @@ export async function POST(req: NextRequest) {
     return err('VALIDATION_ERROR', parsed.error.issues.map(e => e.message).join(', '))
   }
   const { product_url, description, audience, key_points, brand_tone, cta_text, cta_url } = parsed.data
+  const video_style = normalizeVideoStyleId(parsed.data.video_style)
+  if (video_style === null) {
+    return err('VALIDATION_ERROR', '请选择有效的视频风格')
+  }
   const tts_voice_id = parsed.data.tts_voice_id ?? 'default'
   const tts_speed = normalizeTtsSpeed(parsed.data.tts_speed ?? TTS_SPEED_DEFAULT)
   if (tts_speed === null) {
@@ -89,6 +95,9 @@ export async function POST(req: NextRequest) {
   }
   if (!canUseTtsSpeed(subscription.plan, tts_speed)) {
     return err('PLAN_RESTRICTED', '当前套餐不支持调整旁白语速')
+  }
+  if (!canUseVideoStyle(subscription.plan, video_style)) {
+    return err('PLAN_RESTRICTED', '当前套餐不支持选择该视频风格')
   }
   const normalizedCtaUrl = cta_url === '' ? null : cta_url ?? null
   let safeProductUrl: URL
@@ -145,6 +154,7 @@ export async function POST(req: NextRequest) {
       brand_tone:  brand_tone ?? null,
       tts_voice_id: tts_voice_id ?? 'default',
       tts_speed:    tts_speed,
+      video_style:  video_style,
       cta_text:    cta_text ?? null,
       cta_url:     normalizedCtaUrl,
       status:      'pending',
@@ -161,6 +171,7 @@ export async function POST(req: NextRequest) {
       brandTone: brand_tone ?? null,
       ctaText: cta_text ?? null,
       ctaUrl: normalizedCtaUrl,
+      videoStyle: video_style,
     }, {
       priority: getTtsQueuePriority(subscription.plan),
       attempts: 3,
