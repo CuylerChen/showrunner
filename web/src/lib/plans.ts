@@ -14,6 +14,7 @@ export interface PlanCapabilities {
   ttsSpeedControl: boolean
   customAudio: boolean
   priorityQueue: boolean
+  manualVideoStyles: boolean
 }
 
 export interface TtsVoiceOption {
@@ -31,6 +32,7 @@ export const PLAN_CAPABILITIES: Record<PlanType, PlanCapabilities> = {
     ttsSpeedControl: false,
     customAudio: false,
     priorityQueue: false,
+    manualVideoStyles: false,
   },
   starter: {
     videosPerMonth: 10,
@@ -39,6 +41,7 @@ export const PLAN_CAPABILITIES: Record<PlanType, PlanCapabilities> = {
     ttsSpeedControl: true,
     customAudio: false,
     priorityQueue: false,
+    manualVideoStyles: true,
   },
   pro: {
     videosPerMonth: -1,
@@ -47,6 +50,7 @@ export const PLAN_CAPABILITIES: Record<PlanType, PlanCapabilities> = {
     ttsSpeedControl: true,
     customAudio: true,
     priorityQueue: true,
+    manualVideoStyles: true,
   },
 }
 

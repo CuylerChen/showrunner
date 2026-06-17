@@ -12,6 +12,12 @@ import {
   getTtsQueuePriority,
   TTS_VOICES,
 } from '../src/lib/plans'
+import {
+  canUseVideoStyle,
+  getAllowedVideoStyles,
+  isVideoStyleId,
+  VIDEO_STYLES,
+} from '../src/lib/video-styles'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 function read(relativePath: string): string {
@@ -64,6 +70,31 @@ assert.equal(canUseTtsSpeed('free', 110), false)
 assert.equal(canUseTtsSpeed('starter', 90), true)
 assert.equal(canUseTtsSpeed('pro', 120), true)
 assert.equal(canUseTtsSpeed('pro', 200), false)
+
+assert.equal(getPlanCapabilities('free').manualVideoStyles, false)
+assert.equal(getPlanCapabilities('starter').manualVideoStyles, true)
+assert.equal(getPlanCapabilities('pro').manualVideoStyles, true)
+
+assert.deepEqual(getAllowedVideoStyles('free').map(style => style.id), ['auto'])
+assert.deepEqual(
+  getAllowedVideoStyles('starter').map(style => style.id),
+  ['auto', 'clean_saas', 'bold_launch', 'warm_editorial'],
+)
+assert.deepEqual(
+  getAllowedVideoStyles('pro').map(style => style.id),
+  VIDEO_STYLES.map(style => style.id),
+)
+
+assert.equal(isVideoStyleId('auto'), true)
+assert.equal(isVideoStyleId('creator_social'), true)
+assert.equal(isVideoStyleId('unknown_style'), false)
+
+assert.equal(canUseVideoStyle('free', 'auto'), true)
+assert.equal(canUseVideoStyle('free', 'clean_saas'), false)
+assert.equal(canUseVideoStyle('starter', 'clean_saas'), true)
+assert.equal(canUseVideoStyle('starter', 'technical_dark'), false)
+assert.equal(canUseVideoStyle('pro', 'technical_dark'), true)
+assert.equal(canUseVideoStyle('pro', 'unknown_style'), false)
 
 assert.equal(getTtsQueuePriority('pro') < getTtsQueuePriority('starter'), true)
 assert.equal(getTtsQueuePriority('starter') < getTtsQueuePriority('free'), true)
