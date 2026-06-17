@@ -1,3 +1,4 @@
+import type { VideoStyleId } from '@/lib/video-styles'
 import type { zh } from './zh'
 
 export const en: typeof zh = {
@@ -364,7 +365,7 @@ export const en: typeof zh = {
         label: 'Creator Social',
         description: 'Faster social pacing for creator-led products.',
       },
-    },
+    } satisfies Record<VideoStyleId, { label: string; description: string }>,
     ttsVoices: {
       default: {
         label: 'Default narrator',

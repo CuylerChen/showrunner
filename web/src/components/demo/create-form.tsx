@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from '@/lib/i18n'
 import { getAllowedTtsVoices, getPlanCapabilities, TTS_SPEED_DEFAULT, TTS_VOICES, type TtsVoiceId } from '@/lib/plans'
@@ -75,12 +75,19 @@ export function CreateForm({ plan }: CreateFormProps) {
   const [ctaUrl, setCtaUrl] = useState('')
   const [ttsVoiceId, setTtsVoiceId] = useState<TtsVoiceId>('default')
   const [ttsSpeed, setTtsSpeed] = useState(TTS_SPEED_DEFAULT)
-  const [videoStyleId, setVideoStyleId] = useState<VideoStyleId>(VIDEO_STYLE_DEFAULT)
+  const [selectedVideoStyleId, setVideoStyleId] = useState<VideoStyleId>(VIDEO_STYLE_DEFAULT)
+  const videoStyleId = allowedStyleIds.has(selectedVideoStyleId) ? selectedVideoStyleId : VIDEO_STYLE_DEFAULT
   const [loading, setLoading]   = useState(false)
   const [success, setSuccess]   = useState(false)
   const [error, setError]       = useState<string | null>(null)
 
   const steps = cf.steps
+
+  useEffect(() => {
+    if (selectedVideoStyleId !== videoStyleId) {
+      setVideoStyleId(videoStyleId)
+    }
+  }, [selectedVideoStyleId, videoStyleId])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

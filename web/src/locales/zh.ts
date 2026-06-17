@@ -1,3 +1,5 @@
+import type { VideoStyleId } from '@/lib/video-styles'
+
 export const zh = {
   nav: {
     signIn: '登录',
@@ -370,7 +372,7 @@ export const zh = {
         label: 'Creator Social',
         description: '节奏更快，适合社媒传播和创作者产品。',
       },
-    } as Record<string, { label: string; description: string }>,
+    } satisfies Record<VideoStyleId, { label: string; description: string }>,
     ttsVoices: {
       default: {
         label: '默认旁白',
