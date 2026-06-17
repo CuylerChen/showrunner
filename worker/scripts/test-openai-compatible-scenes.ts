@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { generateProductStoryScenes } from '../src/services/parser/scenes'
 import type { ScreenshotAsset } from '../src/services/parser/assets'
+import { normalizeVideoStyleId } from '../src/services/video-styles'
 
 const originalFetch = globalThis.fetch
 const originalEnv = {
@@ -33,6 +34,7 @@ globalThis.fetch = (async (url, init) => {
               kicker: 'Office coffee',
               proof_points: ['Weekly delivery', 'Roast preferences'],
               visual_style: 'warm editorial',
+              style_id: 'warm_editorial',
               product_type: 'ecommerce',
               visual_type: 'screenshot',
               visual_role: 'home',
@@ -63,6 +65,10 @@ const assets: ScreenshotAsset[] = [{
 }]
 
 async function main() {
+  assert.equal(normalizeVideoStyleId('unknown_style'), 'auto')
+  assert.equal(normalizeVideoStyleId('toString'), 'auto')
+  assert.equal(normalizeVideoStyleId('constructor'), 'auto')
+
   const scenes = await generateProductStoryScenes({
     productUrl: 'https://example.com',
     description: 'Example product',
@@ -92,6 +98,21 @@ async function main() {
   assert.equal(scenes[0]?.style_id, 'technical_dark')
   assert.equal(scenes[1]?.style_id, 'technical_dark')
   assert.equal(scenes[1]?.cta_headline, 'Order beans for next week')
+
+  delete process.env.OPENAI_API_KEY
+  const fallbackScenes = await generateProductStoryScenes({
+    productUrl: 'https://example.com',
+    description: 'Example product',
+    brandName: 'Example Brand',
+    productCategory: 'developer_tool',
+    videoStyle: 'technical_dark',
+    sourceSummary: 'Example source summary',
+  }, assets)
+
+  assert.equal(fallbackScenes[0]?.style_id, 'technical_dark')
+  assert.equal(fallbackScenes[0]?.visual_style, 'dark technical product story')
+  assert.equal(fallbackScenes.at(-1)?.style_id, 'technical_dark')
+  assert.equal(fallbackScenes.at(-1)?.visual_style, 'dark technical product story CTA')
 }
 
 main().finally(() => {

@@ -128,12 +128,14 @@ function normalizeScenes(
   videoStyle: VideoStyleId = 'auto',
 ): ProductStoryScene[] {
   const limitedScenes = rawScenes.slice(0, 7)
+  const requestedStyle = normalizeVideoStyleId(videoStyle)
 
   return limitedScenes.map((scene, index) => {
     const role = scene.visual_role ?? scene.asset_role ?? scene.role
     const asset = selectAsset(assets, role, index)
     const isLast = index === limitedScenes.length - 1
     const visualType = normalizeVisualType(scene.visual_type, Boolean(asset), isLast)
+    const modelStyle = normalizeVideoStyleId(scene.style_id ?? scene.styleId)
 
     return {
       position: index + 1,
@@ -143,7 +145,7 @@ function normalizeScenes(
       proof_points: normalizeProofPoints(scene.proof_points ?? scene.proofPoints),
       cta_headline: scene.cta_headline || scene.ctaHeadline ? String(scene.cta_headline ?? scene.ctaHeadline).slice(0, 120) : null,
       visual_style: scene.visual_style || scene.visualStyle ? String(scene.visual_style ?? scene.visualStyle).slice(0, 80) : null,
-      style_id: normalizeVideoStyleId(scene.style_id ?? scene.styleId ?? videoStyle),
+      style_id: requestedStyle === 'auto' ? modelStyle : requestedStyle,
       product_type: normalizeProductCategory(scene.product_type ?? scene.productType, productCategory),
       visual_type: visualType,
       visual_asset_url: visualType === 'screenshot' ? asset?.publicUrl ?? null : null,

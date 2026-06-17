@@ -70,7 +70,8 @@ export const VIDEO_STYLE_DESCRIPTORS: Record<VideoStyleId, VideoStyleDescriptor>
 }
 
 export function isVideoStyleId(value: unknown): value is VideoStyleId {
-  return typeof value === 'string' && value in VIDEO_STYLE_DESCRIPTORS
+  return typeof value === 'string' &&
+    Object.prototype.hasOwnProperty.call(VIDEO_STYLE_DESCRIPTORS, value)
 }
 
 export function normalizeVideoStyleId(value: unknown): VideoStyleId {
