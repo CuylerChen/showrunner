@@ -28,7 +28,7 @@ export const zh = {
       { title: '一键分享', desc: 'HyperFrames 合成专属视频，带章节导航的分享页' },
     ] as { title: string; desc: string }[],
     pricingTitle: '价格简单，随生成规模升级',
-    pricingSub: '从免费试用开始，需要更多生成额度时再升级。',
+    pricingSub: 'Free 适合验证流程；Starter 解锁音色、语速和常用风格；Pro 支持团队持续产出与分镜级控制。',
     pricingCta: '开始生成',
     pricingFeatured: '推荐',
     pricingPlans: [
@@ -37,16 +37,16 @@ export const zh = {
         price: '$0',
         period: '永久',
         quota: '1 条视频',
-        description: '适合体验基础生成流程，使用默认旁白声音。',
-        features: ['每月 1 条免费视频', '默认旁白声音', 'AI 分镜与公开视频分享页'],
+        description: '适合快速体验核心流程，AI 自动匹配视频风格，并使用默认旁白生成公开视频分享页。',
+        features: ['每月 1 条免费视频', '智能匹配视频风格', '默认旁白与标准语速', 'AI 分镜与公开视频分享页'],
       },
       {
         name: 'Starter',
         price: '$19.9',
         period: '/ 月',
         quota: '10 条视频 / 月',
-        description: '适合稳定制作产品推广视频，可选择整条视频的预设音色。',
-        features: ['每月 10 条视频', '整条视频旁白音色选择', '专业女声、温暖男声等预设音色'],
+        description: '适合稳定制作产品推广视频，解锁整条视频音色、旁白语速控制和常用视频风格。',
+        features: ['每月 10 条视频', '整条视频旁白音色选择', '旁白语速调节', '可选智能匹配、Clean SaaS、Bold Launch、Warm Editorial 风格'],
         highlighted: true,
       },
       {
@@ -54,8 +54,8 @@ export const zh = {
         price: '$59.9',
         period: '/ 月',
         quota: '无限视频',
-        description: '适合团队持续生产营销素材，可为每个分镜设置不同人物声音。',
-        features: ['不限视频生成次数', '分镜级人物声音设置', '完整音色库与优先生成'],
+        description: '适合团队持续生产营销素材，解锁完整风格库、完整音色库、分镜人物声音和自定义音频。',
+        features: ['不限视频生成次数', '完整视频风格库', '完整音色库与分镜级人物声音', '分镜自定义音频上传与优先生成'],
       },
     ] as {
       name: string

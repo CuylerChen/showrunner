@@ -26,18 +26,18 @@ function assertPricingCopy(locale: typeof zh, expected: {
 assertPricingCopy(zh, {
   title: '价格简单，随生成规模升级',
   plans: [
-    { name: 'Free', price: '$0', period: '永久', quota: '1 条视频', featureKeywords: ['默认旁白'] },
-    { name: 'Starter', price: '$19.9', period: '/ 月', quota: '10 条视频 / 月', featureKeywords: ['整条视频', '预设音色'] },
-    { name: 'Pro', price: '$59.9', period: '/ 月', quota: '无限视频', featureKeywords: ['分镜', '人物声音'] },
+    { name: 'Free', price: '$0', period: '永久', quota: '1 条视频', featureKeywords: ['默认旁白', '智能匹配'] },
+    { name: 'Starter', price: '$19.9', period: '/ 月', quota: '10 条视频 / 月', featureKeywords: ['整条视频', '语速', 'Clean SaaS'] },
+    { name: 'Pro', price: '$59.9', period: '/ 月', quota: '无限视频', featureKeywords: ['完整视频风格库', '自定义音频', '优先生成'] },
   ],
 })
 
 assertPricingCopy(en, {
   title: 'Simple pricing that scales with output',
   plans: [
-    { name: 'Free', price: '$0', period: 'forever', quota: '1 video', featureKeywords: ['default narrator'] },
-    { name: 'Starter', price: '$19.9', period: '/ month', quota: '10 videos / month', featureKeywords: ['whole video', 'preset voices'] },
-    { name: 'Pro', price: '$59.9', period: '/ month', quota: 'Unlimited videos', featureKeywords: ['scene', 'character voices'] },
+    { name: 'Free', price: '$0', period: 'forever', quota: '1 video', featureKeywords: ['default narrator', 'Smart-matched'] },
+    { name: 'Starter', price: '$19.9', period: '/ month', quota: '10 videos / month', featureKeywords: ['Whole-video', 'speed', 'Clean SaaS'] },
+    { name: 'Pro', price: '$59.9', period: '/ month', quota: 'Unlimited videos', featureKeywords: ['Full video style catalog', 'custom audio', 'priority'] },
   ],
 })
 
