@@ -103,9 +103,9 @@ mysql -u showrunner -p showrunner < /opt/showrunner/database/schema.sql
 systemctl status mysql
 systemctl status redis-server
 systemctl status nginx
-pm2 status
-pm2 logs showrunner-web --lines 30
-pm2 logs showrunner-worker --lines 30
+systemctl status showrunner-web.service showrunner-worker.service
+journalctl -u showrunner-web.service -n 30 --no-pager
+journalctl -u showrunner-worker.service -n 30 --no-pager
 ```
 
 访问 `NEXT_PUBLIC_APP_URL`，注册账号后创建 demo。Worker 日志中应能看到 parse、tts、merge 阶段执行记录。
