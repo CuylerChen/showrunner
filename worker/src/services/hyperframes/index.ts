@@ -7,6 +7,7 @@ import { Step } from '../../types'
 import { createMediaToolEnv, resolveMediaToolPath } from '../../utils/media-tools'
 import { getVideoStorageDir } from '../../utils/video-storage'
 import { normalizeProductCategory, type ProductCategory } from '../parser/scenes'
+import { getVideoStyleDescriptor, normalizeVideoStyleId, type VideoStyleId } from '../video-styles'
 
 const execFileAsync = promisify(execFile)
 
@@ -38,6 +39,7 @@ export interface PromotionalScene {
   proofPoints?: string[]
   ctaHeadline?: string | null
   visualStyle?: string | null
+  styleId?: VideoStyleId | null
   brandColor?: string | null
   productType?: ProductCategory | null
 }
@@ -682,6 +684,9 @@ function createPromotionalHtml(
   const brandPrimary = scenes.map(scene => validHexColor(scene.brandColor)).find(Boolean) ?? '#2563EB'
   const productType = promotionalProductType(scenes)
   const productClass = `product-${productType}`
+  const selectedStyleId = normalizeVideoStyleId(scenes.find(scene => scene.styleId)?.styleId)
+  const styleDescriptor = getVideoStyleDescriptor(selectedStyleId)
+  const styleClass = styleDescriptor.className
   const navLabels = PRODUCT_NAV_LABELS[productType]
   const lastIndex = scenes.length - 1
 
@@ -834,6 +839,40 @@ function createPromotionalHtml(
       --paper: #f7faff;
       --line: #dbe6f4;
       --dark: #020817;
+      --style-surface: #f7faff;
+      --style-accent: var(--brand-primary);
+      --style-ink: #061226;
+      --style-muted: #53657d;
+    }
+    .style-bold-launch {
+      --style-surface: #fff7ed;
+      --style-accent: #f97316;
+      --style-ink: #111827;
+      --style-muted: #4b5563;
+    }
+    .style-warm-editorial {
+      --style-surface: #fff7ed;
+      --style-accent: #7c3a12;
+      --style-ink: #3f2415;
+      --style-muted: #6b4e3d;
+    }
+    .style-technical-dark {
+      --style-surface: #020817;
+      --style-accent: #38bdf8;
+      --style-ink: #f8fafc;
+      --style-muted: #94a3b8;
+    }
+    .style-premium-minimal {
+      --style-surface: #fafaf9;
+      --style-accent: #18181b;
+      --style-ink: #18181b;
+      --style-muted: #71717a;
+    }
+    .style-creator-social {
+      --style-surface: #fdf2f8;
+      --style-accent: #db2777;
+      --style-ink: #1f2937;
+      --style-muted: #6b7280;
     }
     * { box-sizing: border-box; }
     html, body {
@@ -850,7 +889,18 @@ function createPromotionalHtml(
       width: ${WIDTH}px;
       height: ${HEIGHT}px;
       overflow: hidden;
-      background: linear-gradient(110deg, #f8fbff 0%, #eef5ff 50%, #eefcf6 100%);
+      background: var(--style-surface);
+    }
+    .style-technical-dark #root {
+      background: #020817;
+    }
+    .style-technical-dark .topbar,
+    .style-technical-dark .code-card {
+      color: #e5eefb;
+    }
+    .style-bold-launch h1,
+    .style-bold-launch h2 {
+      letter-spacing: 0;
     }
     .film, .scene {
       position: absolute;
@@ -1232,8 +1282,8 @@ function createPromotionalHtml(
     }
   </style>
 </head>
-<body class="${productClass}">
-<div id="root" class="${productClass}" data-composition-id="root" data-start="0" data-width="${WIDTH}" data-height="${HEIGHT}" data-duration="${formatDuration(totalDuration)}" data-fps="${FPS}">
+<body class="${productClass} ${styleClass}" data-video-style="${selectedStyleId}">
+<div id="root" class="${productClass} ${styleClass}" data-video-style="${selectedStyleId}" data-composition-id="root" data-start="0" data-width="${WIDTH}" data-height="${HEIGHT}" data-duration="${formatDuration(totalDuration)}" data-fps="${FPS}">
   <section id="film" class="clip film" data-start="0.000" data-duration="${formatDuration(totalDuration)}" data-track-index="0">
     ${audioTracks}
     <div class="topbar">

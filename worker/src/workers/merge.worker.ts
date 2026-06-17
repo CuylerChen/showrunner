@@ -10,6 +10,7 @@ import fs from 'fs'
 import path from 'path'
 import { Step } from '../types'
 import { normalizeProductCategory, type ProductCategory } from '../services/parser/scenes'
+import { normalizeVideoStyleId, type VideoStyleId } from '../services/video-styles'
 import { getVideoStorageDir } from '../utils/video-storage'
 import { singleLongRunningWorkerOptions } from '../utils/worker-options'
 
@@ -32,6 +33,7 @@ interface PromotionalDemoMetadata {
   cta_text: string | null
   cta_url: string | null
   brand_tone: string | null
+  video_style: string | null
 }
 
 interface BuildPromotionalScenesInput {
@@ -46,6 +48,7 @@ interface PromotionalStepMetadata {
   proofPoints?: string[]
   ctaHeadline?: string | null
   visualStyle?: string | null
+  styleId?: VideoStyleId | null
   brandColor?: string | null
   productType?: ProductCategory | null
 }
@@ -116,6 +119,9 @@ function parsePromotionalStepMetadata(value: string | null | undefined): Promoti
         : [],
       ctaHeadline: typeof parsed.ctaHeadline === 'string' ? parsed.ctaHeadline : null,
       visualStyle: typeof parsed.visualStyle === 'string' ? parsed.visualStyle : null,
+      styleId: typeof parsed.styleId === 'string'
+        ? normalizeVideoStyleId(parsed.styleId)
+        : null,
       brandColor: typeof parsed.brandColor === 'string' ? parsed.brandColor : null,
       productType: typeof parsed.productType === 'string'
         ? normalizeProductCategory(parsed.productType)
@@ -129,6 +135,7 @@ function parsePromotionalStepMetadata(value: string | null | undefined): Promoti
 export function buildPromotionalScenes(input: BuildPromotionalScenesInput) {
   const brandName = inferBrandName(input.demo)
   const ctaUrl = input.demo.cta_url ?? input.demo.product_url ?? null
+  const demoStyleId = normalizeVideoStyleId(input.demo.video_style)
 
   return input.steps.map((step, index) => {
     const timestamp = input.stepTimestamps[index]
@@ -150,6 +157,7 @@ export function buildPromotionalScenes(input: BuildPromotionalScenesInput) {
       proofPoints: metadata.proofPoints ?? [],
       ctaHeadline: metadata.ctaHeadline ?? null,
       visualStyle: metadata.visualStyle ?? null,
+      styleId: metadata.styleId ?? demoStyleId,
       brandColor: metadata.brandColor ?? null,
       productType: metadata.productType ?? null,
     }
@@ -193,6 +201,7 @@ async function processJob(job: Job<MergeJobData>) {
         cta_text: demos.cta_text,
         cta_url: demos.cta_url,
         brand_tone: demos.brand_tone,
+        video_style: demos.video_style,
       })
       .from(demos)
       .where(eq(demos.id, demoId))
@@ -209,6 +218,7 @@ async function processJob(job: Job<MergeJobData>) {
           cta_text: null,
           cta_url: null,
           brand_tone: null,
+          video_style: null,
         },
       }),
       outputDir,

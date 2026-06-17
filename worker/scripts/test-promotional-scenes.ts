@@ -15,6 +15,7 @@ const steps: Step[] = [
       proofPoints: ['Weekly delivery', 'Roast preferences'],
       ctaHeadline: 'Order beans for next week',
       visualStyle: 'warm editorial',
+      styleId: 'warm_editorial',
       brandColor: '#7C3A12',
       productType: 'ecommerce',
     }),
@@ -49,6 +50,7 @@ const scenes = buildPromotionalScenes({
     cta_text: 'Start access',
     cta_url: 'https://sub.sharellm.uk/v1',
     brand_tone: 'clear and technical',
+    video_style: null,
   },
 })
 
@@ -61,6 +63,8 @@ assert.equal(scenes[0]?.kicker, 'Office coffee')
 assert.deepEqual(scenes[0]?.proofPoints, ['Weekly delivery', 'Roast preferences'])
 assert.equal(scenes[0]?.ctaHeadline, 'Order beans for next week')
 assert.equal(scenes[0]?.visualStyle, 'warm editorial')
+assert.equal(scenes[0]?.styleId, 'warm_editorial')
+assert.equal(scenes[1]?.styleId, 'auto')
 assert.equal(scenes[0]?.brandColor, '#7C3A12')
 assert.equal(scenes[0]?.productType, 'ecommerce')
 assert.equal(scenes[0]?.audioPath, '/tmp/audio-one.mp3')
@@ -79,6 +83,7 @@ const titledScenes = buildPromotionalScenes({
     cta_text: null,
     cta_url: null,
     brand_tone: null,
+    video_style: null,
   },
 })
 

@@ -47,6 +47,7 @@ async function main() {
       visualType: 'template',
       brandName: 'ShareLLM',
       ctaUrl: 'https://sub.sharellm.uk/v1',
+      styleId: 'technical_dark',
     },
     {
       title: 'Second scene',
@@ -69,6 +70,8 @@ async function main() {
   assert.match(html, /data-height="720"/)
   assert.match(html, /data-duration="3\.750"/)
   assert.doesNotMatch(html, /<body[^>]+data-duration=/)
+  assert.ok(html.includes('style-technical-dark'), 'manual styles should produce a stable root style class')
+  assert.ok(html.includes('data-video-style="technical_dark"'), 'composition should expose the selected video style')
 
   assert.match(html, /window\.__timelines\["root"\]/)
   assert.match(html, /createStaticTimeline\(3\.750\)/)
