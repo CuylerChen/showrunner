@@ -3,6 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from '@/lib/i18n'
+import {
+  NARRATION_LANGUAGE_DEFAULT,
+  NARRATION_LANGUAGES,
+  type NarrationLanguageId,
+} from '@/lib/narration-languages'
 import { getAllowedTtsVoices, getPlanCapabilities, TTS_SPEED_DEFAULT, TTS_VOICES, type TtsVoiceId } from '@/lib/plans'
 import {
   getAllowedVideoStyles,
@@ -73,6 +78,7 @@ export function CreateForm({ plan }: CreateFormProps) {
   const [brandTone, setBrandTone] = useState('')
   const [ctaText, setCtaText] = useState('')
   const [ctaUrl, setCtaUrl] = useState('')
+  const [narrationLanguage, setNarrationLanguage] = useState<NarrationLanguageId>(NARRATION_LANGUAGE_DEFAULT)
   const [ttsVoiceId, setTtsVoiceId] = useState<TtsVoiceId>('default')
   const [ttsSpeed, setTtsSpeed] = useState(TTS_SPEED_DEFAULT)
   const [selectedVideoStyleId, setVideoStyleId] = useState<VideoStyleId>(VIDEO_STYLE_DEFAULT)
@@ -105,6 +111,7 @@ export function CreateForm({ plan }: CreateFormProps) {
           brand_tone: brandTone || null,
           cta_text: ctaText || null,
           cta_url: ctaUrl || null,
+          narration_language: narrationLanguage,
           tts_voice_id: ttsVoiceId,
           tts_speed: ttsSpeed,
           video_style: videoStyleId,
@@ -120,6 +127,7 @@ export function CreateForm({ plan }: CreateFormProps) {
       setBrandTone('')
       setCtaText('')
       setCtaUrl('')
+      setNarrationLanguage(NARRATION_LANGUAGE_DEFAULT)
       setTtsVoiceId('default')
       setTtsSpeed(TTS_SPEED_DEFAULT)
       setVideoStyleId(VIDEO_STYLE_DEFAULT)
@@ -242,6 +250,28 @@ export function CreateForm({ plan }: CreateFormProps) {
 
           {/* Marketing brief */}
           <div className="grid gap-3 sm:grid-cols-2">
+            <label className="space-y-1.5 sm:col-span-2">
+              <span className="text-xs font-medium" style={{ color: '#64748B' }}>{cf.narrationLanguageLabel}</span>
+              <select
+                value={narrationLanguage}
+                onChange={e => setNarrationLanguage(e.target.value as NarrationLanguageId)}
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+                style={{
+                  background: '#F8FAFC',
+                  border: '1.5px solid #E2E8F0',
+                  color: '#0F172A',
+                }}
+              >
+                {NARRATION_LANGUAGES.map(language => (
+                  <option key={language.id} value={language.id}>
+                    {cf.narrationLanguages[language.id]}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs leading-relaxed" style={{ color: '#64748B' }}>
+                {cf.narrationLanguageHint}
+              </p>
+            </label>
             <label className="space-y-1.5 sm:col-span-2">
               <span className="text-xs font-medium" style={{ color: '#64748B' }}>{cf.ttsVoiceLabel}</span>
               <select

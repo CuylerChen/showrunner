@@ -21,9 +21,19 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return Response.json({ success: false, error: 'Failed to get state from worker' }, { status: 500 })
   }
 
-  // 读取 demo 的 product_url 和 description（重新解析时需要）
+  // 读取 demo 的创建参数（重新解析时需要保留原配置）
   const demo = await db
-    .select({ product_url: schema.demos.product_url, description: schema.demos.description })
+    .select({
+      product_url: schema.demos.product_url,
+      description: schema.demos.description,
+      audience: schema.demos.audience,
+      key_points: schema.demos.key_points,
+      brand_tone: schema.demos.brand_tone,
+      cta_text: schema.demos.cta_text,
+      cta_url: schema.demos.cta_url,
+      video_style: schema.demos.video_style,
+      narration_language: schema.demos.narration_language,
+    })
     .from(schema.demos)
     .where(and(eq(schema.demos.id, id), eq(schema.demos.user_id, userId)))
     .then(rows => rows[0] ?? null)
@@ -48,6 +58,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       demoId:      id,
       productUrl:  demo.product_url!,
       description: demo.description ?? null,
+      audience:    demo.audience ?? undefined,
+      keyPoints:   demo.key_points ?? undefined,
+      brandTone:   demo.brand_tone ?? undefined,
+      ctaText:     demo.cta_text ?? undefined,
+      ctaUrl:      demo.cta_url ?? undefined,
+      videoStyle:  demo.video_style,
+      narrationLanguage: demo.narration_language,
       isReparse:   true,
     }, {
       attempts: 3,

@@ -8,6 +8,7 @@ import { ok, err } from '@/lib/api'
 import { assertSafePublicUrl } from '@/lib/security/safe-url'
 import { canUseTtsSpeed, canUseVideoVoice, getTtsQueuePriority, isTtsVoiceId, normalizeTtsSpeed, TTS_SPEED_DEFAULT } from '@/lib/plans'
 import { canUseVideoStyle, normalizeVideoStyleId } from '@/lib/video-styles'
+import { normalizeNarrationLanguageId } from '@/lib/narration-languages'
 
 type UpdateResult = { affectedRows?: number }
 
@@ -22,6 +23,7 @@ const CreateDemoSchema = z.object({
   tts_voice_id: z.string().max(40).nullable().optional(),
   tts_speed: z.number().int().nullable().optional(),
   video_style: z.string().max(40).nullable().optional(),
+  narration_language: z.string().max(20).nullable().optional(),
 })
 
 // GET /api/demos — 获取当前用户的 Demo 列表
@@ -79,6 +81,10 @@ export async function POST(req: NextRequest) {
   const video_style = normalizeVideoStyleId(parsed.data.video_style)
   if (video_style === null) {
     return err('VALIDATION_ERROR', '请选择有效的视频风格')
+  }
+  const narration_language = normalizeNarrationLanguageId(parsed.data.narration_language)
+  if (narration_language === null) {
+    return err('VALIDATION_ERROR', '请选择有效的旁白语言')
   }
   const tts_voice_id = parsed.data.tts_voice_id ?? 'default'
   const tts_speed = normalizeTtsSpeed(parsed.data.tts_speed ?? TTS_SPEED_DEFAULT)
@@ -152,6 +158,7 @@ export async function POST(req: NextRequest) {
       audience:    audience ?? null,
       key_points:  key_points ?? null,
       brand_tone:  brand_tone ?? null,
+      narration_language,
       tts_voice_id: tts_voice_id ?? 'default',
       tts_speed:    tts_speed,
       video_style:  video_style,
@@ -172,6 +179,7 @@ export async function POST(req: NextRequest) {
       ctaText: cta_text ?? null,
       ctaUrl: normalizedCtaUrl,
       videoStyle: video_style,
+      narrationLanguage: narration_language,
     }, {
       priority: getTtsQueuePriority(subscription.plan),
       attempts: 3,

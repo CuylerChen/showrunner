@@ -1,5 +1,6 @@
 import { Step } from '../../types'
 import { assertSafePublicUrl, resolveSafeRedirectUrl } from '../../utils/safe-url'
+import { normalizeNarrationLanguageId, type NarrationLanguageId } from '../narration-languages'
 import { normalizeVideoStyleId, type VideoStyleId } from '../video-styles'
 import { captureWebsiteScreenshots, type ScreenshotAsset } from './assets'
 import {
@@ -44,6 +45,7 @@ export interface ParseStepsOptions {
   ctaText?: string
   ctaUrl?: string
   videoStyle?: VideoStyleId
+  narrationLanguage?: NarrationLanguageId
 }
 
 export interface ParseProductStoryResult {
@@ -340,6 +342,7 @@ function buildInput(
     ctaText: options.ctaText,
     ctaUrl: options.ctaUrl,
     videoStyle: normalizeVideoStyleId(options.videoStyle),
+    narrationLanguage: normalizeNarrationLanguageId(options.narrationLanguage),
     sourceSummary,
   }
 }

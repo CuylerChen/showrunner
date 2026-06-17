@@ -1,3 +1,4 @@
+import type { NarrationLanguageId } from '@/lib/narration-languages'
 import type { VideoStyleId } from '@/lib/video-styles'
 import type { zh } from './zh'
 
@@ -318,6 +319,20 @@ export const en: typeof zh = {
     ctaTextPlaceholder: 'CTA text, e.g. Book a demo',
     ctaUrlLabel: 'CTA URL',
     ctaUrlPlaceholder: 'CTA URL',
+    narrationLanguageLabel: 'Narration language',
+    narrationLanguageHint: 'Controls the language used for the AI-generated narration script. Auto follows the input language, then falls back to English.',
+    narrationLanguages: {
+      auto: 'Auto',
+      en: 'English',
+      zh: 'Chinese (Mandarin)',
+      ko: 'Korean',
+      ja: 'Japanese',
+      es: 'Spanish',
+      fr: 'French',
+      de: 'German',
+      pt: 'Portuguese',
+      it: 'Italian',
+    } satisfies Record<NarrationLanguageId, string>,
     ttsVoiceLabel: 'Narration voice',
     ttsStarterLocked: 'Starter unlock',
     ttsProLocked: 'Pro unlock',

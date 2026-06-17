@@ -1,3 +1,4 @@
+import type { NarrationLanguageId } from '@/lib/narration-languages'
 import type { VideoStyleId } from '@/lib/video-styles'
 
 export const zh = {
@@ -325,6 +326,20 @@ export const zh = {
     ctaTextPlaceholder: 'CTA 文案，例如预约演示',
     ctaUrlLabel: 'CTA 链接',
     ctaUrlPlaceholder: 'CTA 链接',
+    narrationLanguageLabel: '旁白语言',
+    narrationLanguageHint: '控制 AI 生成旁白脚本的语言。Auto 会根据输入内容判断，无法判断时使用英语。',
+    narrationLanguages: {
+      auto: 'Auto（自动判断）',
+      en: 'English',
+      zh: '中文（普通话）',
+      ko: '한국어',
+      ja: '日本語',
+      es: 'Español',
+      fr: 'Français',
+      de: 'Deutsch',
+      pt: 'Português',
+      it: 'Italiano',
+    } satisfies Record<NarrationLanguageId, string>,
     ttsVoiceLabel: '旁白声音',
     ttsStarterLocked: 'Starter 解锁',
     ttsProLocked: 'Pro 解锁',

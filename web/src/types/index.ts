@@ -27,6 +27,7 @@ export interface Demo {
   audience?: string | null
   key_points?: string | null
   brand_tone?: string | null
+  narration_language?: string | null
   tts_voice_id?: string | null
   tts_speed?: number | null
   source_summary?: string | null

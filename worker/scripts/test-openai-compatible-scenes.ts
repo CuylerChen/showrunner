@@ -75,6 +75,7 @@ async function main() {
     brandName: 'Example Brand',
     brandColors: ['#2563EB', '#10B981'],
     productCategory: 'ecommerce',
+    narrationLanguage: 'ko',
     videoStyle: 'technical_dark',
     sourceSummary: 'Example source summary',
   }, assets)
@@ -89,6 +90,7 @@ async function main() {
   assert.match(JSON.stringify(requestedBody), /#2563EB/)
   assert.match(JSON.stringify(requestedBody), /technical_dark/)
   assert.match(JSON.stringify(requestedBody), /Dark, code-forward technical style/)
+  assert.match(JSON.stringify(requestedBody), /Korean/)
   assert.equal(scenes.length, 2)
   assert.equal(scenes[0]?.visual_asset_url, '/videos/demo/assets/home.png')
   assert.equal(scenes[0]?.kicker, 'Office coffee')
@@ -105,10 +107,13 @@ async function main() {
     description: 'Example product',
     brandName: 'Example Brand',
     productCategory: 'developer_tool',
+    narrationLanguage: 'zh',
     videoStyle: 'technical_dark',
     sourceSummary: 'Example source summary',
   }, assets)
 
+  assert.match(fallbackScenes[0]?.title ?? '', /认识/)
+  assert.match(fallbackScenes[0]?.narration ?? '', /帮助/)
   assert.equal(fallbackScenes[0]?.style_id, 'technical_dark')
   assert.equal(fallbackScenes[0]?.visual_style, 'dark technical product story')
   assert.equal(fallbackScenes.at(-1)?.style_id, 'technical_dark')

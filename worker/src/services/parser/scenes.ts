@@ -1,5 +1,10 @@
 import type { ScreenshotAsset } from './assets'
 import {
+  getNarrationLanguageInstruction,
+  normalizeNarrationLanguageId,
+  type NarrationLanguageId,
+} from '../narration-languages'
+import {
   getVideoStyleDescriptor,
   normalizeVideoStyleId,
   type VideoStyleId,
@@ -21,6 +26,7 @@ export interface ProductStoryInput {
   ctaText?: string
   ctaUrl?: string
   videoStyle?: VideoStyleId
+  narrationLanguage?: NarrationLanguageId
   sourceSummary: string
 }
 
@@ -121,6 +127,137 @@ function normalizeProofPoints(value: unknown): string[] {
     .map(point => point.slice(0, 90))
 }
 
+type FallbackLanguage = 'en' | 'zh' | 'ko'
+
+interface FallbackCopy {
+  productPromise: string
+  customerProblem: string
+  buyerFriction: string
+  clearNextStep: string
+  productValue: string
+  practicalValue: string
+  concreteBenefits: string
+  plainLanguageBenefit: string
+  realOutcome: string
+  nextStep: string
+  problemTitle: string
+  problemNarration: string
+  valueTitle: string
+  benefitsTitle: string
+  benefitsNarration: string
+  meetTitle: (product: string) => string
+  meetNarration: (product: string, audience?: string) => string
+  valueNarration: (keyPoint?: string) => string
+  closeTitle: (tone?: string) => string
+  closeNarration: (ctaText: string) => string
+}
+
+function inferFallbackLanguage(input: ProductStoryInput): FallbackLanguage {
+  const selected = normalizeNarrationLanguageId(input.narrationLanguage)
+  if (selected === 'zh' || selected === 'ko') return selected
+  if (selected !== 'auto') return 'en'
+
+  const text = [
+    input.description,
+    input.audience,
+    input.keyPoints,
+    input.brandTone,
+    input.ctaText,
+    input.sourceSummary,
+  ].filter(Boolean).join('\n')
+
+  if (/[\uac00-\ud7af]/.test(text)) return 'ko'
+  if (/[\u4e00-\u9fff]/.test(text)) return 'zh'
+  return 'en'
+}
+
+function fallbackCopy(language: FallbackLanguage): FallbackCopy {
+  if (language === 'zh') {
+    return {
+      productPromise: '产品承诺',
+      customerProblem: '用户问题',
+      buyerFriction: '购买阻力',
+      clearNextStep: '清晰下一步',
+      productValue: '产品价值',
+      practicalValue: '实际价值',
+      concreteBenefits: '具体收益',
+      plainLanguageBenefit: '清晰收益',
+      realOutcome: '真实结果',
+      nextStep: '下一步',
+      problemTitle: '从用户问题开始',
+      problemNarration: '故事先呈现买家每天遇到的阻力，再把产品作为自然的下一步。',
+      valueTitle: '展示产品价值',
+      benefitsTitle: '让收益更具体',
+      benefitsNarration: '每个收益都用直接的语言表达，让观众把产品和真实结果联系起来。',
+      meetTitle: product => `认识 ${product}`,
+      meetNarration: (product, audience) => audience
+        ? `${product} 帮助${audience}更清楚地理解产品价值，并判断它是否适合自己的工作流程。`
+        : `${product} 帮助访客更清楚地理解产品价值，并判断它是否适合自己的需求。`,
+      valueNarration: keyPoint => keyPoint
+        ? `核心价值聚焦在${keyPoint}，把功能转化为观众愿意继续了解的实际理由。`
+        : '核心价值把产品能力转化为实际理由，帮助观众继续了解并考虑下一步。',
+      closeTitle: tone => tone ? `用${tone}的方式收尾` : '用清晰的下一步收尾',
+      closeNarration: ctaText => `${ctaText} 为感兴趣的观众提供一条从视频回到产品体验的简单路径。`,
+    }
+  }
+
+  if (language === 'ko') {
+    return {
+      productPromise: '제품 약속',
+      customerProblem: '고객 문제',
+      buyerFriction: '구매 장벽',
+      clearNextStep: '명확한 다음 단계',
+      productValue: '제품 가치',
+      practicalValue: '실질적 가치',
+      concreteBenefits: '구체적 혜택',
+      plainLanguageBenefit: '쉬운 혜택 설명',
+      realOutcome: '실제 결과',
+      nextStep: '다음 단계',
+      problemTitle: '고객 문제에서 시작하기',
+      problemNarration: '이야기는 구매자가 매일 겪는 불편을 먼저 보여 주고, 제품을 자연스러운 다음 단계로 소개합니다.',
+      valueTitle: '제품 가치 보여주기',
+      benefitsTitle: '혜택을 구체적으로 만들기',
+      benefitsNarration: '각 혜택은 쉬운 말로 제시되어 시청자가 제품을 실제 결과와 연결할 수 있게 합니다.',
+      meetTitle: product => `${product} 소개`,
+      meetNarration: (product, audience) => audience
+        ? `${product}은 ${audience}가 제품의 가치를 더 분명히 이해하고 업무 흐름에 맞는지 판단하도록 돕습니다.`
+        : `${product}은 방문자가 제품의 가치를 더 분명히 이해하고 자신의 필요에 맞는지 판단하도록 돕습니다.`,
+      valueNarration: keyPoint => keyPoint
+        ? `핵심 가치는 ${keyPoint}에 집중해 기능을 계속 살펴볼 만한 실질적인 이유로 바꿉니다.`
+        : '핵심 가치는 제품 기능을 실질적인 이유로 바꿔 시청자가 다음 단계를 고려하게 합니다.',
+      closeTitle: tone => tone ? `${tone} 톤의 다음 단계로 마무리` : '명확한 다음 단계로 마무리',
+      closeNarration: ctaText => `${ctaText}는 관심 있는 시청자가 영상에서 제품 경험으로 쉽게 이동할 수 있는 길을 제공합니다.`,
+    }
+  }
+
+  return {
+    productPromise: 'Product promise',
+    customerProblem: 'Customer problem',
+    buyerFriction: 'Buyer friction',
+    clearNextStep: 'Clear next step',
+    productValue: 'Product value',
+    practicalValue: 'Practical value',
+    concreteBenefits: 'Concrete benefits',
+    plainLanguageBenefit: 'Plain-language benefit',
+    realOutcome: 'Real outcome',
+    nextStep: 'Next step',
+    problemTitle: 'Start with the customer problem',
+    problemNarration: 'The story frames the everyday friction buyers are trying to solve before introducing the product as the next step.',
+    valueTitle: 'Show the product value',
+    benefitsTitle: 'Make benefits concrete',
+    benefitsNarration: 'Each benefit is presented in plain language, so the audience can connect the product to a real outcome.',
+    meetTitle: product => `Meet ${product}`,
+    meetNarration: (product, audience) => audience
+      ? `${product} gives ${audience} a clearer way to understand the offer and decide whether it fits their workflow.`
+      : `${product} gives visitors a clearer way to understand the offer and decide whether it fits their workflow.`,
+    valueNarration: keyPoint => keyPoint
+      ? `The core value centers on ${keyPoint}, turning a feature into a practical reason for viewers to keep watching.`
+      : 'The core value turns product capabilities into practical reasons for viewers to keep watching and consider the next step.',
+    closeTitle: tone => tone ? `Close with a ${tone} next step` : 'Close with a clear next step',
+    closeNarration: ctaText => `${ctaText} gives interested viewers a simple path from the video back to the product experience.`,
+  }
+}
+
 function normalizeScenes(
   rawScenes: RawScene[],
   assets: ScreenshotAsset[],
@@ -161,14 +298,14 @@ export function fallbackProductStory(input: ProductStoryInput, assets: Screensho
   const tone = input.brandTone?.trim()
   const productCategory = normalizeProductCategory(input.productCategory)
   const style = getVideoStyleDescriptor(input.videoStyle)
+  const fallbackLanguage = inferFallbackLanguage(input)
+  const copy = fallbackCopy(fallbackLanguage)
 
   const rawScenes: RawScene[] = [
     {
-      title: `Meet ${product}`,
-      narration: audience
-        ? `${product} gives ${audience} a clearer way to understand the offer and decide whether it fits their workflow.`
-        : `${product} gives visitors a clearer way to understand the offer and decide whether it fits their workflow.`,
-      kicker: 'Product promise',
+      title: copy.meetTitle(product),
+      narration: copy.meetNarration(product, audience),
+      kicker: copy.productPromise,
       proof_points: audience ? [audience, ctaText] : [product, ctaText],
       visual_style: tone || style.fallbackVisualStyle,
       product_type: productCategory,
@@ -176,40 +313,38 @@ export function fallbackProductStory(input: ProductStoryInput, assets: Screensho
       visual_role: 'home',
     },
     {
-      title: 'Start with the customer problem',
-      narration: 'The story frames the everyday friction buyers are trying to solve before introducing the product as the next step.',
-      kicker: 'Customer problem',
-      proof_points: ['Buyer friction', 'Clear next step'],
+      title: copy.problemTitle,
+      narration: copy.problemNarration,
+      kicker: copy.customerProblem,
+      proof_points: [copy.buyerFriction, copy.clearNextStep],
       visual_style: tone || style.fallbackVisualStyle,
       product_type: productCategory,
       visual_type: 'template',
     },
     {
-      title: 'Show the product value',
-      narration: keyPoint
-        ? `The core value centers on ${keyPoint}, turning a feature into a practical reason for viewers to keep watching.`
-        : 'The core value turns product capabilities into practical reasons for viewers to keep watching and consider the next step.',
-      kicker: 'Product value',
-      proof_points: keyPoint ? [keyPoint, ctaText] : ['Practical value', ctaText],
+      title: copy.valueTitle,
+      narration: copy.valueNarration(keyPoint),
+      kicker: copy.productValue,
+      proof_points: keyPoint ? [keyPoint, ctaText] : [copy.practicalValue, ctaText],
       visual_style: tone || style.fallbackVisualStyle,
       product_type: productCategory,
       visual_type: 'screenshot',
       visual_role: 'features',
     },
     {
-      title: 'Make benefits concrete',
-      narration: 'Each benefit is presented in plain language, so the audience can connect the product to a real outcome.',
-      kicker: 'Concrete benefits',
-      proof_points: ['Plain-language benefit', 'Real outcome'],
+      title: copy.benefitsTitle,
+      narration: copy.benefitsNarration,
+      kicker: copy.concreteBenefits,
+      proof_points: [copy.plainLanguageBenefit, copy.realOutcome],
       visual_style: tone || style.fallbackVisualStyle,
       product_type: productCategory,
       visual_type: 'screenshot',
       visual_role: 'product',
     },
     {
-      title: tone ? `Close with a ${tone} next step` : 'Close with a clear next step',
-      narration: `${ctaText} gives interested viewers a simple path from the video back to the product experience.`,
-      kicker: 'Next step',
+      title: copy.closeTitle(tone),
+      narration: copy.closeNarration(ctaText),
+      kicker: copy.nextStep,
       proof_points: [ctaText, input.ctaUrl || input.productUrl],
       cta_headline: ctaText,
       visual_style: tone || `${style.fallbackVisualStyle} CTA`,
@@ -233,6 +368,7 @@ export async function generateProductStoryScenes(
   const baseUrl = (process.env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1').replace(/\/+$/, '')
   const model = process.env.OPENAI_MODEL ?? 'gpt-4o-mini'
   const style = getVideoStyleDescriptor(input.videoStyle)
+  const narrationLanguageInstruction = getNarrationLanguageInstruction(input.narrationLanguage)
 
   const assetSummary = assets.map(asset => `${asset.role}: ${asset.url} -> ${asset.publicUrl}`).join('\n')
   const systemPrompt = `You are a senior product marketing video writer.
@@ -266,7 +402,8 @@ Rules:
 - Use screenshots when they help prove the product story; use template when source material is thin.
 - Last scene must be a CTA.
 - Avoid fake claims, unsupported metrics, invented customers, and guarantees.
-- Use the user's language when obvious; otherwise use English.`
+- Narration language: ${narrationLanguageInstruction}
+- Apply the selected narration language to title, narration, kicker, proof_points, and cta_headline. Keep brand and product names unchanged.`
 
   const userMessage = [
     `Product URL: ${input.productUrl}`,
@@ -279,6 +416,7 @@ Rules:
     input.brandTone ? `Brand tone:\n${input.brandTone}` : '',
     input.ctaText ? `CTA text:\n${input.ctaText}` : '',
     input.ctaUrl ? `CTA URL:\n${input.ctaUrl}` : '',
+    `Narration language:\n${narrationLanguageInstruction}`,
     `Requested video style: ${style.id} - ${style.prompt}`,
     input.sourceSummary ? `Website source summary:\n${input.sourceSummary}` : 'No website source text was available.',
     assetSummary ? `Available screenshot assets:\n${assetSummary}` : 'No screenshots were available.',
