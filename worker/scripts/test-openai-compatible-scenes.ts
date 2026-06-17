@@ -69,6 +69,7 @@ async function main() {
     brandName: 'Example Brand',
     brandColors: ['#2563EB', '#10B981'],
     productCategory: 'ecommerce',
+    videoStyle: 'technical_dark',
     sourceSummary: 'Example source summary',
   }, assets)
 
@@ -80,12 +81,16 @@ async function main() {
   assert.match(JSON.stringify(requestedBody), /ecommerce/)
   assert.match(JSON.stringify(requestedBody), /Example Brand/)
   assert.match(JSON.stringify(requestedBody), /#2563EB/)
+  assert.match(JSON.stringify(requestedBody), /technical_dark/)
+  assert.match(JSON.stringify(requestedBody), /Dark, code-forward technical style/)
   assert.equal(scenes.length, 2)
   assert.equal(scenes[0]?.visual_asset_url, '/videos/demo/assets/home.png')
   assert.equal(scenes[0]?.kicker, 'Office coffee')
   assert.deepEqual(scenes[0]?.proof_points, ['Weekly delivery', 'Roast preferences'])
   assert.equal(scenes[0]?.visual_style, 'warm editorial')
   assert.equal(scenes[0]?.product_type, 'ecommerce')
+  assert.equal(scenes[0]?.style_id, 'technical_dark')
+  assert.equal(scenes[1]?.style_id, 'technical_dark')
   assert.equal(scenes[1]?.cta_headline, 'Order beans for next week')
 }
 

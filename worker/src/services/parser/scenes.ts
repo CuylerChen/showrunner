@@ -1,4 +1,9 @@
 import type { ScreenshotAsset } from './assets'
+import {
+  getVideoStyleDescriptor,
+  normalizeVideoStyleId,
+  type VideoStyleId,
+} from '../video-styles'
 
 export type VisualType = 'screenshot' | 'template' | 'cta'
 export const PRODUCT_CATEGORIES = ['saas', 'developer_tool', 'ecommerce', 'local_service', 'content', 'generic'] as const
@@ -15,6 +20,7 @@ export interface ProductStoryInput {
   brandTone?: string
   ctaText?: string
   ctaUrl?: string
+  videoStyle?: VideoStyleId
   sourceSummary: string
 }
 
@@ -26,6 +32,7 @@ export interface ProductStoryScene {
   proof_points?: string[]
   cta_headline?: string | null
   visual_style?: string | null
+  style_id: VideoStyleId
   product_type: ProductCategory
   visual_type: VisualType
   visual_asset_url: string | null
@@ -44,6 +51,8 @@ interface RawScene {
   ctaHeadline?: string
   visual_style?: string
   visualStyle?: string
+  style_id?: string
+  styleId?: string
   product_type?: string
   productType?: string
   visual_type?: string
@@ -116,6 +125,7 @@ function normalizeScenes(
   rawScenes: RawScene[],
   assets: ScreenshotAsset[],
   productCategory: ProductCategory = DEFAULT_PRODUCT_CATEGORY,
+  videoStyle: VideoStyleId = 'auto',
 ): ProductStoryScene[] {
   const limitedScenes = rawScenes.slice(0, 7)
 
@@ -133,6 +143,7 @@ function normalizeScenes(
       proof_points: normalizeProofPoints(scene.proof_points ?? scene.proofPoints),
       cta_headline: scene.cta_headline || scene.ctaHeadline ? String(scene.cta_headline ?? scene.ctaHeadline).slice(0, 120) : null,
       visual_style: scene.visual_style || scene.visualStyle ? String(scene.visual_style ?? scene.visualStyle).slice(0, 80) : null,
+      style_id: normalizeVideoStyleId(scene.style_id ?? scene.styleId ?? videoStyle),
       product_type: normalizeProductCategory(scene.product_type ?? scene.productType, productCategory),
       visual_type: visualType,
       visual_asset_url: visualType === 'screenshot' ? asset?.publicUrl ?? null : null,
@@ -147,6 +158,7 @@ export function fallbackProductStory(input: ProductStoryInput, assets: Screensho
   const keyPoint = input.keyPoints?.split(/[\n,;。]+/).map(point => point.trim()).find(Boolean)
   const tone = input.brandTone?.trim()
   const productCategory = normalizeProductCategory(input.productCategory)
+  const style = getVideoStyleDescriptor(input.videoStyle)
 
   const rawScenes: RawScene[] = [
     {
@@ -156,7 +168,7 @@ export function fallbackProductStory(input: ProductStoryInput, assets: Screensho
         : `${product} gives visitors a clearer way to understand the offer and decide whether it fits their workflow.`,
       kicker: 'Product promise',
       proof_points: audience ? [audience, ctaText] : [product, ctaText],
-      visual_style: tone || 'brand-led product story',
+      visual_style: tone || style.fallbackVisualStyle,
       product_type: productCategory,
       visual_type: 'screenshot',
       visual_role: 'home',
@@ -166,7 +178,7 @@ export function fallbackProductStory(input: ProductStoryInput, assets: Screensho
       narration: 'The story frames the everyday friction buyers are trying to solve before introducing the product as the next step.',
       kicker: 'Customer problem',
       proof_points: ['Buyer friction', 'Clear next step'],
-      visual_style: tone || 'clear editorial',
+      visual_style: tone || style.fallbackVisualStyle,
       product_type: productCategory,
       visual_type: 'template',
     },
@@ -177,7 +189,7 @@ export function fallbackProductStory(input: ProductStoryInput, assets: Screensho
         : 'The core value turns product capabilities into practical reasons for viewers to keep watching and consider the next step.',
       kicker: 'Product value',
       proof_points: keyPoint ? [keyPoint, ctaText] : ['Practical value', ctaText],
-      visual_style: tone || 'proof-focused',
+      visual_style: tone || style.fallbackVisualStyle,
       product_type: productCategory,
       visual_type: 'screenshot',
       visual_role: 'features',
@@ -187,7 +199,7 @@ export function fallbackProductStory(input: ProductStoryInput, assets: Screensho
       narration: 'Each benefit is presented in plain language, so the audience can connect the product to a real outcome.',
       kicker: 'Concrete benefits',
       proof_points: ['Plain-language benefit', 'Real outcome'],
-      visual_style: tone || 'benefit-led',
+      visual_style: tone || style.fallbackVisualStyle,
       product_type: productCategory,
       visual_type: 'screenshot',
       visual_role: 'product',
@@ -198,13 +210,13 @@ export function fallbackProductStory(input: ProductStoryInput, assets: Screensho
       kicker: 'Next step',
       proof_points: [ctaText, input.ctaUrl || input.productUrl],
       cta_headline: ctaText,
-      visual_style: tone || 'direct CTA',
+      visual_style: tone || `${style.fallbackVisualStyle} CTA`,
       product_type: productCategory,
       visual_type: 'cta',
     },
   ]
 
-  return normalizeScenes(rawScenes, assets, productCategory)
+  return normalizeScenes(rawScenes, assets, productCategory, style.id)
 }
 
 export async function generateProductStoryScenes(
@@ -218,6 +230,7 @@ export async function generateProductStoryScenes(
   }
   const baseUrl = (process.env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1').replace(/\/+$/, '')
   const model = process.env.OPENAI_MODEL ?? 'gpt-4o-mini'
+  const style = getVideoStyleDescriptor(input.videoStyle)
 
   const assetSummary = assets.map(asset => `${asset.role}: ${asset.url} -> ${asset.publicUrl}`).join('\n')
   const systemPrompt = `You are a senior product marketing video writer.
@@ -233,6 +246,7 @@ Each scene must be:
   "proof_points": string[],
   "cta_headline": string | null,
   "visual_style": string,
+  "style_id": string,
   "product_type": "saas" | "developer_tool" | "ecommerce" | "local_service" | "content" | "generic",
   "visual_type": "screenshot" | "template" | "cta",
   "visual_role": "home" | "features" | "pricing" | "customers" | "about" | "product"
@@ -246,6 +260,7 @@ Rules:
 - Use cta_headline only for the CTA scene unless a scene needs a strong action label.
 - Set product_type to the detected category unless the source clearly supports a more specific allowed category.
 - Use visual_style to describe the desired scene feel for this product category.
+- Include "style_id" on every scene. Use the requested style id exactly unless it is "auto"; when "auto", infer the best style and still return "auto" as style_id.
 - Use screenshots when they help prove the product story; use template when source material is thin.
 - Last scene must be a CTA.
 - Avoid fake claims, unsupported metrics, invented customers, and guarantees.
@@ -262,6 +277,7 @@ Rules:
     input.brandTone ? `Brand tone:\n${input.brandTone}` : '',
     input.ctaText ? `CTA text:\n${input.ctaText}` : '',
     input.ctaUrl ? `CTA URL:\n${input.ctaUrl}` : '',
+    `Requested video style: ${style.id} - ${style.prompt}`,
     input.sourceSummary ? `Website source summary:\n${input.sourceSummary}` : 'No website source text was available.',
     assetSummary ? `Available screenshot assets:\n${assetSummary}` : 'No screenshots were available.',
   ].filter(Boolean).join('\n\n')
@@ -298,7 +314,7 @@ Rules:
     const rawScenes = Array.isArray(parsed) ? parsed : parsed.scenes
     if (!Array.isArray(rawScenes) || rawScenes.length < 1) throw new Error('Scene JSON was empty')
 
-    const scenes = normalizeScenes(rawScenes, assets, normalizeProductCategory(input.productCategory))
+    const scenes = normalizeScenes(rawScenes, assets, normalizeProductCategory(input.productCategory), normalizeVideoStyleId(input.videoStyle))
     if (scenes.length < 1) throw new Error('No usable scenes returned')
     return scenes
   } catch (err) {

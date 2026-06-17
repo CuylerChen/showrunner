@@ -1,5 +1,6 @@
 import { Step } from '../../types'
 import { assertSafePublicUrl, resolveSafeRedirectUrl } from '../../utils/safe-url'
+import { normalizeVideoStyleId, type VideoStyleId } from '../video-styles'
 import { captureWebsiteScreenshots, type ScreenshotAsset } from './assets'
 import {
   generateProductStoryScenes,
@@ -42,6 +43,7 @@ export interface ParseStepsOptions {
   brandTone?: string
   ctaText?: string
   ctaUrl?: string
+  videoStyle?: VideoStyleId
 }
 
 export interface ParseProductStoryResult {
@@ -337,6 +339,7 @@ function buildInput(
     brandTone: options.brandTone,
     ctaText: options.ctaText,
     ctaUrl: options.ctaUrl,
+    videoStyle: normalizeVideoStyleId(options.videoStyle),
     sourceSummary,
   }
 }
@@ -348,6 +351,7 @@ export function productStorySceneMetadata(scene: ProductStoryScene, brandProfile
     proofPoints: scene.proof_points ?? [],
     ctaHeadline: scene.cta_headline ?? null,
     visualStyle: scene.visual_style ?? null,
+    styleId: scene.style_id ?? 'auto',
     brandColor: brandProfile?.primaryColor ?? null,
     productType: scene.product_type ?? 'generic',
   })

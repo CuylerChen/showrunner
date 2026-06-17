@@ -3,6 +3,7 @@ import { connection } from '../utils/redis'
 import { db, demos, steps, jobs } from '../utils/db'
 import { and, eq } from 'drizzle-orm'
 import { parseProductStory, productStorySceneMetadata, type ParseStepsOptions } from '../services/parser'
+import { normalizeVideoStyleId, type VideoStyleId } from '../services/video-styles'
 
 export interface ParseJobData {
   demoId: string
@@ -13,6 +14,7 @@ export interface ParseJobData {
   brandTone?: string
   ctaText?: string
   ctaUrl?: string
+  videoStyle?: VideoStyleId
   isReparse?: boolean   // true 时：用登录态重新解析（删除旧步骤，用 session_cookies 加载页面）
 }
 
@@ -24,6 +26,7 @@ async function processJob(job: Job<ParseJobData>) {
     brandTone: job.data.brandTone,
     ctaText: job.data.ctaText,
     ctaUrl: job.data.ctaUrl,
+    videoStyle: normalizeVideoStyleId(job.data.videoStyle),
   }
   console.log(`[parse] 开始解析 demo=${demoId}${isReparse ? '（重新解析）' : ''}`)
 
