@@ -242,7 +242,7 @@ VIDEO_DIR=/opt/showrunner/videos
 
 ```bash
 cd /opt/showrunner/web
-npm ci
+npm ci --include=dev
 npm run build
 
 # Next standalone 不会自动复制静态资源，需要手动同步
@@ -258,7 +258,7 @@ cp -R public .next/standalone/public
 
 ```bash
 cd /opt/showrunner/worker
-npm ci
+npm ci --include=dev
 
 # 配置 Playwright 使用系统 Chromium（跳过浏览器下载）
 export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
@@ -402,7 +402,7 @@ certbot --nginx -d your-domain.com
 ```bash
 cd /opt/showrunner/app
 git pull origin main
-cd web && npm ci && npm run build
+cd web && npm ci --include=dev && npm run build
 systemctl restart showrunner-web.service
 ```
 
@@ -411,7 +411,7 @@ systemctl restart showrunner-web.service
 ```bash
 cd /opt/showrunner/app
 git pull origin main
-cd worker && npm ci
+cd worker && npm ci --include=dev
 systemctl restart showrunner-worker.service
 ```
 
@@ -419,8 +419,8 @@ systemctl restart showrunner-worker.service
 
 ```bash
 cd /opt/showrunner/app && git pull origin main
-cd web    && npm ci && npm run build && cd ..
-cd worker && npm ci && cd ..
+cd web    && npm ci --include=dev && npm run build && cd ..
+cd worker && npm ci --include=dev && cd ..
 systemctl restart showrunner-web.service
 systemctl restart showrunner-worker.service
 ```

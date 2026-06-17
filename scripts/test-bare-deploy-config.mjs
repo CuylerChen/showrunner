@@ -62,6 +62,7 @@ assert.match(deployBare, /journalctl -u \$\{WEB_SERVICE\}/, 'web deploy should p
 assert.match(deployBare, /run_as_app_user/, 'bare deploy should execute app commands as the configured app user')
 assert.match(deployBare, /runMigrations/, 'bare deploy should run database migrations')
 assert.match(deployBare, /database\/migrations\/\*\.sql/, 'bare deploy should apply SQL migration files')
+assert.match(deployBare, /npm ci --include=dev --quiet/, 'bare deploy should install build-time dev dependencies')
 assert.match(deployBare, /syncNextStandaloneAssets/, 'web deploy should sync Next standalone static assets')
 assert.match(deployBare, /run_as_app_user mkdir -p "\.next\/standalone\/\.next"/, 'web deploy should create standalone .next directory as the app user')
 assert.match(deployBare, /run_as_app_user cp -R "\.next\/static" "\.next\/standalone\/\.next\/static"/, 'web deploy should copy .next/static into standalone output as the app user')

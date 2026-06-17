@@ -161,7 +161,7 @@ runMigrations
 if [ "$TARGET" = "web" ] || [ "$TARGET" = "all" ]; then
   echo ""
   echo "▶  Building Web..."
-  run_npm_in "$REMOTE_DIR/web" npm ci --quiet
+  run_npm_in "$REMOTE_DIR/web" npm ci --include=dev --quiet
   run_npm_in "$REMOTE_DIR/web" npm run build
   cd "$REMOTE_DIR/web"
   syncNextStandaloneAssets
@@ -174,7 +174,7 @@ fi
 if [ "$TARGET" = "worker" ] || [ "$TARGET" = "all" ]; then
   echo ""
   echo "▶  Installing Worker dependencies..."
-  run_npm_in "$REMOTE_DIR/worker" env PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci --quiet
+  run_npm_in "$REMOTE_DIR/worker" env PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci --include=dev --quiet
   echo "▶  Restarting Worker service..."
   systemctl restart "$WORKER_SERVICE"
   systemctl is-active "$WORKER_SERVICE"
