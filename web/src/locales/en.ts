@@ -329,6 +329,42 @@ export const en: typeof zh = {
     ttsSpeedFast: 'Faster · 110%',
     ttsSpeedHint: 'Starter and Pro can adjust narration speed for the whole video.',
     ttsSpeedLockedHint: 'Free uses normal speed. Upgrade to Starter to adjust narration speed.',
+    videoStyleLabel: 'Video style',
+    videoStyleStarterLocked: 'Starter unlock',
+    videoStyleProLocked: 'Pro unlock',
+    videoStyleFreeHint: 'Free automatically matches the video style. Upgrade to Starter to choose selected styles.',
+    videoStyleStarterHint: 'Starter can choose common video styles. Pro unlocks the full catalog.',
+    videoStyleProHint: 'Pro can choose the full video style catalog.',
+    videoStyles: {
+      auto: {
+        label: 'Smart match',
+        description: 'Automatically matches style to product category, brand colors, and content.',
+      },
+      clean_saas: {
+        label: 'Clean SaaS',
+        description: 'Clear and restrained for SaaS, B2B, and tool products.',
+      },
+      bold_launch: {
+        label: 'Bold Launch',
+        description: 'High-contrast launch energy for new products and promos.',
+      },
+      warm_editorial: {
+        label: 'Warm Editorial',
+        description: 'Story-led warmth for commerce, services, and content products.',
+      },
+      technical_dark: {
+        label: 'Technical Dark',
+        description: 'Dark technical treatment for developer and technical products.',
+      },
+      premium_minimal: {
+        label: 'Premium Minimal',
+        description: 'Premium, sparse, restrained brand expression.',
+      },
+      creator_social: {
+        label: 'Creator Social',
+        description: 'Faster social pacing for creator-led products.',
+      },
+    },
     ttsVoices: {
       default: {
         label: 'Default narrator',

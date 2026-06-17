@@ -4,6 +4,12 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from '@/lib/i18n'
 import { getAllowedTtsVoices, getPlanCapabilities, TTS_SPEED_DEFAULT, TTS_VOICES, type TtsVoiceId } from '@/lib/plans'
+import {
+  getAllowedVideoStyles,
+  VIDEO_STYLE_DEFAULT,
+  VIDEO_STYLES,
+  type VideoStyleId,
+} from '@/lib/video-styles'
 import type { PlanType } from '@/types'
 
 /* ── 图标 ──────────────────────────────────────────────── */
@@ -56,6 +62,8 @@ export function CreateForm({ plan }: CreateFormProps) {
   const cf = t.createForm
   const allowedVoices = getAllowedTtsVoices(plan)
   const allowedVoiceIds = new Set(allowedVoices.map(voice => voice.id))
+  const allowedStyles = getAllowedVideoStyles(plan)
+  const allowedStyleIds = new Set(allowedStyles.map(style => style.id))
   const capabilities = getPlanCapabilities(plan)
 
   const [url, setUrl]           = useState('')
@@ -67,6 +75,7 @@ export function CreateForm({ plan }: CreateFormProps) {
   const [ctaUrl, setCtaUrl] = useState('')
   const [ttsVoiceId, setTtsVoiceId] = useState<TtsVoiceId>('default')
   const [ttsSpeed, setTtsSpeed] = useState(TTS_SPEED_DEFAULT)
+  const [videoStyleId, setVideoStyleId] = useState<VideoStyleId>(VIDEO_STYLE_DEFAULT)
   const [loading, setLoading]   = useState(false)
   const [success, setSuccess]   = useState(false)
   const [error, setError]       = useState<string | null>(null)
@@ -91,6 +100,7 @@ export function CreateForm({ plan }: CreateFormProps) {
           cta_url: ctaUrl || null,
           tts_voice_id: ttsVoiceId,
           tts_speed: ttsSpeed,
+          video_style: videoStyleId,
         }),
       })
       const data = await res.json()
@@ -105,6 +115,7 @@ export function CreateForm({ plan }: CreateFormProps) {
       setCtaUrl('')
       setTtsVoiceId('default')
       setTtsSpeed(TTS_SPEED_DEFAULT)
+      setVideoStyleId(VIDEO_STYLE_DEFAULT)
       // 2 秒后跳转到视频列表
       setTimeout(() => {
         setSuccess(false)
@@ -269,6 +280,32 @@ export function CreateForm({ plan }: CreateFormProps) {
               </select>
               <p className="text-xs leading-relaxed" style={{ color: '#64748B' }}>
                 {capabilities.ttsSpeedControl ? cf.ttsSpeedHint : cf.ttsSpeedLockedHint}
+              </p>
+            </label>
+            <label className="space-y-1.5 sm:col-span-2">
+              <span className="text-xs font-medium" style={{ color: '#64748B' }}>{cf.videoStyleLabel}</span>
+              <select
+                value={videoStyleId}
+                onChange={e => setVideoStyleId(e.target.value as VideoStyleId)}
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+                style={{
+                  background: '#F8FAFC',
+                  border: '1.5px solid #E2E8F0',
+                  color: '#0F172A',
+                }}
+              >
+                {VIDEO_STYLES.map(style => {
+                  const locked = !allowedStyleIds.has(style.id)
+                  const copy = cf.videoStyles[style.id]
+                  return (
+                    <option key={style.id} value={style.id} disabled={locked}>
+                      {copy.label}{locked ? ` · ${style.starter ? cf.videoStyleStarterLocked : cf.videoStyleProLocked}` : ''}
+                    </option>
+                  )
+                })}
+              </select>
+              <p className="text-xs leading-relaxed" style={{ color: '#64748B' }}>
+                {plan === 'free' ? cf.videoStyleFreeHint : plan === 'starter' ? cf.videoStyleStarterHint : cf.videoStyleProHint}
               </p>
             </label>
             <label className="space-y-1.5">

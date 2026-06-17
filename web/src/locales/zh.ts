@@ -335,6 +335,42 @@ export const zh = {
     ttsSpeedFast: '偏快 · 110%',
     ttsSpeedHint: 'Starter 和 Pro 可调整整条视频的旁白语速。',
     ttsSpeedLockedHint: 'Free 使用标准语速。升级 Starter 可调整旁白语速。',
+    videoStyleLabel: '视频风格',
+    videoStyleStarterLocked: 'Starter 解锁',
+    videoStyleProLocked: 'Pro 解锁',
+    videoStyleFreeHint: 'Free 自动匹配视频风格。升级 Starter 可手动选择部分风格。',
+    videoStyleStarterHint: 'Starter 可选择常用视频风格。Pro 解锁全部风格。',
+    videoStyleProHint: 'Pro 可选择全部视频风格。',
+    videoStyles: {
+      auto: {
+        label: '智能匹配',
+        description: '根据产品类别、品牌色和内容自动匹配风格。',
+      },
+      clean_saas: {
+        label: 'Clean SaaS',
+        description: '清晰克制，适合 SaaS、B2B 和工具产品。',
+      },
+      bold_launch: {
+        label: 'Bold Launch',
+        description: '高对比、强发布感，适合新品和推广活动。',
+      },
+      warm_editorial: {
+        label: 'Warm Editorial',
+        description: '更有叙事感，适合电商、服务和内容产品。',
+      },
+      technical_dark: {
+        label: 'Technical Dark',
+        description: '深色技术感，适合开发者和技术产品。',
+      },
+      premium_minimal: {
+        label: 'Premium Minimal',
+        description: '高级、留白、克制的品牌表达。',
+      },
+      creator_social: {
+        label: 'Creator Social',
+        description: '节奏更快，适合社媒传播和创作者产品。',
+      },
+    } as Record<string, { label: string; description: string }>,
     ttsVoices: {
       default: {
         label: '默认旁白',
