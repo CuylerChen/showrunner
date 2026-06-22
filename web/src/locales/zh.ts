@@ -70,12 +70,12 @@ export const zh = {
     ctaTitle: '开始生成你的第一条推广视频',
     ctaSub: '免费注册，1 条视频无需信用卡',
     ctaBtn: '立即免费开始',
-    footer: '© 2025 Showrunner · All rights reserved',
+    footer: '© 2026 costpilot · Showrunner · All rights reserved',
   },
   legal: {
     lastUpdatedLabel: '最后更新',
-    lastUpdated: '2026 年 6 月 17 日',
-    footer: '© 2026 Showrunner',
+    lastUpdated: '2026 年 6 月 23 日',
+    footer: '© 2026 costpilot · Showrunner',
     links: {
       terms: '使用条款',
       privacy: '隐私政策',
@@ -85,13 +85,14 @@ export const zh = {
       title: '使用条款',
       metaDescription: '适用于访问和使用 Showrunner 的条款。',
       intro: [
-        '本使用条款（“条款”）适用于你访问和使用 Showrunner 的网站、视频生成工具、托管分享页以及相关服务（统称为“服务”）。访问或使用服务即表示你同意受本条款约束。',
+        'Showrunner 是由 costpilot（“costpilot”、“我们”）运营的产品。本使用条款（“条款”）适用于你访问和使用 Showrunner 的网站、视频生成工具、托管分享页以及相关服务（统称为“服务”）。访问或使用服务即表示你同意受本条款约束。',
       ] as string[],
       sections: [
         {
-          title: '1. 服务使用',
+          title: '1. 服务提供方与服务内容',
           paragraphs: [
-            'Showrunner 帮助用户基于产品 URL、补充说明、AI 生成脚本、旁白和渲染场景生成产品推广视频。你只能在遵守适用法律和本条款的前提下使用服务。你需要对你的账号、凭据、输入内容以及账号下发生的活动负责。',
+            'costpilot 提供 Showrunner，这是一项 AI 驱动的产品推广视频生成服务，帮助用户基于产品 URL、补充说明、AI 生成脚本、旁白和渲染场景生成产品推广视频。主要交付内容可能包括产品页面分析、AI 生成分镜和脚本、旁白音频、渲染视频场景、托管分享页，以及相关账号和订阅功能。',
+            '你只能在遵守适用法律和本条款的前提下使用服务。你需要对你的账号、凭据、输入内容以及账号下发生的活动负责。',
           ],
         },
         {
@@ -109,7 +110,8 @@ export const zh = {
         {
           title: '4. 付款与订阅',
           paragraphs: [
-            '付费套餐按订阅方式预先计费。付款由 Paddle.com Market Ltd（“Paddle”）处理，Paddle 是 Showrunner 的 merchant of record，负责付款处理、开票、税费计算和退款。你可以随时取消订阅；付费功能通常会保留到当前计费周期结束。可退款的情形将依据 Paddle 条款和我们的退款政策处理。',
+            '付费套餐、当前价格、计费周期、额度和包含功能会在价格页面展示，并会在购买前的结账流程中再次展示。付费套餐按订阅方式预先计费。',
+            '付款由 Paddle.com Market Ltd（“Paddle”）处理，Paddle 是 Showrunner 和 costpilot 的 merchant of record，负责付款处理、开票、税费计算和退款。你可以随时取消订阅；付费功能通常会保留到当前计费周期结束。可退款的情形将依据 Paddle 条款和我们的退款政策处理。',
           ],
         },
         {
@@ -139,7 +141,7 @@ export const zh = {
         {
           title: '9. 联系我们',
           paragraphs: [
-            '如果你对本条款有任何问题，请通过 showrunner@cuylerchen.uk 联系我们。',
+            '如果你对本条款或 costpilot 有任何问题，请通过 showrunner@cuylerchen.uk 联系我们。',
           ],
         },
       ] as { title: string; paragraphs: string[]; items?: string[] }[],
@@ -148,7 +150,7 @@ export const zh = {
       title: '隐私政策',
       metaDescription: 'Showrunner 如何收集、使用和保护信息。',
       intro: [
-        '本隐私政策说明 Showrunner（“我们”）在你使用我们的网站、视频生成工具、托管分享页和相关服务（“服务”）时如何收集、使用、披露和保护信息。',
+        '本隐私政策说明运营 Showrunner 的 costpilot（“我们”）在你使用我们的网站、视频生成工具、托管分享页和相关服务（“服务”）时如何收集、使用、披露和保护信息。',
       ] as string[],
       sections: [
         {
@@ -184,7 +186,7 @@ export const zh = {
         {
           title: '4. 付款处理',
           paragraphs: [
-            '付款由 Paddle 处理。作为 merchant of record，Paddle 可能会收集账单详情、付款方式信息、税务信息和交易记录。我们会接收管理 Showrunner 账号所需的订阅状态、套餐、客户和交易信息。',
+            '付款由 Paddle 处理。作为 merchant of record，Paddle 可能会收集账单详情、付款方式信息、税务信息和交易记录。costpilot 会接收管理 Showrunner 账号所需的订阅状态、套餐、客户和交易信息。',
           ],
         },
         {
@@ -235,13 +237,13 @@ export const zh = {
       title: '退款政策',
       metaDescription: 'Showrunner 订阅的退款和取消政策。',
       intro: [
-        '本退款政策说明 Showrunner 付费订阅的退款处理方式。所有付款均由 Paddle.com Market Ltd（“Paddle”）处理，Paddle 是 Showrunner 的 merchant of record。',
+        '本退款政策说明由 costpilot 提供的 Showrunner 付费订阅的退款处理方式。所有付款均由 Paddle.com Market Ltd（“Paddle”）处理，Paddle 是 Showrunner 和 costpilot 的 merchant of record。',
       ] as string[],
       sections: [
         {
           title: '1. Merchant of Record',
           paragraphs: [
-            'Showrunner 订阅通过 Paddle 销售。Paddle 负责处理通过我们结账流程完成购买的付款处理、开票、税费计算和退款。你的购买和任何退款也受 Paddle Invoiced Consumer Terms 约束，地址为 https://www.paddle.com/legal/invoiced-consumer-terms。',
+            'Showrunner 订阅通过 Paddle 销售。Paddle 负责处理通过我们结账流程完成购买的付款处理、开票、税费计算和退款。你从 costpilot 购买的服务以及任何退款也受 Paddle Invoiced Consumer Terms 约束，地址为 https://www.paddle.com/legal/invoiced-consumer-terms。',
           ],
         },
         {

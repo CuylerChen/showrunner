@@ -63,12 +63,12 @@ export const en: typeof zh = {
     ctaTitle: 'Create your first promo video today',
     ctaSub: 'Free to start · 1 video · No credit card required',
     ctaBtn: 'Start for free now',
-    footer: '© 2025 Showrunner · All rights reserved',
+    footer: '© 2026 costpilot · Showrunner · All rights reserved',
   },
   legal: {
     lastUpdatedLabel: 'Last updated',
-    lastUpdated: 'June 17, 2026',
-    footer: '© 2026 Showrunner',
+    lastUpdated: 'June 23, 2026',
+    footer: '© 2026 costpilot · Showrunner',
     links: {
       terms: 'Terms',
       privacy: 'Privacy',
@@ -78,13 +78,14 @@ export const en: typeof zh = {
       title: 'Terms of Service',
       metaDescription: 'Terms that govern access to and use of Showrunner.',
       intro: [
-        'These Terms of Service ("Terms") govern your access to and use of Showrunner\'s website, video generation tools, hosted share pages, and related services (collectively, the "Services"). By accessing or using the Services, you agree to be bound by these Terms.',
+        'Showrunner is a product operated by costpilot ("costpilot", "we", "us", or "our"). These Terms of Service ("Terms") govern your access to and use of Showrunner\'s website, video generation tools, hosted share pages, and related services (collectively, the "Services"). By accessing or using the Services, you agree to be bound by these Terms.',
       ],
       sections: [
         {
-          title: '1. Use of the Services',
+          title: '1. Provider and Services',
           paragraphs: [
-            'Showrunner helps users generate product promotional videos from product URLs, written context, AI-generated scripts, narration, and rendered video scenes. You may use the Services only in compliance with applicable laws and these Terms. You are responsible for your account, credentials, input content, and activity under your account.',
+            'costpilot provides Showrunner, an AI-powered service that helps users generate product promotional videos from product URLs, written context, AI-generated scripts, narration, and rendered video scenes. Key deliverables may include product-page analysis, AI-generated storyboards and scripts, narration audio, rendered video scenes, hosted share pages, and related account and subscription features.',
+            'You may use the Services only in compliance with applicable laws and these Terms. You are responsible for your account, credentials, input content, and activity under your account.',
           ],
         },
         {
@@ -102,7 +103,8 @@ export const en: typeof zh = {
         {
           title: '4. Payment and Subscriptions',
           paragraphs: [
-            'Paid plans are billed in advance on a subscription basis. Payments are processed by Paddle.com Market Ltd ("Paddle"), which acts as the merchant of record for Showrunner and is responsible for payment processing, invoicing, tax calculation, and refunds. You may cancel a subscription at any time; access to paid features generally remains available until the end of the current billing period. Refunds, where available, are handled in accordance with Paddle\'s terms and our Refund Policy.',
+            'Paid plans, current prices, billing periods, quotas, and included features are shown on our pricing page and again at checkout before purchase. Paid plans are billed in advance on a subscription basis.',
+            'Payments are processed by Paddle.com Market Ltd ("Paddle"), which acts as the merchant of record for Showrunner and costpilot and is responsible for payment processing, invoicing, tax calculation, and refunds. You may cancel a subscription at any time; access to paid features generally remains available until the end of the current billing period. Refunds, where available, are handled in accordance with Paddle\'s terms and our Refund Policy.',
           ],
         },
         {
@@ -132,7 +134,7 @@ export const en: typeof zh = {
         {
           title: '9. Contact',
           paragraphs: [
-            'If you have any questions about these Terms, contact us at showrunner@cuylerchen.uk.',
+            'If you have any questions about these Terms or costpilot, contact us at showrunner@cuylerchen.uk.',
           ],
         },
       ],
@@ -141,7 +143,7 @@ export const en: typeof zh = {
       title: 'Privacy Policy',
       metaDescription: 'How Showrunner collects, uses, and protects information.',
       intro: [
-        'This Privacy Policy explains how Showrunner ("we", "us", or "our") collects, uses, discloses, and protects information when you use our website, video generation tools, hosted share pages, and related services (the "Services").',
+        'This Privacy Policy explains how costpilot, operating Showrunner ("we", "us", or "our"), collects, uses, discloses, and protects information when you use our website, video generation tools, hosted share pages, and related services (the "Services").',
       ],
       sections: [
         {
@@ -177,7 +179,7 @@ export const en: typeof zh = {
         {
           title: '4. Payment Processing',
           paragraphs: [
-            'Payments are processed by Paddle. Paddle may collect billing details, payment method information, tax information, and transaction records as the merchant of record. We receive subscription status, plan, customer, and transaction information needed to manage your Showrunner account.',
+            'Payments are processed by Paddle. Paddle may collect billing details, payment method information, tax information, and transaction records as the merchant of record. costpilot receives subscription status, plan, customer, and transaction information needed to manage your Showrunner account.',
           ],
         },
         {
@@ -228,13 +230,13 @@ export const en: typeof zh = {
       title: 'Refund Policy',
       metaDescription: 'Refund and cancellation policy for Showrunner subscriptions.',
       intro: [
-        'This Refund Policy explains how refunds for paid Showrunner subscriptions are handled. All payments are processed by Paddle.com Market Ltd ("Paddle"), which acts as the merchant of record for Showrunner.',
+        'This Refund Policy explains how refunds for paid Showrunner subscriptions provided by costpilot are handled. All payments are processed by Paddle.com Market Ltd ("Paddle"), which acts as the merchant of record for Showrunner and costpilot.',
       ],
       sections: [
         {
           title: '1. Merchant of Record',
           paragraphs: [
-            'Showrunner subscriptions are sold through Paddle. Paddle is responsible for payment processing, invoicing, tax calculation, and issuing refunds for purchases made through our checkout. Your purchase and any refund are also governed by Paddle\'s Invoiced Consumer Terms, available at https://www.paddle.com/legal/invoiced-consumer-terms.',
+            'Showrunner subscriptions are sold through Paddle. Paddle is responsible for payment processing, invoicing, tax calculation, and issuing refunds for purchases made through our checkout. Your purchase from costpilot and any refund are also governed by Paddle\'s Invoiced Consumer Terms, available at https://www.paddle.com/legal/invoiced-consumer-terms.',
           ],
         },
         {
