@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { headers } from 'next/headers'
-import { ShowrunnerLogo } from '@/components/logo'
-import { LangToggle } from '@/components/lang-toggle'
+import { MarketingNav } from '@/components/marketing-nav'
 import { getT } from '@/lib/i18n-server'
 
 function IconBolt() {
@@ -38,15 +37,6 @@ function IconArrow() {
     </svg>
   )
 }
-function IconCheck() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"
-      strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-      <path d="M13 4L6 11 3 8" />
-    </svg>
-  )
-}
-
 const FEATURE_ICONS = [IconBolt, IconVideo, IconLink]
 const FEATURE_COLORS = [
   { color: '#6366F1', bg: '#EEF2FF' },
@@ -65,34 +55,15 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-base)' }}>
 
-      {/* ── 顶部导航 ─────────────────────────────────────── */}
-      <header style={{ borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)' }}
-        className="sticky top-0 z-20">
-        <div className="max-w-6xl mx-auto flex items-center justify-between px-6 h-14">
-          <ShowrunnerLogo size={28} />
-          <nav className="flex items-center gap-2.5">
-            <LangToggle />
-            {loggedIn ? (
-              <Link href="/dashboard"
-                className="btn-brand rounded-lg px-4 py-2 text-sm inline-flex items-center gap-1.5">
-                {t.nav.goToDashboard}
-                <IconArrow />
-              </Link>
-            ) : (
-              <>
-                <Link href="/sign-in" className="btn-outline rounded-lg px-4 py-2 text-sm">
-                  {t.nav.signIn}
-                </Link>
-                <Link href="/sign-up"
-                  className="btn-brand rounded-lg px-4 py-2 text-sm inline-flex items-center gap-1.5">
-                  {t.nav.signUp}
-                  <IconArrow />
-                </Link>
-              </>
-            )}
-          </nav>
-        </div>
-      </header>
+      <MarketingNav
+        loggedIn={loggedIn}
+        labels={{
+          pricing: t.nav.pricing,
+          signIn: t.nav.signIn,
+          signUp: t.nav.signUp,
+          goToDashboard: t.nav.goToDashboard,
+        }}
+      />
 
       {/* ── Hero ─────────────────────────────────────────── */}
       <main className="flex-1">
@@ -209,81 +180,6 @@ export default async function HomePage() {
                   </div>
                 )
               })}
-            </div>
-          </div>
-        </section>
-
-        {/* ── 价格 ─────────────────────────────────────── */}
-        <section className="px-4 py-20" style={{ background: 'var(--bg-surface)', borderTop: '1px solid var(--border)' }}>
-          <div className="mx-auto max-w-5xl">
-            <div className="mx-auto mb-10 max-w-2xl text-center">
-              <h2 className="text-2xl font-bold sm:text-3xl" style={{ color: 'var(--text-primary)' }}>
-                {h.pricingTitle}
-              </h2>
-              <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                {h.pricingSub}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-              {h.pricingPlans.map((plan) => (
-                <div
-                  key={plan.name}
-                  className="glass-card relative flex min-h-[360px] flex-col rounded-xl p-6"
-                  style={plan.highlighted ? { borderColor: '#6366F1', boxShadow: '0 18px 50px rgba(99,102,241,0.14)' } : undefined}
-                >
-                  {plan.highlighted && (
-                    <div className="absolute right-5 top-5 rounded-full px-2.5 py-1 text-xs font-semibold"
-                      style={{ background: '#EEF2FF', color: '#4338CA', border: '1px solid #C7D2FE' }}>
-                      {h.pricingFeatured}
-                    </div>
-                  )}
-
-                  <div className="pr-24">
-                    <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
-                      {plan.name}
-                    </h3>
-                    <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                      {plan.description}
-                    </p>
-                  </div>
-
-                  <div className="mt-6">
-                    <div className="flex items-end gap-2">
-                      <span className="text-4xl font-bold tabular-nums" style={{ color: 'var(--text-primary)' }}>
-                        {plan.price}
-                      </span>
-                      <span className="pb-1 text-sm" style={{ color: 'var(--text-muted)' }}>
-                        {plan.period}
-                      </span>
-                    </div>
-                    <div className="mt-3 inline-flex rounded-lg px-3 py-1.5 text-xs font-semibold"
-                      style={{ background: plan.highlighted ? '#EEF2FF' : 'var(--bg-base)', color: plan.highlighted ? '#4338CA' : 'var(--text-secondary)', border: '1px solid var(--border)' }}>
-                      {plan.quota}
-                    </div>
-                  </div>
-
-                  <ul className="mt-6 space-y-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                    {plan.features.map((feature) => (
-                      <li key={feature} className="flex gap-2.5">
-                        <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
-                          style={{ background: '#EEF2FF', color: '#4338CA' }}>
-                          <IconCheck />
-                        </span>
-                        <span className="leading-relaxed">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <Link
-                    href={loggedIn ? '/dashboard' : '/sign-up'}
-                    className={`mt-auto inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold ${plan.highlighted ? 'btn-brand' : 'btn-outline'}`}
-                  >
-                    {loggedIn ? t.nav.goToDashboard : h.pricingCta}
-                    <IconArrow />
-                  </Link>
-                </div>
-              ))}
             </div>
           </div>
         </section>

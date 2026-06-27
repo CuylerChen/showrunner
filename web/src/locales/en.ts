@@ -6,6 +6,7 @@ export const en: typeof zh = {
   nav: {
     signIn: 'Sign in',
     signUp: 'Get started',
+    pricing: 'Pricing',
     goToDashboard: 'Go to dashboard',
     logout: 'Log out',
   },

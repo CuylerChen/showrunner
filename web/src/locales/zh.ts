@@ -5,6 +5,7 @@ export const zh = {
   nav: {
     signIn: '登录',
     signUp: '免费开始',
+    pricing: '定价',
     goToDashboard: '进入控制台',
     logout: '退出登录',
   },
