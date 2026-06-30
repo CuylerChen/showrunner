@@ -29,6 +29,8 @@ type PaddleWindow = Window & {
   }
 }
 
+type MessageKey = 'opening' | 'confirming' | 'scriptFailed'
+
 const COPY = {
   zh: {
     opening: '正在打开 Paddle 安全支付...',
@@ -65,40 +67,52 @@ export function PaddleCheckoutClient({
   processingUrl: string
   locale: 'zh' | 'en'
 }) {
-  const [ready, setReady] = useState(false)
-  const [message, setMessage] = useState(COPY[locale].opening)
+  const [messageKey, setMessageKey] = useState<MessageKey>('opening')
   const openedRef = useRef(false)
+  const fallbackTimerRef = useRef<number | null>(null)
+
+  const configMessage = !transactionId
+    ? COPY[locale].missing
+    : !clientToken
+      ? COPY[locale].configMissing
+      : null
+
+  const message = configMessage ?? COPY[locale][messageKey]
 
   useEffect(() => {
-    if (!transactionId) {
-      setMessage(COPY[locale].missing)
-      return
+    return () => {
+      if (fallbackTimerRef.current) {
+        window.clearTimeout(fallbackTimerRef.current)
+      }
     }
-    if (!clientToken) {
-      setMessage(COPY[locale].configMissing)
-      return
+  }, [])
+
+  function clearFallbackTimer() {
+    if (fallbackTimerRef.current) {
+      window.clearTimeout(fallbackTimerRef.current)
+      fallbackTimerRef.current = null
     }
-    if (!ready || openedRef.current) return
+  }
+
+  function returnTo(url: string) {
+    clearFallbackTimer()
+    window.location.replace(url)
+  }
+
+  function openCheckout() {
+    if (configMessage || openedRef.current) return
 
     const paddleWindow = window as PaddleWindow
     if (!paddleWindow.Paddle) {
-      setMessage(COPY[locale].scriptFailed)
+      setMessageKey('scriptFailed')
       return
     }
 
     openedRef.current = true
 
-    let fallbackTimer: number | null = window.setTimeout(() => {
+    fallbackTimerRef.current = window.setTimeout(() => {
       window.location.replace(processingUrl)
     }, 90000)
-
-    function returnTo(url: string) {
-      if (fallbackTimer) {
-        window.clearTimeout(fallbackTimer)
-        fallbackTimer = null
-      }
-      window.location.replace(url)
-    }
 
     try {
       if (environment === 'sandbox') {
@@ -114,7 +128,7 @@ export function PaddleCheckoutClient({
             return
           }
           if (name === 'checkout.payment.initiated' || name === 'checkout.payment.selected' || name === 'checkout.payment.created') {
-            setMessage(COPY[locale].confirming)
+            setMessageKey('confirming')
             return
           }
           if (name === 'checkout.closed' || name === 'checkout.close') {
@@ -131,27 +145,18 @@ export function PaddleCheckoutClient({
       })
     } catch {
       openedRef.current = false
-      setMessage(COPY[locale].scriptFailed)
-      if (fallbackTimer) {
-        window.clearTimeout(fallbackTimer)
-        fallbackTimer = null
-      }
+      setMessageKey('scriptFailed')
+      clearFallbackTimer()
     }
-
-    return () => {
-      if (fallbackTimer) {
-        window.clearTimeout(fallbackTimer)
-      }
-    }
-  }, [clientToken, environment, locale, processingUrl, ready, successUrl, transactionId])
+  }
 
   return (
     <>
       <Script
         src="https://cdn.paddle.com/paddle/v2/paddle.js"
         strategy="afterInteractive"
-        onReady={() => setReady(true)}
-        onError={() => setMessage(COPY[locale].scriptFailed)}
+        onReady={openCheckout}
+        onError={() => setMessageKey('scriptFailed')}
       />
       <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
         {message}

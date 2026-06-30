@@ -10,24 +10,47 @@ export const zh = {
     logout: '退出登录',
   },
   home: {
-    badge: 'AI 驱动的产品推广视频生成器',
-    headline1: '粘贴 URL，',
-    headline2: '秒生成推广视频',
-    sub: '输入产品网址和介绍资料，AI 分析卖点、生成文案、合成旁白，\n输出专业的可分享产品推广视频。',
-    ctaStart: '免费开始使用',
+    badge: 'AI 短视频脚本生成工具',
+    headline1: '输入产品 URL，',
+    headline2: '生成短视频脚本和分镜',
+    sub: '面向短视频创作者、YouTube 创作者和产品营销团队。Showrunner 根据产品链接和 brief 输出 Hook、逐场景脚本、旁白文案和可分享草稿。',
+    ctaStart: '免费生成样例',
     ctaSignIn: '已有账号登录',
-    ctaNote: '免费生成 1 条视频 · 无需信用卡',
+    ctaSecondary: '查看定价',
+    ctaNote: '免费生成 1 条脚本/视频草稿 · 无需信用卡',
     stats: [
-      { value: '< 5min', label: '平均生成时长' },
-      { value: '100%', label: 'AI 自动分镜' },
-      { value: '无限制', label: '分享链接永久有效' },
+      { value: 'URL + brief', label: '输入内容' },
+      { value: '脚本 + 分镜', label: '核心交付物' },
+      { value: '分享页', label: '可交付结果' },
     ] as { value: string; label: string }[],
-    featuresTitle: '自动化产品推广视频生成',
-    featuresSub: '三步生成专业产品介绍视频',
+    reviewChecklistTitle: '购买前就能看清楚',
+    reviewChecklist: [
+      { label: '用户', value: '短视频创作者、YouTube 创作者和产品营销团队' },
+      { label: '用途', value: '把产品链接和 brief 转成短视频脚本、分镜和旁白文案' },
+      { label: '交付物', value: '脚本、分镜、旁白文案、视频草稿和托管分享页' },
+      { label: '付费模式', value: 'Free 试用，Starter / Pro 月订阅，结账前展示套餐额度' },
+    ] as { label: string; value: string }[],
+    demoTitle: '样例输出',
+    demoSub: '先看清输入和输出格式，再决定是否继续生成完整草稿。',
+    exampleInputLabel: '输入',
+    exampleInput: [
+      '产品 URL：https://example.com/launch',
+      '目标受众：独立开发者和 SaaS 团队',
+      '关键卖点：30 秒说明产品价值并引导试用',
+    ] as string[],
+    exampleOutputLabel: '输出',
+    exampleOutput: [
+      { label: 'Hook', text: '3 秒开场：还在手动解释产品功能？用一条短视频讲清楚核心价值。' },
+      { label: '分镜 1', text: '展示首页截图，旁白介绍目标用户、痛点和使用场景。' },
+      { label: '分镜 2', text: '突出 3 个关键卖点，并给出清晰字幕和旁白节奏。' },
+      { label: 'CTA', text: '结尾生成可点击行动按钮和托管分享页，方便发送给客户或团队。' },
+    ] as { label: string; text: string }[],
+    featuresTitle: '一个明确的内容创作工具',
+    featuresSub: '从产品链接到可预览的脚本、分镜和草稿',
     features: [
-      { title: 'AI 智能分析', desc: 'OpenAI 兼容接口分析公开页面和介绍资料，提炼产品卖点' },
-      { title: '自动生成分镜', desc: '生成 Hook、功能亮点、价值主张和 CTA 场景' },
-      { title: '一键分享', desc: 'HyperFrames 合成专属视频，带章节导航的分享页' },
+      { title: '分析产品链接', desc: '读取公开产品页面和补充说明，提炼目标用户、痛点和卖点' },
+      { title: '生成脚本和分镜', desc: '输出 Hook、逐场景脚本、字幕节奏、旁白文案和 CTA' },
+      { title: '生成视频草稿和分享页', desc: '把脚本转成带章节导航的草稿视频，方便确认、分享和下载' },
     ] as { title: string; desc: string }[],
     pricingTitle: '价格简单，随生成规模升级',
     pricingSub: 'Free 适合验证流程；Starter 解锁音色、语速和常用风格；Pro 支持团队持续产出与分镜级控制。',
@@ -68,14 +91,17 @@ export const zh = {
       features: string[]
       highlighted?: boolean
     }[],
-    ctaTitle: '开始生成你的第一条推广视频',
-    ctaSub: '免费注册，1 条视频无需信用卡',
+    pricingReviewTitle: '公开定价，结账前确认',
+    pricingReviewSub: '套餐、价格、计费周期和额度在定价页公开展示，并会在 Creem 结账前再次确认。',
+    pricingReviewCta: '查看定价',
+    ctaTitle: '开始生成你的第一条短视频脚本',
+    ctaSub: '免费注册，1 条脚本/视频草稿无需信用卡',
     ctaBtn: '立即免费开始',
     footer: '© 2026 costpilot · Showrunner · All rights reserved',
   },
   legal: {
     lastUpdatedLabel: '最后更新',
-    lastUpdated: '2026 年 6 月 23 日',
+    lastUpdated: '2026 年 6 月 30 日',
     footer: '© 2026 costpilot · Showrunner',
     links: {
       terms: '使用条款',
@@ -92,7 +118,7 @@ export const zh = {
         {
           title: '1. 服务提供方与服务内容',
           paragraphs: [
-            'costpilot 提供 Showrunner，这是一项 AI 驱动的产品推广视频生成服务，帮助用户基于产品 URL、补充说明、AI 生成脚本、旁白和渲染场景生成产品推广视频。主要交付内容可能包括产品页面分析、AI 生成分镜和脚本、旁白音频、渲染视频场景、托管分享页，以及相关账号和订阅功能。',
+            'costpilot 提供 Showrunner，这是一项 AI 驱动的短视频脚本、分镜和视频草稿生成服务，帮助用户基于产品 URL、补充说明、AI 生成脚本、旁白和渲染场景生成产品营销素材。主要交付内容可能包括产品页面分析、AI 生成分镜和脚本、旁白音频、渲染视频场景、托管分享页，以及相关账号和订阅功能。',
             '你只能在遵守适用法律和本条款的前提下使用服务。你需要对你的账号、凭据、输入内容以及账号下发生的活动负责。',
           ],
         },
@@ -112,7 +138,8 @@ export const zh = {
           title: '4. 付款与订阅',
           paragraphs: [
             '付费套餐、当前价格、计费周期、额度和包含功能会在价格页面展示，并会在购买前的结账流程中再次展示。付费套餐按订阅方式预先计费。',
-            '付款由 Paddle.com Market Ltd（“Paddle”）处理，Paddle 是 Showrunner 和 costpilot 的 merchant of record，负责付款处理、开票、税费计算和退款。你可以随时取消订阅；付费功能通常会保留到当前计费周期结束。可退款的情形将依据 Paddle 条款和我们的退款政策处理。',
+            '付款由 Creem（“Creem”）处理。Creem 作为 merchant of record，负责通过结账流程完成付款处理、发票、适用销售税、VAT、GST 等税费计算与收取，以及退款和拒付处理。costpilot 负责提供 Showrunner 服务、账号访问、产品支持、客户沟通和本条款下的服务义务。',
+            '你可以随时取消订阅；付费功能通常会保留到当前计费周期结束，未来续订将停止。可退款的情形将依据 Creem 的 Buyer Terms、我们的退款政策和适用法律处理。',
           ],
         },
         {
@@ -162,7 +189,7 @@ export const zh = {
             '你提交的产品 URL、提示词、brief、受众说明、品牌语气、CTA 文案和其他内容。',
             '生成的脚本、分镜、音频、渲染视频、分享链接和相关元数据。',
             '使用信息，例如视频生成次数、套餐额度、功能使用、日志和时间戳。',
-            '通过 Paddle 处理的账单和订阅信息。',
+            '通过 Creem 处理的账单、税务、发票、交易、退款和订阅信息。',
             '技术信息，例如 IP 地址、浏览器类型、设备信息、Cookie 和会话数据。',
           ],
         },
@@ -181,13 +208,13 @@ export const zh = {
         {
           title: '3. 服务提供商与共享',
           paragraphs: [
-            '我们不会出售你的个人数据。我们可能与帮助我们运营服务的可信服务提供商共享信息，包括托管服务商、数据库服务商、AI 模型提供商、文本转语音或渲染服务、分析或日志工具，以及用于账单和订阅管理的 Paddle。这些提供商只能在向我们提供服务所需范围内使用信息。',
+            '我们不会出售你的个人数据。我们可能与帮助我们运营服务的可信服务提供商共享信息，包括托管服务商、数据库服务商、AI 模型提供商、文本转语音或渲染服务、分析或日志工具，以及用于结账、付款、税费、发票、退款、拒付和订阅管理的 Creem。这些提供商只能在向我们提供服务所需范围内使用信息。',
           ],
         },
         {
           title: '4. 付款处理',
           paragraphs: [
-            '付款由 Paddle 处理。作为 merchant of record，Paddle 可能会收集账单详情、付款方式信息、税务信息和交易记录。costpilot 会接收管理 Showrunner 账号所需的订阅状态、套餐、客户和交易信息。',
+            '付款由 Creem 处理。作为 merchant of record，Creem 可能会收集账单详情、付款方式信息、税务信息、发票信息、交易记录、退款状态、拒付状态以及用于安全与合规的技术信息。costpilot 会接收管理 Showrunner 账号所需的订阅状态、套餐、客户邮箱、交易 ID、发票或付款状态、退款和取消状态。',
           ],
         },
         {
@@ -238,55 +265,46 @@ export const zh = {
       title: '退款政策',
       metaDescription: 'Showrunner 订阅的退款和取消政策。',
       intro: [
-        '本退款政策说明由 costpilot 提供的 Showrunner 付费订阅的退款处理方式。所有付款均由 Paddle.com Market Ltd（“Paddle”）处理，Paddle 是 Showrunner 和 costpilot 的 merchant of record。',
+        '本退款政策说明由 costpilot 提供的 Showrunner 付费订阅的退款和取消处理方式。所有付款均由 Creem 处理，Creem 是通过 Showrunner 结账购买时的 merchant of record。',
       ] as string[],
       sections: [
         {
           title: '1. Merchant of Record',
           paragraphs: [
-            'Showrunner 订阅通过 Paddle 销售。Paddle 负责处理通过我们结账流程完成购买的付款处理、开票、税费计算和退款。你从 costpilot 购买的服务以及任何退款也受 Paddle Invoiced Consumer Terms 约束，地址为 https://www.paddle.com/legal/invoiced-consumer-terms。',
+            'Showrunner 订阅通过 Creem 结账销售。Creem 负责付款处理、发票、适用销售税、VAT、GST 等税费计算与收取、退款处理和拒付处理。你的付款记录或银行卡账单中可能显示 Creem 或 CREEM.IO。',
+            '你购买和退款也可能受 Creem Buyer Terms 约束，地址为 https://www.creem.io/terms。Showrunner 负责产品交付、账号访问和产品支持。',
           ],
         },
         {
-          title: '2. 14 天退款窗口',
+          title: '2. 退款资格',
           paragraphs: [
-            '消费者可以在交易完成后 14 天内取消购买并申请退款，但需遵守 Paddle 条款和适用法律。对于订阅，该 14 天期限通常从初次订阅扣款日期开始计算；如适用，也可能从续订周期的首次扣款日期开始计算。',
+            '如果你在购买后无法访问已购买的服务、被重复收费、错误购买了套餐，或认为服务与页面描述明显不符，可以申请退款。退款是否批准取决于你的订单状态、服务使用情况、适用消费者保护法律、Creem 条款以及我们的审核结果。',
+            'Showrunner 提供数字服务，包括 AI 生成脚本、分镜、旁白、渲染视频和托管分享页。如果数字服务已经被访问、生成、下载或消耗，退款资格可能会受到限制，但这不影响你在适用法律下享有的强制性消费者权利。',
           ],
         },
         {
-          title: '3. 14 天后的退款',
+          title: '3. 订阅取消',
           paragraphs: [
-            '14 天期限过后，退款不作保证。超出该窗口的退款请求将由 Paddle 根据 Paddle 政策、我们的条款和适用法律逐案处理。',
+            '订阅会自动续订，直到取消。你可以随时取消订阅。取消后，付费访问权限通常会保留到当前计费周期结束，未来续订将停止。取消订阅不会自动产生对已扣款项的退款，除非 Creem 条款、我们的退款政策或适用法律要求退款。',
           ],
         },
         {
-          title: '4. 订阅与取消',
-          paragraphs: [
-            '订阅会自动续订，直到取消。你可以随时取消订阅。取消后，付费访问权限通常会保留到当前计费周期结束，未来续订将停止。除 Paddle 条款或适用法律要求外，取消订阅不会自动产生对已扣款项的退款。',
-          ],
-        },
-        {
-          title: '5. 数字服务使用',
-          paragraphs: [
-            'Showrunner 提供数字服务，包括 AI 生成脚本、旁白、渲染视频和托管分享页。如果数字服务已经被访问、生成、下载或消耗，退款资格可能会受到限制，具体以 Paddle 条款和适用消费者保护法律为准。',
-          ],
-        },
-        {
-          title: '6. 如何申请退款',
+          title: '4. 如何申请退款',
           paragraphs: ['如果你认为自己符合退款条件，可以：'],
           items: [
-            '使用 Paddle 购买确认邮件中的链接管理订单，并直接向 Paddle 提交退款请求；或',
-            '将订单详情发送至 showrunner@cuylerchen.uk，我们会协助你转交或处理请求。',
+            '将订单邮箱、Creem 订单 ID、购买日期和退款原因发送至 showrunner@cuylerchen.uk；',
+            '使用 Creem 收据、订单页面或客户门户中的管理入口提交或跟进订单请求；',
+            '如果你已经联系 Showrunner 但 7 天内没有收到回复，可以联系 Creem 支持 support@creem.io，并附上订单信息和你与我们的沟通记录。',
           ],
         },
         {
-          title: '7. 你的法定权利',
+          title: '5. 你的法定权利',
           paragraphs: [
             '本退款政策不限制你在适用消费者保护法律下享有的任何权利，包括与产品或服务不符合描述、存在缺陷或不适合特定用途相关的权利。',
           ],
         },
         {
-          title: '8. 政策变更',
+          title: '6. 政策变更',
           paragraphs: [
             '我们可能会不时更新本退款政策。如发生重大变更，我们会通过更新上述日期或其他合理方式通知你。',
           ],

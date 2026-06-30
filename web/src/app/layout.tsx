@@ -4,8 +4,8 @@ import { I18nProvider, type Locale } from '@/lib/i18n'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Showrunner — Promo Video Generator',
-  description: '自动生成可分享的产品推广视频，粘贴 URL 即可开始',
+  title: 'Showrunner — AI Short Video Script Generator',
+  description: 'Generate a short video script, storyboard, and shareable draft with narration copy from a product URL.',
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

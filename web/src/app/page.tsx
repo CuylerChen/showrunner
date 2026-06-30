@@ -69,64 +69,72 @@ export default async function HomePage() {
       <main className="flex-1">
 
         {/* Hero 区域 */}
-        <section className="relative overflow-hidden py-24 text-center px-4"
+        <section className="relative overflow-hidden px-4 py-16 sm:py-20"
           style={{ background: 'var(--bg-base)' }}>
-          {/* 背景网格 */}
           <div className="absolute inset-0 bg-grid pointer-events-none" />
-          {/* 顶部光晕 */}
-          <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px]"
-            style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.06) 0%, transparent 70%)' }} />
 
-          <div className="relative max-w-3xl mx-auto">
-            {/* 标签 */}
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium"
-              style={{ background: '#EEF2FF', border: '1px solid #C7D2FE', color: '#4338CA' }}>
-              <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse-dot" />
-              {h.badge}
-            </div>
+          <div className="relative mx-auto grid max-w-6xl gap-8 lg:grid-cols-[1.08fr_0.92fr] lg:items-center">
+            <div>
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium"
+                style={{ background: '#EEF2FF', border: '1px solid #C7D2FE', color: '#4338CA' }}>
+                <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse-dot" />
+                {h.badge}
+              </div>
 
-            {/* 主标题 */}
-            <h1 className="text-5xl font-bold leading-[1.1] sm:text-6xl lg:text-[4.25rem]"
-              style={{ color: 'var(--text-primary)' }}>
-              {h.headline1}
-              <br />
-              <span className="animate-shimmer">{h.headline2}</span>
-            </h1>
+              <h1 className="max-w-3xl text-4xl font-bold leading-[1.1] sm:text-5xl lg:text-6xl"
+                style={{ color: 'var(--text-primary)' }}>
+                {h.headline1}
+                <br />
+                <span className="animate-shimmer">{h.headline2}</span>
+              </h1>
 
-            {/* 副标题 */}
-            <p className="mt-5 text-base sm:text-lg leading-relaxed max-w-xl mx-auto"
-              style={{ color: 'var(--text-secondary)' }}>
-              {h.sub.split('\n').map((line, i) => (
-                <span key={i}>{line}{i === 0 && <br className="hidden sm:block" />}</span>
-              ))}
-            </p>
+              <p className="mt-5 max-w-2xl text-base leading-relaxed sm:text-lg"
+                style={{ color: 'var(--text-secondary)' }}>
+                {h.sub}
+              </p>
 
-            {/* CTA */}
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-              {loggedIn ? (
-                <Link href="/dashboard"
-                  className="btn-brand rounded-xl px-8 py-3.5 text-sm font-semibold inline-flex items-center gap-2">
-                  {t.nav.goToDashboard}
-                  <IconArrow />
-                </Link>
-              ) : (
-                <>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                {loggedIn ? (
+                  <Link href="/dashboard"
+                    className="btn-brand inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3.5 text-sm font-semibold">
+                    {t.nav.goToDashboard}
+                    <IconArrow />
+                  </Link>
+                ) : (
                   <Link href="/sign-up"
-                    className="btn-brand rounded-xl px-8 py-3.5 text-sm font-semibold inline-flex items-center gap-2">
+                    className="btn-brand inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3.5 text-sm font-semibold">
                     {h.ctaStart}
                     <IconArrow />
                   </Link>
-                  <Link href="/sign-in" className="btn-outline rounded-xl px-8 py-3.5 text-sm font-medium">
-                    {h.ctaSignIn}
-                  </Link>
-                </>
+                )}
+                <Link href="/pricing" className="btn-outline inline-flex items-center justify-center rounded-lg px-6 py-3.5 text-sm font-medium">
+                  {h.ctaSecondary}
+                </Link>
+              </div>
+              {!loggedIn && (
+                <p className="mt-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+                  {h.ctaNote}
+                </p>
               )}
             </div>
-            {!loggedIn && (
-              <p className="mt-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-                {h.ctaNote}
-              </p>
-            )}
+
+            <div className="glass-card rounded-lg p-5">
+              <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                {h.reviewChecklistTitle}
+              </h2>
+              <dl className="mt-4 space-y-4">
+                {h.reviewChecklist.map((item) => (
+                  <div key={item.label} className="grid gap-1 sm:grid-cols-[96px_1fr] sm:gap-3">
+                    <dt className="text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>
+                      {item.label}
+                    </dt>
+                    <dd className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                      {item.value}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
           </div>
         </section>
 
@@ -143,6 +151,55 @@ export default async function HomePage() {
                 </div>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* ── 样例输出 ─────────────────────────────────── */}
+        <section className="py-18 px-4" style={{ background: 'var(--bg-base)' }}>
+          <div className="mx-auto max-w-6xl">
+            <div className="mb-8 max-w-2xl">
+              <h2 className="text-2xl font-bold sm:text-3xl" style={{ color: 'var(--text-primary)' }}>
+                {h.demoTitle}
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                {h.demoSub}
+              </p>
+            </div>
+
+            <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
+              <div className="glass-card rounded-lg p-5">
+                <div className="text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>
+                  {h.exampleInputLabel}
+                </div>
+                <ul className="mt-4 space-y-3">
+                  {h.exampleInput.map((line) => (
+                    <li key={line} className="rounded-lg px-3 py-2 text-sm leading-relaxed"
+                      style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)' }}>
+                      {line}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="glass-card rounded-lg p-5">
+                <div className="text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>
+                  {h.exampleOutputLabel}
+                </div>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {h.exampleOutput.map((item) => (
+                    <div key={item.label} className="rounded-lg border p-4"
+                      style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
+                      <div className="text-xs font-semibold" style={{ color: '#4338CA' }}>
+                        {item.label}
+                      </div>
+                      <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                        {item.text}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -163,8 +220,8 @@ export default async function HomePage() {
                 const Icon = FEATURE_ICONS[i]
                 const { color, bg } = FEATURE_COLORS[i]
                 return (
-                  <div key={title} className="glass-card rounded-2xl p-6">
-                    <div className="mb-4 inline-flex items-center justify-center w-10 h-10 rounded-xl"
+                  <div key={title} className="glass-card rounded-lg p-6">
+                    <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg"
                       style={{ background: bg, color }}>
                       <Icon />
                     </div>
@@ -184,6 +241,24 @@ export default async function HomePage() {
           </div>
         </section>
 
+        {/* ── 定价提示 ─────────────────────────────────── */}
+        <section className="px-4 py-14"
+          style={{ background: 'var(--bg-surface)', borderTop: '1px solid var(--border)' }}>
+          <div className="mx-auto flex max-w-5xl flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="max-w-2xl">
+              <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                {h.pricingReviewTitle}
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                {h.pricingReviewSub}
+              </p>
+            </div>
+            <Link href="/pricing" className="btn-outline inline-flex min-h-11 items-center justify-center rounded-lg px-5 text-sm font-semibold">
+              {h.pricingReviewCta}
+            </Link>
+          </div>
+        </section>
+
         {/* ── 底部 CTA ─────────────────────────────────── */}
         <section className="py-16 px-4 text-center"
           style={{ background: 'var(--bg-surface)', borderTop: '1px solid var(--border)' }}>
@@ -195,13 +270,13 @@ export default async function HomePage() {
           </p>
           {loggedIn ? (
             <Link href="/dashboard"
-              className="btn-brand inline-flex items-center gap-2 rounded-xl px-8 py-3.5 text-sm font-semibold">
+              className="btn-brand inline-flex items-center gap-2 rounded-lg px-8 py-3.5 text-sm font-semibold">
               {t.nav.goToDashboard}
               <IconArrow />
             </Link>
           ) : (
             <Link href="/sign-up"
-              className="btn-brand inline-flex items-center gap-2 rounded-xl px-8 py-3.5 text-sm font-semibold">
+              className="btn-brand inline-flex items-center gap-2 rounded-lg px-8 py-3.5 text-sm font-semibold">
               {h.ctaBtn}
               <IconArrow />
             </Link>

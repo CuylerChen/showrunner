@@ -11,24 +11,47 @@ export const en: typeof zh = {
     logout: 'Log out',
   },
   home: {
-    badge: 'AI-powered product promo video generator',
-    headline1: 'Paste a URL,',
-    headline2: 'generate a promo video instantly',
-    sub: 'Enter your product URL and notes. AI analyzes the value proposition, writes the script,\nadds narration, and renders a shareable product promo video.',
-    ctaStart: 'Start for free',
+    badge: 'AI short video script generator',
+    headline1: 'Enter a product URL,',
+    headline2: 'generate a short video script and storyboard',
+    sub: 'For short-form creators, YouTube creators, and product marketing teams. Showrunner turns a product link and brief into a hook, scene-by-scene script, narration copy, and shareable draft.',
+    ctaStart: 'Generate a free sample',
     ctaSignIn: 'Already have an account',
-    ctaNote: 'Generate 1 video free · No credit card required',
+    ctaSecondary: 'View pricing',
+    ctaNote: 'Generate 1 script/video draft free · No credit card required',
     stats: [
-      { value: '< 5min', label: 'Avg. generation time' },
-      { value: '100%', label: 'AI storyboarded' },
-      { value: 'Unlimited', label: 'Share links forever' },
+      { value: 'URL + brief', label: 'User input' },
+      { value: 'Script + storyboard', label: 'Core deliverable' },
+      { value: 'Share page', label: 'Share-ready output' },
     ],
-    featuresTitle: 'Automated product promo video generation',
-    featuresSub: 'Three steps to a professional product introduction video',
+    reviewChecklistTitle: 'Clear before you buy',
+    reviewChecklist: [
+      { label: 'Users', value: 'Short-form creators, YouTube creators, and product marketing teams' },
+      { label: 'Use case', value: 'Turn a product link and brief into a short video script, storyboard, and narration copy' },
+      { label: 'Deliverables', value: 'Script, storyboard, narration copy, video draft, and hosted share page' },
+      { label: 'Paid model', value: 'Free trial, Starter / Pro monthly subscriptions, plan quotas shown before checkout' },
+    ],
+    demoTitle: 'Example output',
+    demoSub: 'See the input and output format before you decide to generate a full draft.',
+    exampleInputLabel: 'Input',
+    exampleInput: [
+      'Product URL: https://example.com/launch',
+      'Audience: indie developers and SaaS teams',
+      'Goal: explain product value in 30 seconds and invite trials',
+    ],
+    exampleOutputLabel: 'Output',
+    exampleOutput: [
+      { label: 'Hook', text: '3-second opener: Still explaining your product manually? Use one short video to make the core value clear.' },
+      { label: 'Scene 1', text: 'Show the homepage screenshot while narration introduces the audience, pain point, and use case.' },
+      { label: 'Scene 2', text: 'Highlight three key benefits with concise captions and narration pacing.' },
+      { label: 'CTA', text: 'End with a clickable call-to-action and hosted share page for customers or teammates.' },
+    ],
+    featuresTitle: 'A specific content creation tool',
+    featuresSub: 'From product link to preview-ready script, storyboard, and draft',
     features: [
-      { title: 'AI Analysis', desc: 'An OpenAI-compatible model analyzes public pages and product notes to extract the key value proposition' },
-      { title: 'Auto Storyboard', desc: 'Generate hook, feature, benefit, proof, and call-to-action scenes automatically' },
-      { title: 'One-click Share', desc: 'HyperFrames renders a branded video with a share page and chapter navigation' },
+      { title: 'Analyze the product link', desc: 'Read public product pages and notes to extract the target user, pain point, and key benefits' },
+      { title: 'Generate script and storyboard', desc: 'Output a hook, scene-by-scene script, caption rhythm, narration copy, and CTA' },
+      { title: 'Create a draft and share page', desc: 'Turn the script into a chaptered video draft for review, sharing, and download' },
     ],
     pricingTitle: 'Simple pricing that scales with output',
     pricingSub: 'Free validates the workflow; Starter unlocks voices, speed, and common styles; Pro adds team-scale output and scene-level control.',
@@ -61,14 +84,17 @@ export const en: typeof zh = {
         features: ['Unlimited video generation', 'Full video style catalog', 'Full voice catalog and scene-level character voices', 'Scene custom audio uploads and priority generation'],
       },
     ],
-    ctaTitle: 'Create your first promo video today',
-    ctaSub: 'Free to start · 1 video · No credit card required',
+    pricingReviewTitle: 'Public pricing, confirmed before checkout',
+    pricingReviewSub: 'Plans, prices, billing periods, and quotas are published on the pricing page and shown again before Creem checkout.',
+    pricingReviewCta: 'View pricing',
+    ctaTitle: 'Create your first short video script',
+    ctaSub: 'Free to start · 1 script/video draft · No credit card required',
     ctaBtn: 'Start for free now',
     footer: '© 2026 costpilot · Showrunner · All rights reserved',
   },
   legal: {
     lastUpdatedLabel: 'Last updated',
-    lastUpdated: 'June 23, 2026',
+    lastUpdated: 'June 30, 2026',
     footer: '© 2026 costpilot · Showrunner',
     links: {
       terms: 'Terms',
@@ -85,7 +111,7 @@ export const en: typeof zh = {
         {
           title: '1. Provider and Services',
           paragraphs: [
-            'costpilot provides Showrunner, an AI-powered service that helps users generate product promotional videos from product URLs, written context, AI-generated scripts, narration, and rendered video scenes. Key deliverables may include product-page analysis, AI-generated storyboards and scripts, narration audio, rendered video scenes, hosted share pages, and related account and subscription features.',
+            'costpilot provides Showrunner, an AI-powered short video script, storyboard, and video draft generation service that helps users create product marketing assets from product URLs, written context, AI-generated scripts, narration, and rendered video scenes. Key deliverables may include product-page analysis, AI-generated storyboards and scripts, narration audio, rendered video scenes, hosted share pages, and related account and subscription features.',
             'You may use the Services only in compliance with applicable laws and these Terms. You are responsible for your account, credentials, input content, and activity under your account.',
           ],
         },
@@ -105,7 +131,8 @@ export const en: typeof zh = {
           title: '4. Payment and Subscriptions',
           paragraphs: [
             'Paid plans, current prices, billing periods, quotas, and included features are shown on our pricing page and again at checkout before purchase. Paid plans are billed in advance on a subscription basis.',
-            'Payments are processed by Paddle.com Market Ltd ("Paddle"), which acts as the merchant of record for Showrunner and costpilot and is responsible for payment processing, invoicing, tax calculation, and refunds. You may cancel a subscription at any time; access to paid features generally remains available until the end of the current billing period. Refunds, where available, are handled in accordance with Paddle\'s terms and our Refund Policy.',
+            'Payments are processed by Creem ("Creem"). Creem acts as the merchant of record and is responsible for checkout payment processing, invoices, applicable sales tax, VAT, GST, tax calculation and collection, refunds, and chargebacks. costpilot remains responsible for providing the Showrunner service, account access, product support, customer communications, and the service obligations described in these Terms.',
+            'You may cancel a subscription at any time; access to paid features generally remains available until the end of the current billing period, and future renewals stop. Refunds, where available, are handled in accordance with Creem Buyer Terms, our Refund Policy, and applicable law.',
           ],
         },
         {
@@ -155,7 +182,7 @@ export const en: typeof zh = {
             'Product URLs, prompts, briefs, audience notes, brand tone, CTA text, and other content you submit.',
             'Generated scripts, storyboards, audio, rendered videos, share links, and related metadata.',
             'Usage information, such as video generation counts, plan limits, feature usage, logs, and timestamps.',
-            'Billing and subscription information processed through Paddle.',
+            'Billing, tax, invoice, transaction, refund, and subscription information processed through Creem.',
             'Technical information, such as IP address, browser type, device information, cookies, and session data.',
           ],
         },
@@ -174,13 +201,13 @@ export const en: typeof zh = {
         {
           title: '3. Service Providers and Sharing',
           paragraphs: [
-            'We do not sell your personal data. We may share information with trusted service providers that help us operate the Services, including hosting providers, database providers, AI model providers, text-to-speech or rendering services, analytics or logging tools, and Paddle for billing and subscription management. These providers are authorized to use information only as needed to provide services to us.',
+            'We do not sell your personal data. We may share information with trusted service providers that help us operate the Services, including hosting providers, database providers, AI model providers, text-to-speech or rendering services, analytics or logging tools, and Creem for checkout, payments, taxes, invoices, refunds, chargebacks, and subscription management. These providers are authorized to use information only as needed to provide services to us.',
           ],
         },
         {
           title: '4. Payment Processing',
           paragraphs: [
-            'Payments are processed by Paddle. Paddle may collect billing details, payment method information, tax information, and transaction records as the merchant of record. costpilot receives subscription status, plan, customer, and transaction information needed to manage your Showrunner account.',
+            'Payments are processed by Creem. As merchant of record, Creem may collect billing details, payment method information, tax information, invoice information, transaction records, refund status, chargeback status, and technical information used for risk and compliance. costpilot receives subscription status, plan, customer email, transaction IDs, invoice or payment status, refund status, and cancellation status needed to manage your Showrunner account.',
           ],
         },
         {
@@ -231,55 +258,46 @@ export const en: typeof zh = {
       title: 'Refund Policy',
       metaDescription: 'Refund and cancellation policy for Showrunner subscriptions.',
       intro: [
-        'This Refund Policy explains how refunds for paid Showrunner subscriptions provided by costpilot are handled. All payments are processed by Paddle.com Market Ltd ("Paddle"), which acts as the merchant of record for Showrunner and costpilot.',
+        'This Refund Policy explains how refunds and cancellations for paid Showrunner subscriptions provided by costpilot are handled. All payments are processed by Creem, which acts as the merchant of record for purchases made through Showrunner checkout.',
       ],
       sections: [
         {
           title: '1. Merchant of Record',
           paragraphs: [
-            'Showrunner subscriptions are sold through Paddle. Paddle is responsible for payment processing, invoicing, tax calculation, and issuing refunds for purchases made through our checkout. Your purchase from costpilot and any refund are also governed by Paddle\'s Invoiced Consumer Terms, available at https://www.paddle.com/legal/invoiced-consumer-terms.',
+            'Showrunner subscriptions are sold through Creem checkout. Creem is responsible for payment processing, invoices, applicable sales tax, VAT, GST, tax calculation and collection, refund processing, and chargeback handling. Your payment record or card statement may show Creem or CREEM.IO.',
+            'Your purchase and any refund may also be governed by Creem Buyer Terms, available at https://www.creem.io/terms. Showrunner is responsible for product delivery, account access, and product support.',
           ],
         },
         {
-          title: '2. 14-day Refund Window',
+          title: '2. Refund Eligibility',
           paragraphs: [
-            'Consumers may cancel a purchase and request a refund within 14 days of completing the transaction, subject to Paddle\'s terms and applicable law. For subscriptions, this 14-day period generally runs from the date of the initial subscription charge or, where applicable, the first charge of a renewed term.',
+            'You may request a refund if you cannot access the purchased service, were charged more than once, purchased the wrong plan by mistake, or believe the service is materially different from the page description. Refund approval depends on your order status, service usage, applicable consumer protection law, Creem terms, and our review of the request.',
+            'Showrunner provides digital services, including AI-generated scripts, storyboards, narration, rendered videos, and hosted share pages. Refund eligibility may be limited where digital services have already been accessed, generated, downloaded, or consumed, without limiting mandatory consumer rights under applicable law.',
           ],
         },
         {
-          title: '3. Refunds After 14 Days',
+          title: '3. Subscription Cancellations',
           paragraphs: [
-            'After the 14-day period has passed, refunds are not guaranteed. Refund requests outside this window are handled by Paddle on a case-by-case basis in accordance with Paddle\'s policies, our terms, and applicable law.',
+            'Subscriptions renew automatically until cancelled. You may cancel your subscription at any time. When you cancel, your paid access generally remains active until the end of the current billing period, and future renewals stop. Cancellation does not automatically create a refund for amounts already charged except as required by Creem terms, our Refund Policy, or applicable law.',
           ],
         },
         {
-          title: '4. Subscriptions and Cancellations',
-          paragraphs: [
-            'Subscriptions renew automatically until cancelled. You may cancel your subscription at any time. When you cancel, your paid access generally remains active until the end of the current billing period, and future renewals stop. Cancellation does not automatically create a refund for amounts already charged except as required by Paddle\'s terms or applicable law.',
-          ],
-        },
-        {
-          title: '5. Usage of Digital Services',
-          paragraphs: [
-            'Showrunner provides digital services, including AI-generated scripts, narration, rendered videos, and hosted share pages. Refund eligibility may be limited where digital services have already been accessed, generated, downloaded, or consumed, as described in Paddle\'s terms and applicable consumer protection laws.',
-          ],
-        },
-        {
-          title: '6. How to Request a Refund',
+          title: '4. How to Request a Refund',
           paragraphs: ['If you believe you are eligible for a refund, you can:'],
           items: [
-            'use the link in your Paddle purchase confirmation email to manage your order and submit a refund request directly to Paddle; or',
-            'contact us at showrunner@cuylerchen.uk with your order details so we can help route your request.',
+            'email showrunner@cuylerchen.uk with your order email, Creem order ID, purchase date, and reason for the refund request;',
+            'use the management link in your Creem receipt, order page, or customer portal to submit or follow up on an order request; or',
+            'contact Creem support at support@creem.io with your order information and communication history if you contacted Showrunner and did not receive a response within 7 days.',
           ],
         },
         {
-          title: '7. Your Legal Rights',
+          title: '5. Your Legal Rights',
           paragraphs: [
             'Nothing in this Refund Policy limits rights you may have under applicable consumer protection law, including rights related to products or services that are not as described, faulty, or not fit for purpose.',
           ],
         },
         {
-          title: '8. Changes to This Policy',
+          title: '6. Changes to This Policy',
           paragraphs: [
             'We may update this Refund Policy from time to time. If we make material changes, we will notify you by updating the date above or by other reasonable means.',
           ],
