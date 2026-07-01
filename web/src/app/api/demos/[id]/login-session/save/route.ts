@@ -3,6 +3,11 @@ import { headers } from 'next/headers'
 import { db, schema } from '@/lib/db'
 import { and, eq } from 'drizzle-orm'
 import { parseQueue } from '@/lib/queue'
+import {
+  assertPromptAllowedByCreem,
+  composeDemoModerationPrompt,
+  handleContentModerationError,
+} from '@/lib/moderation/creem'
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const h = await headers()
@@ -40,6 +45,23 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   if (!demo) {
     return Response.json({ success: false, error: 'Demo not found' }, { status: 404 })
+  }
+
+  try {
+    await assertPromptAllowedByCreem(
+      composeDemoModerationPrompt({
+        product_url: demo.product_url ?? '',
+        description: demo.description,
+        audience: demo.audience,
+        key_points: demo.key_points,
+        brand_tone: demo.brand_tone,
+        cta_text: demo.cta_text,
+        cta_url: demo.cta_url,
+      }),
+      { externalId: `user_${userId}:demo_${id}:reparse` },
+    )
+  } catch (moderationError) {
+    return handleContentModerationError(moderationError)
   }
 
   try {

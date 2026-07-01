@@ -6,6 +6,11 @@ import { eq, and } from 'drizzle-orm'
 import { getCurrentUser, getSubscription } from '@/lib/auth'
 import { ok, err } from '@/lib/api'
 import { canUsePerSceneVoice, isTtsVoiceId } from '@/lib/plans'
+import {
+  assertPromptAllowedByCreem,
+  composeStepsModerationPrompt,
+  handleContentModerationError,
+} from '@/lib/moderation/creem'
 
 type Params = { params: Promise<{ id: string }> }
 type StepVisualType = 'screenshot' | 'template' | 'cta'
@@ -74,6 +79,15 @@ export async function PUT(req: NextRequest, { params }: Params) {
   const existingStepIds = new Set(existingSteps.map(step => step.id))
   for (const step of parsed.data.steps) {
     if (!existingStepIds.has(step.id)) return err('NOT_FOUND', '分镜不存在或无权访问')
+  }
+
+  try {
+    await assertPromptAllowedByCreem(
+      composeStepsModerationPrompt(parsed.data.steps),
+      { externalId: `user_${user.id}:demo_${id}:steps_update` },
+    )
+  } catch (moderationError) {
+    return handleContentModerationError(moderationError)
   }
 
   const submittedStepIds = new Set(parsed.data.steps.map(step => step.id))

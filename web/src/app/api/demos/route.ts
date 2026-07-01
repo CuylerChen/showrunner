@@ -9,6 +9,11 @@ import { assertSafePublicUrl } from '@/lib/security/safe-url'
 import { canUseTtsSpeed, canUseVideoVoice, getTtsQueuePriority, isTtsVoiceId, normalizeTtsSpeed, TTS_SPEED_DEFAULT } from '@/lib/plans'
 import { canUseVideoStyle, normalizeVideoStyleId } from '@/lib/video-styles'
 import { normalizeNarrationLanguageId } from '@/lib/narration-languages'
+import {
+  assertPromptAllowedByCreem,
+  composeDemoModerationPrompt,
+  handleContentModerationError,
+} from '@/lib/moderation/creem'
 
 type UpdateResult = { affectedRows?: number }
 
@@ -115,6 +120,26 @@ export async function POST(req: NextRequest) {
   }
   const normalizedProductUrl = safeProductUrl.toString()
 
+  // Screen prompt-like inputs before reserving quota or enqueueing generation.
+  const demoId      = crypto.randomUUID()
+  const share_token = crypto.randomUUID()
+  try {
+    await assertPromptAllowedByCreem(
+      composeDemoModerationPrompt({
+        product_url: normalizedProductUrl,
+        description,
+        audience,
+        key_points,
+        brand_tone,
+        cta_text,
+        cta_url: normalizedCtaUrl,
+      }),
+      { externalId: `user_${userId}:demo_${demoId}:create` },
+    )
+  } catch (moderationError) {
+    return handleContentModerationError(moderationError)
+  }
+
   const reserved = await db
     .update(schema.subscriptions)
     .set({
@@ -132,10 +157,6 @@ export async function POST(req: NextRequest) {
   if (reservedRows === 0) {
     return err('QUOTA_EXCEEDED', '本月生成额度已用完。请在 Dashboard 选择 Starter 或 Pro 升级后继续生成。')
   }
-
-  // 创建 Demo 记录
-  const demoId      = crypto.randomUUID()
-  const share_token = crypto.randomUUID()
 
   async function releaseQuota() {
     await db

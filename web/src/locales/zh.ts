@@ -132,6 +132,7 @@ export const zh = {
           title: '3. AI 生成输出',
           paragraphs: [
             '服务可能使用 AI 系统分析网站、撰写脚本、创建分镜、生成旁白并渲染视频。AI 输出可能不准确或不完整。你有责任在发布或依赖生成视频前进行审核和确认。',
+            'AI 提供方披露：Showrunner 使用 costpilot 配置的 OpenAI-compatible Chat Completions / OpenAI 兼容大语言模型提供商进行产品页面分析、脚本和分镜生成。旁白可能使用 Kokoro TTS 或 OpenAI-compatible TTS / OpenAI 兼容 TTS 提供商生成，视频草稿由 HyperFrames 及相关渲染工具合成。模型、声音和服务提供商可能随服务演进而变化。',
           ],
         },
         {
@@ -146,6 +147,7 @@ export const zh = {
           title: '5. 可接受使用',
           paragraphs: [
             '你同意不会滥用服务，包括但不限于破坏平台运行、绕过安全控制、抓取私有或未经授权的内容、侵犯第三方权利、提交违法材料，或将服务用于欺诈、有害或误导性目的。',
+            '你不得使用服务提交提示词或生成 NSFW、成人、色情、性露骨、情色、性化、剥削性或其他以生成性内容为目的的内容。我们可以阻止、移除或拒绝生成违反本规则的内容。',
           ],
         },
         {
@@ -169,7 +171,7 @@ export const zh = {
         {
           title: '9. 联系我们',
           paragraphs: [
-            '如果你对本条款或 costpilot 有任何问题，请通过 showrunner@cuylerchen.uk 联系我们。',
+            '如果你对本条款或 costpilot 有任何问题，请通过 chenkaileyxy@gmail.com 联系我们。',
           ],
         },
       ] as { title: string; paragraphs: string[]; items?: string[] }[],
@@ -209,6 +211,7 @@ export const zh = {
           title: '3. 服务提供商与共享',
           paragraphs: [
             '我们不会出售你的个人数据。我们可能与帮助我们运营服务的可信服务提供商共享信息，包括托管服务商、数据库服务商、AI 模型提供商、文本转语音或渲染服务、分析或日志工具，以及用于结账、付款、税费、发票、退款、拒付和订阅管理的 Creem。这些提供商只能在向我们提供服务所需范围内使用信息。',
+            '当前 AI 生成链路可能包括 OpenAI-compatible Chat Completions / OpenAI 兼容大语言模型提供商、Kokoro TTS 或 OpenAI-compatible TTS / OpenAI 兼容 TTS 提供商、HyperFrames 渲染工具，以及用于存储和交付视频草稿的基础设施提供商。',
           ],
         },
         {
@@ -256,7 +259,7 @@ export const zh = {
         {
           title: '11. 联系我们',
           paragraphs: [
-            '如果你对本隐私政策有任何问题，请通过 showrunner@cuylerchen.uk 联系我们。',
+            '如果你对本隐私政策有任何问题，请通过 chenkaileyxy@gmail.com 联系我们。',
           ],
         },
       ] as { title: string; paragraphs: string[]; items?: string[] }[],
@@ -292,7 +295,7 @@ export const zh = {
           title: '4. 如何申请退款',
           paragraphs: ['如果你认为自己符合退款条件，可以：'],
           items: [
-            '将订单邮箱、Creem 订单 ID、购买日期和退款原因发送至 showrunner@cuylerchen.uk；',
+            '将订单邮箱、Creem 订单 ID、购买日期和退款原因发送至 chenkaileyxy@gmail.com；',
             '使用 Creem 收据、订单页面或客户门户中的管理入口提交或跟进订单请求；',
             '如果你已经联系 Showrunner 但 7 天内没有收到回复，可以联系 Creem 支持 support@creem.io，并附上订单信息和你与我们的沟通记录。',
           ],

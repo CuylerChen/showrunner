@@ -125,6 +125,7 @@ export const en: typeof zh = {
           title: '3. AI-generated Output',
           paragraphs: [
             'The Services may use AI systems to analyze websites, draft scripts, create storyboards, generate narration, and render videos. AI output may be inaccurate or incomplete. You are responsible for reviewing and approving generated videos before publishing or relying on them.',
+            'AI provider disclosure: Showrunner uses OpenAI-compatible chat completion providers configured by costpilot for product-page analysis, scripts, and storyboards. Narration may be generated with Kokoro TTS or an OpenAI-compatible TTS provider, and video drafts are composed with HyperFrames and related rendering tools. Models, voices, and providers may change as the Services evolve.',
           ],
         },
         {
@@ -139,6 +140,7 @@ export const en: typeof zh = {
           title: '5. Acceptable Use',
           paragraphs: [
             'You agree not to misuse the Services, including by attempting to disrupt the platform, bypass security controls, scrape private or unauthorized content, infringe third-party rights, submit unlawful material, or use the Services for fraudulent, harmful, or deceptive purposes.',
+            'You may not use the Services to submit prompts or generate content that is NSFW, adult, pornographic, sexually explicit, erotic, sexualized, exploitative, or otherwise intended to create sexual content. We may block, remove, or refuse to generate content that violates this rule.',
           ],
         },
         {
@@ -162,7 +164,7 @@ export const en: typeof zh = {
         {
           title: '9. Contact',
           paragraphs: [
-            'If you have any questions about these Terms or costpilot, contact us at showrunner@cuylerchen.uk.',
+            'If you have any questions about these Terms or costpilot, contact us at chenkaileyxy@gmail.com.',
           ],
         },
       ],
@@ -202,6 +204,7 @@ export const en: typeof zh = {
           title: '3. Service Providers and Sharing',
           paragraphs: [
             'We do not sell your personal data. We may share information with trusted service providers that help us operate the Services, including hosting providers, database providers, AI model providers, text-to-speech or rendering services, analytics or logging tools, and Creem for checkout, payments, taxes, invoices, refunds, chargebacks, and subscription management. These providers are authorized to use information only as needed to provide services to us.',
+            'Our current AI generation stack may include OpenAI-compatible chat completion providers, Kokoro TTS or OpenAI-compatible TTS providers, HyperFrames rendering tools, and infrastructure providers used to store and deliver generated video drafts.',
           ],
         },
         {
@@ -249,7 +252,7 @@ export const en: typeof zh = {
         {
           title: '11. Contact',
           paragraphs: [
-            'If you have questions about this Privacy Policy, contact us at showrunner@cuylerchen.uk.',
+            'If you have questions about this Privacy Policy, contact us at chenkaileyxy@gmail.com.',
           ],
         },
       ],
@@ -285,7 +288,7 @@ export const en: typeof zh = {
           title: '4. How to Request a Refund',
           paragraphs: ['If you believe you are eligible for a refund, you can:'],
           items: [
-            'email showrunner@cuylerchen.uk with your order email, Creem order ID, purchase date, and reason for the refund request;',
+            'email chenkaileyxy@gmail.com with your order email, Creem order ID, purchase date, and reason for the refund request;',
             'use the management link in your Creem receipt, order page, or customer portal to submit or follow up on an order request; or',
             'contact Creem support at support@creem.io with your order information and communication history if you contacted Showrunner and did not receive a response within 7 days.',
           ],

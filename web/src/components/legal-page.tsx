@@ -29,7 +29,7 @@ type LegalLabels = {
 }
 
 function linkedText(text: string): ReactNode[] {
-  const linkPattern = /(https:\/\/www\.creem\.io\/terms|showrunner@cuylerchen\.uk|support@creem\.io)/g
+  const linkPattern = /(https:\/\/www\.creem\.io\/terms|chenkaileyxy@gmail\.com|support@creem\.io)/g
 
   return text.split(linkPattern).map((part, index) => {
     if (part === 'https://www.creem.io/terms') {
@@ -45,7 +45,7 @@ function linkedText(text: string): ReactNode[] {
       )
     }
 
-    if (part === 'showrunner@cuylerchen.uk' || part === 'support@creem.io') {
+    if (part === 'chenkaileyxy@gmail.com' || part === 'support@creem.io') {
       return (
         <a
           key={`${part}-${index}`}

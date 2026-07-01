@@ -5,6 +5,11 @@ import { ttsQueue } from '@/lib/queue'
 import { getCurrentUser, getSubscription } from '@/lib/auth'
 import { ok, err } from '@/lib/api'
 import { getTtsQueuePriority } from '@/lib/plans'
+import {
+  assertPromptAllowedByCreem,
+  composeStepsModerationPrompt,
+  handleContentModerationError,
+} from '@/lib/moderation/creem'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -43,6 +48,15 @@ export async function POST(_req: NextRequest, { params }: Params) {
   }
   const subscription = await getSubscription(user.id)
   if (!subscription) return err('SUBSCRIPTION_NOT_FOUND', '订阅信息不存在')
+
+  try {
+    await assertPromptAllowedByCreem(
+      composeStepsModerationPrompt(steps),
+      { externalId: `user_${user.id}:demo_${id}:start` },
+    )
+  } catch (moderationError) {
+    return handleContentModerationError(moderationError)
+  }
 
   try {
     await db

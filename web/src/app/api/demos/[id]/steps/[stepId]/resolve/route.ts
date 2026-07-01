@@ -6,6 +6,11 @@ import { recordQueue } from '@/lib/queue'
 import { getCurrentUser, getSubscription } from '@/lib/auth'
 import { ok, err } from '@/lib/api'
 import { getTtsQueuePriority } from '@/lib/plans'
+import {
+  assertPromptAllowedByCreem,
+  composeStepsModerationPrompt,
+  handleContentModerationError,
+} from '@/lib/moderation/creem'
 
 type Params = { params: Promise<{ id: string; stepId: string }> }
 
@@ -46,6 +51,15 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   if (action === 'manual') {
+    try {
+      await assertPromptAllowedByCreem(
+        composeStepsModerationPrompt([{ title: 'Manual scene instruction', narration: parsed.data.manual_description }]),
+        { externalId: `user_${user.id}:demo_${id}:step_${stepId}:manual` },
+      )
+    } catch (moderationError) {
+      return handleContentModerationError(moderationError)
+    }
+
     await db
       .update(schema.steps)
       .set({ narration: parsed.data.manual_description, status: 'pending' })
@@ -71,6 +85,15 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   if (remainingSteps.length === 0) {
     return err('DEMO_NOT_READY', '没有需要重录的步骤')
+  }
+
+  try {
+    await assertPromptAllowedByCreem(
+      composeStepsModerationPrompt(remainingSteps),
+      { externalId: `user_${user.id}:demo_${id}:record_retry` },
+    )
+  } catch (moderationError) {
+    return handleContentModerationError(moderationError)
   }
 
   try {
