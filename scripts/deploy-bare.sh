@@ -11,7 +11,7 @@
 set -e
 
 # ── Config. Override with environment variables when needed. ──
-SSH_HOST="${SSH_HOST:-contabo_gigacoder}"
+SSH_HOST="${SSH_HOST:-contabo-gigacoder}"
 REMOTE_DIR="${REMOTE_DIR:-/opt/showrunner/app}"
 REMOTE_USER="${REMOTE_USER:-showrunner}"
 ENV_FILE="${ENV_FILE:-/etc/showrunner/showrunner.env}"

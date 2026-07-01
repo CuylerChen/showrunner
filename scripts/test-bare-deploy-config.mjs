@@ -51,7 +51,7 @@ assert.match(setupBare, /OPENAI_MODEL="gpt-5\.5"/, 'bare-metal setup should defa
 assert.match(envExample, /^OPENAI_BASE_URL=https:\/\/sub\.sharellm\.uk\/v1$/m, '.env.example should use the configured OpenAI-compatible gateway')
 assert.match(envExample, /^OPENAI_MODEL=gpt-5\.5$/m, '.env.example should use gpt-5.5')
 
-assert.match(deployBare, /SSH_HOST="\$\{SSH_HOST:-contabo_gigacoder\}"/, 'bare deploy should default to the reachable production SSH alias')
+assert.match(deployBare, /SSH_HOST="\$\{SSH_HOST:-contabo-gigacoder\}"/, 'bare deploy should default to the reachable production SSH alias')
 assert.match(deployBare, /REMOTE_DIR="\$\{REMOTE_DIR:-\/opt\/showrunner\/app\}"/, 'bare deploy should default to the production app checkout')
 assert.match(deployBare, /REMOTE_USER="\$\{REMOTE_USER:-showrunner\}"/, 'bare deploy should run build commands as the app user')
 assert.match(deployBare, /systemctl restart "\$WEB_SERVICE"/, 'web deploy should restart the systemd web service')
