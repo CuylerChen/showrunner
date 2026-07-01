@@ -556,7 +556,7 @@ export const zh = {
     starter: '升级 Starter',
     pro: '升级 Pro',
 	    loading: '打开中...',
-	    error: '无法打开 Paddle 结账，请稍后重试',
+	    error: '无法打开 Creem 结账，请稍后重试',
 	    portalError: '无法打开订阅管理，请稍后重试',
 	    manageBilling: '管理订阅',
 	    cancelBilling: '取消订阅',

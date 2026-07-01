@@ -7,7 +7,6 @@ const PUBLIC_PATHS = [
   '/terms-of-service',
   '/privacy-policy',
   '/refund-policy',
-  '/paddle-checkout',
   '/sign-in',
   '/sign-up',
 ]
@@ -17,7 +16,7 @@ function isPublic(pathname: string): boolean {
   if (pathname.startsWith('/share/')) return true
   if (pathname.startsWith('/api/share/')) return true
   if (pathname.startsWith('/api/auth/')) return true
-  if (pathname === '/api/webhooks/paddle') return true
+  if (pathname === '/api/webhooks/creem') return true
   return false
 }
 

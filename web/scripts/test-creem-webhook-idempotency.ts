@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url))
 const appRoot = path.resolve(scriptDir, '..')
-const routePath = path.join(appRoot, 'src/app/api/webhooks/paddle/route.ts')
+const routePath = path.join(appRoot, 'src/app/api/webhooks/creem/route.ts')
 const source = fs.readFileSync(routePath, 'utf8')
 
 assert.match(
@@ -23,5 +23,6 @@ assert.ok(subscriptionUpdate > transactionEventInsert, 'duplicate event guard sh
 
 const oldTopLevelInsert = source.indexOf('const eventInsert = await insertEventOnce(event)')
 assert.equal(oldTopLevelInsert, -1, 'subscription events must not be marked processed before subscription mutation succeeds')
+assert.match(source, /schema\.creemEvents/, 'Creem webhook events should be stored in creem_events')
 
-console.log('paddle webhook idempotency tests passed')
+console.log('creem webhook idempotency tests passed')

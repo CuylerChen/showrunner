@@ -549,7 +549,7 @@ export const en: typeof zh = {
     starter: 'Upgrade Starter',
     pro: 'Upgrade Pro',
 	    loading: 'Opening...',
-	    error: 'Could not open Paddle checkout. Please try again.',
+	    error: 'Could not open Creem checkout. Please try again.',
 	    portalError: 'Could not open subscription management. Please try again.',
 	    manageBilling: 'Manage billing',
 	    cancelBilling: 'Cancel subscription',

@@ -25,16 +25,16 @@ export const subscriptions = mysqlTable('subscriptions', {
   demos_used_this_month: int('demos_used_this_month').default(0).notNull(),
   demos_limit:           int('demos_limit').default(1).notNull(),
   current_period_end:    timestamp('current_period_end'),
-  paddle_customer_id:     varchar('paddle_customer_id', { length: 64 }),
-  paddle_subscription_id: varchar('paddle_subscription_id', { length: 64 }).unique(),
-  paddle_price_id:        varchar('paddle_price_id', { length: 64 }),
-  paddle_status:          varchar('paddle_status', { length: 40 }),
-  paddle_updated_at:      timestamp('paddle_updated_at'),
+  creem_customer_id:       varchar('creem_customer_id', { length: 64 }),
+  creem_subscription_id:   varchar('creem_subscription_id', { length: 64 }).unique(),
+  creem_product_id:        varchar('creem_product_id', { length: 64 }),
+  creem_status:            varchar('creem_status', { length: 40 }),
+  creem_updated_at:        timestamp('creem_updated_at'),
   created_at:            timestamp('created_at').defaultNow().notNull(),
   updated_at:            timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 })
 
-export const paddleEvents = mysqlTable('paddle_events', {
+export const creemEvents = mysqlTable('creem_events', {
   id:           varchar('id', { length: 64 }).primaryKey(),
   event_type:   varchar('event_type', { length: 80 }).notNull(),
   occurred_at:  timestamp('occurred_at'),

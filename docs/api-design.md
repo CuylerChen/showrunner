@@ -55,7 +55,7 @@
   /demos/[id]/steps   步骤管理
   /share              公开分享页（无需鉴权）
   /subscription       套餐与额度
-  /webhooks           第三方回调（Paddle）
+  /webhooks           第三方回调（Creem）
 ```
 
 ---
@@ -411,33 +411,35 @@ Auth: 必须
 {
   "success": true,
   "data": {
-    "checkout_url": "https://checkout.paddle.com/...",
-    "transaction_id": "txn_..."
+    "checkout_url": "https://www.creem.io/checkout/...",
+    "transaction_id": "ch_..."
   }
 }
 ```
 
-> 前端拿到 `checkout_url` 后跳转到 Paddle Hosted Checkout。Paddle Webhook 成功后更新本地订阅和额度。
+> 前端拿到 `checkout_url` 后跳转到 Creem Hosted Checkout。Creem Webhook 成功后更新本地订阅和额度。
 
 ---
 
 ## 八、Webhook 接口
 
-### 8.1 Paddle 支付回调
+### 8.1 Creem 支付回调
 ```
-POST /api/webhooks/paddle
-Auth: Paddle-Signature Webhook 签名验证
+POST /api/webhooks/creem
+Auth: creem-signature Webhook 签名验证
 ```
 
 **监听事件**
 
 | 事件 | 处理逻辑 |
 |------|----------|
-| `subscription.created` | 更新 Paddle 订阅 ID、plan、demos_limit |
-| `subscription.updated` | 更新 plan、status、current_period_end |
+| `checkout.completed` | 捕获初始 Creem customer/subscription 信息 |
+| `subscription.active` / `subscription.paid` | 更新 Creem 订阅 ID、plan、demos_limit |
+| `subscription.update` | 更新 plan、status、current_period_end |
 | `subscription.canceled` | status = cancelled，plan 降回 free |
 | `subscription.paused` | status = cancelled，plan 降回 free |
 | `subscription.past_due` | status = expired，plan 降回 free |
+| `subscription.expired` | status = expired，plan 降回 free |
 
 ---
 

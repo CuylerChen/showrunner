@@ -12,7 +12,7 @@ users
   └── demos           (1:N)
         └── steps     (1:N)
         └── jobs      (1:N)
-paddle_events         (Webhook 幂等记录)
+creem_events          (Webhook 幂等记录)
 ```
 
 ---
@@ -38,7 +38,7 @@ create table users (
 
 ## 二、subscriptions 表
 
-> 记录用户套餐、额度、Paddle Billing 订阅信息。
+> 记录用户套餐、额度、Creem Billing 订阅信息。
 
 ```sql
 create table subscriptions (
@@ -49,14 +49,14 @@ create table subscriptions (
   demos_used_this_month   int not null default 0,
   demos_limit             int not null default 1,     -- free=1, starter=10, pro=-1(无限)
   current_period_end      timestamp null,             -- 当前计费周期结束时间
-  paddle_customer_id      varchar(64) null,           -- Paddle customer ID
-  paddle_subscription_id  varchar(64) null,           -- Paddle subscription ID
-  paddle_price_id         varchar(64) null,           -- 当前 Paddle price ID
-  paddle_status           varchar(40) null,           -- Paddle 原始订阅状态
-  paddle_updated_at       timestamp null,             -- 最近一次 Paddle webhook 更新时间
+  creem_customer_id       varchar(64) null,           -- Creem customer ID
+  creem_subscription_id   varchar(64) null,           -- Creem subscription ID
+  creem_product_id        varchar(64) null,           -- 当前 Creem product ID
+  creem_status            varchar(40) null,           -- Creem 原始订阅状态
+  creem_updated_at        timestamp null,             -- 最近一次 Creem webhook 更新时间
   created_at              timestamp default current_timestamp,
   updated_at              timestamp default current_timestamp on update current_timestamp,
-  unique key uq_sub_paddle_subscription (paddle_subscription_id),
+  unique key uq_sub_creem_subscription (creem_subscription_id),
   constraint fk_sub_user foreign key (user_id) references users(id) on delete cascade
 );
 ```
@@ -70,12 +70,12 @@ demos_limit = 1   → Free
 
 ---
 
-## 三、paddle_events 表
+## 三、creem_events 表
 
-> 记录已处理的 Paddle webhook event ID，保证重复回调不会重复扣改本地订阅状态。
+> 记录已处理的 Creem webhook event ID，保证重复回调不会重复扣改本地订阅状态。
 
 ```sql
-create table paddle_events (
+create table creem_events (
   id             varchar(64) primary key,
   event_type     varchar(80) not null,
   occurred_at    timestamp null,

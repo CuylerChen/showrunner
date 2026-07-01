@@ -76,11 +76,11 @@ export interface Subscription {
   demos_used_this_month: number
   demos_limit: number
   current_period_end: string | null
-  paddle_customer_id: string | null
-  paddle_subscription_id: string | null
-  paddle_price_id: string | null
-  paddle_status: string | null
-  paddle_updated_at: string | null
+  creem_customer_id: string | null
+  creem_subscription_id: string | null
+  creem_product_id: string | null
+  creem_status: string | null
+  creem_updated_at: string | null
   created_at: string
   updated_at: string
 }

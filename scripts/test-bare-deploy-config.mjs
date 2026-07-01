@@ -23,12 +23,12 @@ const requiredRuntimeKeys = [
   'WORKER_INTERNAL_URL',
   'WORKER_PORT',
   'WORKER_HOST',
-  'PADDLE_ENVIRONMENT',
-  'PADDLE_API_KEY',
-  'PADDLE_CLIENT_TOKEN',
-  'PADDLE_WEBHOOK_SECRET',
-  'PADDLE_STARTER_PRICE_ID',
-  'PADDLE_PRO_PRICE_ID',
+  'CREEM_API_KEY',
+  'CREEM_API_BASE_URL',
+  'CREEM_MODERATION_TIMEOUT_MS',
+  'CREEM_WEBHOOK_SECRET',
+  'CREEM_STARTER_PRODUCT_ID',
+  'CREEM_PRO_PRODUCT_ID',
   'R2_ACCOUNT_ID',
   'R2_ACCESS_KEY_ID',
   'R2_SECRET_ACCESS_KEY',
@@ -77,13 +77,13 @@ assert.match(rootPm2, /cwd:\s*'\/opt\/showrunner\/web'/, 'root PM2 config should
 assert.match(rootPm2, /WORKER_INTERNAL_URL:\s*process\.env\.WORKER_INTERNAL_URL/, 'root PM2 config should pass WORKER_INTERNAL_URL')
 assert.match(rootPm2, /WORKER_PORT:\s*process\.env\.WORKER_PORT/, 'root PM2 config should pass WORKER_PORT')
 assert.match(rootPm2, /WORKER_HOST:\s*process\.env\.WORKER_HOST/, 'root PM2 config should pass WORKER_HOST')
-assert.match(rootPm2, /PADDLE_API_KEY:\s*process\.env\.PADDLE_API_KEY/, 'root PM2 config should pass Paddle settings')
-assert.match(rootPm2, /PADDLE_CLIENT_TOKEN:\s*process\.env\.PADDLE_CLIENT_TOKEN/, 'root PM2 config should pass Paddle client token')
-assert.match(rootPm2, /PADDLE_STARTER_PRICE_ID:\s*process\.env\.PADDLE_STARTER_PRICE_ID/, 'root PM2 config should pass Starter Paddle price id')
-assert.match(rootPm2, /PADDLE_PRO_PRICE_ID:\s*process\.env\.PADDLE_PRO_PRICE_ID/, 'root PM2 config should pass Pro Paddle price id')
-assert.match(dockerCompose, /PADDLE_CLIENT_TOKEN:\s*\$\{PADDLE_CLIENT_TOKEN:-\}/, 'docker-compose web service should pass Paddle client token')
-assert.match(dockerCompose, /PADDLE_STARTER_PRICE_ID:\s*\$\{PADDLE_STARTER_PRICE_ID:-\}/, 'docker-compose web service should pass Starter Paddle price id')
-assert.match(dockerCompose, /PADDLE_PRO_PRICE_ID:\s*\$\{PADDLE_PRO_PRICE_ID:-\}/, 'docker-compose web service should pass Pro Paddle price id')
+assert.match(rootPm2, /CREEM_API_KEY:\s*process\.env\.CREEM_API_KEY/, 'root PM2 config should pass Creem API key')
+assert.match(rootPm2, /CREEM_WEBHOOK_SECRET:\s*process\.env\.CREEM_WEBHOOK_SECRET/, 'root PM2 config should pass Creem webhook secret')
+assert.match(rootPm2, /CREEM_STARTER_PRODUCT_ID:\s*process\.env\.CREEM_STARTER_PRODUCT_ID/, 'root PM2 config should pass Starter Creem product id')
+assert.match(rootPm2, /CREEM_PRO_PRODUCT_ID:\s*process\.env\.CREEM_PRO_PRODUCT_ID/, 'root PM2 config should pass Pro Creem product id')
+assert.match(dockerCompose, /CREEM_API_KEY:\s*\$\{CREEM_API_KEY:-\}/, 'docker-compose web service should pass Creem API key')
+assert.match(dockerCompose, /CREEM_STARTER_PRODUCT_ID:\s*\$\{CREEM_STARTER_PRODUCT_ID:-\}/, 'docker-compose web service should pass Starter Creem product id')
+assert.match(dockerCompose, /CREEM_PRO_PRODUCT_ID:\s*\$\{CREEM_PRO_PRODUCT_ID:-\}/, 'docker-compose web service should pass Pro Creem product id')
 
 assert.match(setupBare, /syncNextStandaloneAssets/, 'bare-metal setup should sync Next standalone static assets')
 assert.match(setupBare, /mkdir -p "\.next\/standalone\/\.next"/, 'bare-metal setup should create standalone .next directory before syncing static assets')
@@ -92,10 +92,10 @@ assert.match(setupBare, /cp -R "public" "\.next\/standalone\/public"/, 'bare-met
 
 assert.doesNotMatch(webEnvExample, /CLERK_|SUPABASE_|LEMONSQUEEZY_|OPENROUTER_/i, 'web env example should not document removed providers')
 assert.match(webEnvExample, /^MYSQL_HOST=127\.0\.0\.1$/m, 'web env example should document current MySQL config')
-assert.match(webEnvExample, /^PADDLE_ENVIRONMENT=production$/m, 'web env example should document Paddle production config')
-assert.match(webEnvExample, /^PADDLE_CLIENT_TOKEN=$/m, 'web env example should document Paddle client token')
-assert.match(webEnvExample, /^PADDLE_STARTER_PRICE_ID=$/m, 'web env example should document Starter Paddle price id')
-assert.match(webEnvExample, /^PADDLE_PRO_PRICE_ID=$/m, 'web env example should document Pro Paddle price id')
+assert.match(webEnvExample, /^CREEM_API_BASE_URL=https:\/\/api\.creem\.io$/m, 'web env example should document Creem production API base URL')
+assert.match(webEnvExample, /^CREEM_WEBHOOK_SECRET=$/m, 'web env example should document Creem webhook secret')
+assert.match(webEnvExample, /^CREEM_STARTER_PRODUCT_ID=$/m, 'web env example should document Starter Creem product id')
+assert.match(webEnvExample, /^CREEM_PRO_PRODUCT_ID=$/m, 'web env example should document Pro Creem product id')
 assert.match(webEnvExample, /^WORKER_INTERNAL_URL=http:\/\/127\.0\.0\.1:3001$/m, 'web env example should document bare-metal worker URL')
 assert.match(envExample, /^WORKER_PORT=3001$/m, '.env.example should document worker HTTP port')
 assert.match(envExample, /^WORKER_HOST=127\.0\.0\.1$/m, '.env.example should document worker HTTP host')
@@ -107,8 +107,8 @@ assert.match(deploymentDoc, /systemctl status showrunner-web\.service showrunner
 assert.match(deploymentDoc, /journalctl -u showrunner-web\.service/, 'deployment guide should use journalctl for web logs')
 assert.match(deploymentDoc, /journalctl -u showrunner-worker\.service/, 'deployment guide should use journalctl for worker logs')
 assert.match(bareMetalDoc, /WORKER_INTERNAL_URL=http:\/\/127\.0\.0\.1:3001/, 'bare-metal docs should include WORKER_INTERNAL_URL')
-assert.match(bareMetalDoc, /PADDLE_ENVIRONMENT=production/, 'bare-metal docs should include Paddle production settings')
-assert.match(vpsDoc, /PADDLE_STARTER_PRICE_ID=/, 'VPS docs should include Starter Paddle price id')
-assert.match(vpsDoc, /PADDLE_PRO_PRICE_ID=/, 'VPS docs should include Pro Paddle price id')
+assert.match(bareMetalDoc, /CREEM_API_BASE_URL=https:\/\/api\.creem\.io/, 'bare-metal docs should include Creem production settings')
+assert.match(vpsDoc, /CREEM_STARTER_PRODUCT_ID=/, 'VPS docs should include Starter Creem product id')
+assert.match(vpsDoc, /CREEM_PRO_PRODUCT_ID=/, 'VPS docs should include Pro Creem product id')
 
 console.log('bare-metal deployment config tests passed')

@@ -1,4 +1,4 @@
--- Add Paddle Billing subscription fields and webhook idempotency table.
+-- Add Creem Billing subscription fields and webhook idempotency table.
 -- Safe to run repeatedly on MySQL 8.0.
 
 DROP PROCEDURE IF EXISTS showrunner_add_column_if_missing;
@@ -48,11 +48,11 @@ END//
 
 DELIMITER ;
 
-CALL showrunner_add_column_if_missing('subscriptions', 'paddle_customer_id', 'paddle_customer_id VARCHAR(64) NULL AFTER current_period_end');
-CALL showrunner_add_column_if_missing('subscriptions', 'paddle_subscription_id', 'paddle_subscription_id VARCHAR(64) NULL AFTER paddle_customer_id');
-CALL showrunner_add_column_if_missing('subscriptions', 'paddle_price_id', 'paddle_price_id VARCHAR(64) NULL AFTER paddle_subscription_id');
-CALL showrunner_add_column_if_missing('subscriptions', 'paddle_status', 'paddle_status VARCHAR(40) NULL AFTER paddle_price_id');
-CALL showrunner_add_column_if_missing('subscriptions', 'paddle_updated_at', 'paddle_updated_at TIMESTAMP NULL AFTER paddle_status');
+CALL showrunner_add_column_if_missing('subscriptions', 'creem_customer_id', 'creem_customer_id VARCHAR(64) NULL AFTER current_period_end');
+CALL showrunner_add_column_if_missing('subscriptions', 'creem_subscription_id', 'creem_subscription_id VARCHAR(64) NULL AFTER creem_customer_id');
+CALL showrunner_add_column_if_missing('subscriptions', 'creem_product_id', 'creem_product_id VARCHAR(64) NULL AFTER creem_subscription_id');
+CALL showrunner_add_column_if_missing('subscriptions', 'creem_status', 'creem_status VARCHAR(40) NULL AFTER creem_product_id');
+CALL showrunner_add_column_if_missing('subscriptions', 'creem_updated_at', 'creem_updated_at TIMESTAMP NULL AFTER creem_status');
 
 ALTER TABLE subscriptions MODIFY COLUMN demos_limit INT NOT NULL DEFAULT 1;
 
@@ -60,11 +60,11 @@ UPDATE subscriptions SET demos_limit = 1 WHERE plan = 'free' AND demos_limit = 3
 
 CALL showrunner_add_index_if_missing(
   'subscriptions',
-  'uq_sub_paddle_subscription',
-  'UNIQUE KEY uq_sub_paddle_subscription (paddle_subscription_id)'
+  'uq_sub_creem_subscription',
+  'UNIQUE KEY uq_sub_creem_subscription (creem_subscription_id)'
 );
 
-CREATE TABLE IF NOT EXISTS paddle_events (
+CREATE TABLE IF NOT EXISTS creem_events (
   id           VARCHAR(64) NOT NULL PRIMARY KEY,
   event_type   VARCHAR(80) NOT NULL,
   occurred_at  TIMESTAMP   NULL,

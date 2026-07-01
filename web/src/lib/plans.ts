@@ -1,4 +1,8 @@
-import type { PlanType } from '@/types'
+import type { PlanType, SubStatus } from '@/types'
+
+export type AppPlan = PlanType
+export type PaidPlan = Exclude<AppPlan, 'free'>
+export type LocalSubscriptionStatus = SubStatus
 
 export type TtsVoiceId =
   | 'default'
@@ -93,6 +97,14 @@ export const TTS_VOICES: TtsVoiceOption[] = [
 
 export function getPlanCapabilities(plan: PlanType): PlanCapabilities {
   return PLAN_CAPABILITIES[plan]
+}
+
+export function isPaidPlan(value: unknown): value is PaidPlan {
+  return value === 'starter' || value === 'pro'
+}
+
+export function getPlanLimit(plan: AppPlan): number {
+  return PLAN_CAPABILITIES[plan].videosPerMonth
 }
 
 export function getAllowedTtsVoices(plan: PlanType): TtsVoiceOption[] {

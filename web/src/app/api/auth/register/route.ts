@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm'
 import { signJwt } from '@/lib/jwt'
 import { ok, err } from '@/lib/api'
 import { databaseUnavailableMessage, isDatabaseConnectionError } from '@/lib/db/errors'
-import { getPlanLimit } from '@/lib/billing/paddle'
+import { getPlanLimit } from '@/lib/plans'
 import { addMonthlyPeriod } from '@/lib/subscription-period'
 import { cookies } from 'next/headers'
 

@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { db, schema } from '@/lib/db'
 import { eq, and } from 'drizzle-orm'
 import { signJwt } from '@/lib/jwt'
-import { getPlanLimit } from '@/lib/billing/paddle'
+import { getPlanLimit } from '@/lib/plans'
 import { addMonthlyPeriod } from '@/lib/subscription-period'
 
 export async function GET(req: NextRequest) {
