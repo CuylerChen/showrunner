@@ -97,12 +97,12 @@ export const zh = {
     ctaTitle: '开始生成你的第一条短视频脚本',
     ctaSub: '免费注册，1 条脚本/视频草稿无需信用卡',
     ctaBtn: '立即免费开始',
-    footer: '© 2026 costpilot · Showrunner · All rights reserved',
+    footer: '© 2026 Showrunner · All rights reserved',
   },
   legal: {
     lastUpdatedLabel: '最后更新',
     lastUpdated: '2026 年 6 月 30 日',
-    footer: '© 2026 costpilot · Showrunner',
+    footer: '© 2026 Showrunner',
     links: {
       terms: '使用条款',
       privacy: '隐私政策',
@@ -112,13 +112,13 @@ export const zh = {
       title: '使用条款',
       metaDescription: '适用于访问和使用 Showrunner 的条款。',
       intro: [
-        'Showrunner 是由 costpilot（“costpilot”、“我们”）运营的产品。本使用条款（“条款”）适用于你访问和使用 Showrunner 的网站、视频生成工具、托管分享页以及相关服务（统称为“服务”）。访问或使用服务即表示你同意受本条款约束。',
+        '本使用条款（“条款”）适用于你访问和使用 Showrunner 的网站、视频生成工具、托管分享页以及相关服务（统称为“服务”）。访问或使用服务即表示你同意受 Showrunner 约束并遵守本条款。',
       ] as string[],
       sections: [
         {
           title: '1. 服务提供方与服务内容',
           paragraphs: [
-            'costpilot 提供 Showrunner，这是一项 AI 驱动的短视频脚本、分镜和视频草稿生成服务，帮助用户基于产品 URL、补充说明、AI 生成脚本、旁白和渲染场景生成产品营销素材。主要交付内容可能包括产品页面分析、AI 生成分镜和脚本、旁白音频、渲染视频场景、托管分享页，以及相关账号和订阅功能。',
+            'Showrunner 提供一项 AI 驱动的短视频脚本、分镜和视频草稿生成服务，帮助用户基于产品 URL、补充说明、AI 生成脚本、旁白和渲染场景生成产品营销素材。主要交付内容可能包括产品页面分析、AI 生成分镜和脚本、旁白音频、渲染视频场景、托管分享页，以及相关账号和订阅功能。',
             '你只能在遵守适用法律和本条款的前提下使用服务。你需要对你的账号、凭据、输入内容以及账号下发生的活动负责。',
           ],
         },
@@ -132,14 +132,14 @@ export const zh = {
           title: '3. AI 生成输出',
           paragraphs: [
             '服务可能使用 AI 系统分析网站、撰写脚本、创建分镜、生成旁白并渲染视频。AI 输出可能不准确或不完整。你有责任在发布或依赖生成视频前进行审核和确认。',
-            'AI 提供方披露：Showrunner 使用 costpilot 配置的 OpenAI-compatible Chat Completions / OpenAI 兼容大语言模型提供商进行产品页面分析、脚本和分镜生成。旁白可能使用 Kokoro TTS 或 OpenAI-compatible TTS / OpenAI 兼容 TTS 提供商生成，视频草稿由 HyperFrames 及相关渲染工具合成。模型、声音和服务提供商可能随服务演进而变化。',
+            'AI 提供方披露：Showrunner 使用 OpenAI-compatible Chat Completions / OpenAI 兼容大语言模型提供商进行产品页面分析、脚本和分镜生成。旁白可能使用 Kokoro TTS 或 OpenAI-compatible TTS / OpenAI 兼容 TTS 提供商生成，视频草稿由 HyperFrames 及相关渲染工具合成。模型、声音和服务提供商可能随服务演进而变化。',
           ],
         },
         {
           title: '4. 付款与订阅',
           paragraphs: [
             '付费套餐、当前价格、计费周期、额度和包含功能会在价格页面展示，并会在购买前的结账流程中再次展示。付费套餐按订阅方式预先计费。',
-            '付款由 Creem（“Creem”）处理。Creem 作为 merchant of record，负责通过结账流程完成付款处理、发票、适用销售税、VAT、GST 等税费计算与收取，以及退款和拒付处理。costpilot 负责提供 Showrunner 服务、账号访问、产品支持、客户沟通和本条款下的服务义务。',
+            '付款由 Creem（“Creem”）处理。Creem 作为 merchant of record，负责通过结账流程完成付款处理、发票、适用销售税、VAT、GST 等税费计算与收取，以及退款和拒付处理。Showrunner 负责提供服务、账号访问、产品支持、客户沟通和本条款下的服务义务。',
             '你可以随时取消订阅；付费功能通常会保留到当前计费周期结束，未来续订将停止。可退款的情形将依据 Creem 的 Buyer Terms、我们的退款政策和适用法律处理。',
           ],
         },
@@ -171,7 +171,7 @@ export const zh = {
         {
           title: '9. 联系我们',
           paragraphs: [
-            '如果你对本条款或 costpilot 有任何问题，请通过 chenkaileyxy@gmail.com 联系我们。',
+            '如果你对本条款或 Showrunner 有任何问题，请通过 support@cuylerchen.uk 联系我们。',
           ],
         },
       ] as { title: string; paragraphs: string[]; items?: string[] }[],
@@ -180,7 +180,7 @@ export const zh = {
       title: '隐私政策',
       metaDescription: 'Showrunner 如何收集、使用和保护信息。',
       intro: [
-        '本隐私政策说明运营 Showrunner 的 costpilot（“我们”）在你使用我们的网站、视频生成工具、托管分享页和相关服务（“服务”）时如何收集、使用、披露和保护信息。',
+        '本隐私政策说明 Showrunner（“我们”）在你使用我们的网站、视频生成工具、托管分享页和相关服务（“服务”）时如何收集、使用、披露和保护信息。',
       ] as string[],
       sections: [
         {
@@ -217,7 +217,7 @@ export const zh = {
         {
           title: '4. 付款处理',
           paragraphs: [
-            '付款由 Creem 处理。作为 merchant of record，Creem 可能会收集账单详情、付款方式信息、税务信息、发票信息、交易记录、退款状态、拒付状态以及用于安全与合规的技术信息。costpilot 会接收管理 Showrunner 账号所需的订阅状态、套餐、客户邮箱、交易 ID、发票或付款状态、退款和取消状态。',
+            '付款由 Creem 处理。作为 merchant of record，Creem 可能会收集账单详情、付款方式信息、税务信息、发票信息、交易记录、退款状态、拒付状态以及用于安全与合规的技术信息。Showrunner 会接收管理账号所需的订阅状态、套餐、客户邮箱、交易 ID、发票或付款状态、退款和取消状态。',
           ],
         },
         {
@@ -259,7 +259,7 @@ export const zh = {
         {
           title: '11. 联系我们',
           paragraphs: [
-            '如果你对本隐私政策有任何问题，请通过 chenkaileyxy@gmail.com 联系我们。',
+            '如果你对本隐私政策有任何问题，请通过 support@cuylerchen.uk 联系我们。',
           ],
         },
       ] as { title: string; paragraphs: string[]; items?: string[] }[],
@@ -268,7 +268,7 @@ export const zh = {
       title: '退款政策',
       metaDescription: 'Showrunner 订阅的退款和取消政策。',
       intro: [
-        '本退款政策说明由 costpilot 提供的 Showrunner 付费订阅的退款和取消处理方式。所有付款均由 Creem 处理，Creem 是通过 Showrunner 结账购买时的 merchant of record。',
+        '本退款政策说明 Showrunner 付费订阅的退款和取消处理方式。所有付款均由 Creem 处理，Creem 是通过 Showrunner 结账购买时的 merchant of record。',
       ] as string[],
       sections: [
         {
@@ -295,7 +295,7 @@ export const zh = {
           title: '4. 如何申请退款',
           paragraphs: ['如果你认为自己符合退款条件，可以：'],
           items: [
-            '将订单邮箱、Creem 订单 ID、购买日期和退款原因发送至 chenkaileyxy@gmail.com；',
+            '将订单邮箱、Creem 订单 ID、购买日期和退款原因发送至 support@cuylerchen.uk；',
             '使用 Creem 收据、订单页面或客户门户中的管理入口提交或跟进订单请求；',
             '如果你已经联系 Showrunner 但 7 天内没有收到回复，可以联系 Creem 支持 support@creem.io，并附上订单信息和你与我们的沟通记录。',
           ],

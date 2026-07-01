@@ -90,12 +90,12 @@ export const en: typeof zh = {
     ctaTitle: 'Create your first short video script',
     ctaSub: 'Free to start · 1 script/video draft · No credit card required',
     ctaBtn: 'Start for free now',
-    footer: '© 2026 costpilot · Showrunner · All rights reserved',
+    footer: '© 2026 Showrunner · All rights reserved',
   },
   legal: {
     lastUpdatedLabel: 'Last updated',
     lastUpdated: 'June 30, 2026',
-    footer: '© 2026 costpilot · Showrunner',
+    footer: '© 2026 Showrunner',
     links: {
       terms: 'Terms',
       privacy: 'Privacy',
@@ -105,13 +105,13 @@ export const en: typeof zh = {
       title: 'Terms of Service',
       metaDescription: 'Terms that govern access to and use of Showrunner.',
       intro: [
-        'Showrunner is a product operated by costpilot ("costpilot", "we", "us", or "our"). These Terms of Service ("Terms") govern your access to and use of Showrunner\'s website, video generation tools, hosted share pages, and related services (collectively, the "Services"). By accessing or using the Services, you agree to be bound by these Terms.',
+        'Showrunner operates these Services ("we", "us", or "our"). These Terms of Service ("Terms") govern your access to and use of Showrunner\'s website, video generation tools, hosted share pages, and related services (collectively, the "Services"). By accessing or using the Services, you agree to be bound by these Terms.',
       ],
       sections: [
         {
           title: '1. Provider and Services',
           paragraphs: [
-            'costpilot provides Showrunner, an AI-powered short video script, storyboard, and video draft generation service that helps users create product marketing assets from product URLs, written context, AI-generated scripts, narration, and rendered video scenes. Key deliverables may include product-page analysis, AI-generated storyboards and scripts, narration audio, rendered video scenes, hosted share pages, and related account and subscription features.',
+            'Showrunner provides an AI-powered short video script, storyboard, and video draft generation service that helps users create product marketing assets from product URLs, written context, AI-generated scripts, narration, and rendered video scenes. Key deliverables may include product-page analysis, AI-generated storyboards and scripts, narration audio, rendered video scenes, hosted share pages, and related account and subscription features.',
             'You may use the Services only in compliance with applicable laws and these Terms. You are responsible for your account, credentials, input content, and activity under your account.',
           ],
         },
@@ -125,14 +125,14 @@ export const en: typeof zh = {
           title: '3. AI-generated Output',
           paragraphs: [
             'The Services may use AI systems to analyze websites, draft scripts, create storyboards, generate narration, and render videos. AI output may be inaccurate or incomplete. You are responsible for reviewing and approving generated videos before publishing or relying on them.',
-            'AI provider disclosure: Showrunner uses OpenAI-compatible chat completion providers configured by costpilot for product-page analysis, scripts, and storyboards. Narration may be generated with Kokoro TTS or an OpenAI-compatible TTS provider, and video drafts are composed with HyperFrames and related rendering tools. Models, voices, and providers may change as the Services evolve.',
+            'AI provider disclosure: Showrunner uses OpenAI-compatible chat completion providers for product-page analysis, scripts, and storyboards. Narration may be generated with Kokoro TTS or an OpenAI-compatible TTS provider, and video drafts are composed with HyperFrames and related rendering tools. Models, voices, and providers may change as the Services evolve.',
           ],
         },
         {
           title: '4. Payment and Subscriptions',
           paragraphs: [
             'Paid plans, current prices, billing periods, quotas, and included features are shown on our pricing page and again at checkout before purchase. Paid plans are billed in advance on a subscription basis.',
-            'Payments are processed by Creem ("Creem"). Creem acts as the merchant of record and is responsible for checkout payment processing, invoices, applicable sales tax, VAT, GST, tax calculation and collection, refunds, and chargebacks. costpilot remains responsible for providing the Showrunner service, account access, product support, customer communications, and the service obligations described in these Terms.',
+            'Payments are processed by Creem ("Creem"). Creem acts as the merchant of record and is responsible for checkout payment processing, invoices, applicable sales tax, VAT, GST, tax calculation and collection, refunds, and chargebacks. Showrunner remains responsible for providing the service, account access, product support, customer communications, and the service obligations described in these Terms.',
             'You may cancel a subscription at any time; access to paid features generally remains available until the end of the current billing period, and future renewals stop. Refunds, where available, are handled in accordance with Creem Buyer Terms, our Refund Policy, and applicable law.',
           ],
         },
@@ -164,7 +164,7 @@ export const en: typeof zh = {
         {
           title: '9. Contact',
           paragraphs: [
-            'If you have any questions about these Terms or costpilot, contact us at chenkaileyxy@gmail.com.',
+            'If you have any questions about these Terms or Showrunner, contact us at support@cuylerchen.uk.',
           ],
         },
       ],
@@ -173,7 +173,7 @@ export const en: typeof zh = {
       title: 'Privacy Policy',
       metaDescription: 'How Showrunner collects, uses, and protects information.',
       intro: [
-        'This Privacy Policy explains how costpilot, operating Showrunner ("we", "us", or "our"), collects, uses, discloses, and protects information when you use our website, video generation tools, hosted share pages, and related services (the "Services").',
+        'This Privacy Policy explains how Showrunner ("we", "us", or "our") collects, uses, discloses, and protects information when you use our website, video generation tools, hosted share pages, and related services (the "Services").',
       ],
       sections: [
         {
@@ -210,7 +210,7 @@ export const en: typeof zh = {
         {
           title: '4. Payment Processing',
           paragraphs: [
-            'Payments are processed by Creem. As merchant of record, Creem may collect billing details, payment method information, tax information, invoice information, transaction records, refund status, chargeback status, and technical information used for risk and compliance. costpilot receives subscription status, plan, customer email, transaction IDs, invoice or payment status, refund status, and cancellation status needed to manage your Showrunner account.',
+            'Payments are processed by Creem. As merchant of record, Creem may collect billing details, payment method information, tax information, invoice information, transaction records, refund status, chargeback status, and technical information used for risk and compliance. Showrunner receives subscription status, plan, customer email, transaction IDs, invoice or payment status, refund status, and cancellation status needed to manage your account.',
           ],
         },
         {
@@ -252,7 +252,7 @@ export const en: typeof zh = {
         {
           title: '11. Contact',
           paragraphs: [
-            'If you have questions about this Privacy Policy, contact us at chenkaileyxy@gmail.com.',
+            'If you have questions about this Privacy Policy, contact us at support@cuylerchen.uk.',
           ],
         },
       ],
@@ -261,7 +261,7 @@ export const en: typeof zh = {
       title: 'Refund Policy',
       metaDescription: 'Refund and cancellation policy for Showrunner subscriptions.',
       intro: [
-        'This Refund Policy explains how refunds and cancellations for paid Showrunner subscriptions provided by costpilot are handled. All payments are processed by Creem, which acts as the merchant of record for purchases made through Showrunner checkout.',
+        'This Refund Policy explains how refunds and cancellations for paid Showrunner subscriptions are handled. All payments are processed by Creem, which acts as the merchant of record for purchases made through Showrunner checkout.',
       ],
       sections: [
         {
@@ -288,7 +288,7 @@ export const en: typeof zh = {
           title: '4. How to Request a Refund',
           paragraphs: ['If you believe you are eligible for a refund, you can:'],
           items: [
-            'email chenkaileyxy@gmail.com with your order email, Creem order ID, purchase date, and reason for the refund request;',
+            'email support@cuylerchen.uk with your order email, Creem order ID, purchase date, and reason for the refund request;',
             'use the management link in your Creem receipt, order page, or customer portal to submit or follow up on an order request; or',
             'contact Creem support at support@creem.io with your order information and communication history if you contacted Showrunner and did not receive a response within 7 days.',
           ],

@@ -25,7 +25,7 @@ function assertCreemLegalCopy(locale: typeof zh, labels: {
 }) {
   const copy = legalText(locale)
 
-  assert.match(copy, /costpilot/, 'legal copy should include the legal business name costpilot')
+  assert.match(copy, /Showrunner/, 'legal copy should include the Showrunner brand name')
   assert.match(copy, /Creem/, 'legal copy should describe Creem payment processing')
   assert.match(copy, /merchant of record/i, 'legal copy should describe Creem as merchant of record')
   assert.match(copy, /sales tax|VAT|GST|税费|增值税|消费税/i, 'legal copy should describe tax handling')

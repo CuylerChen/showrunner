@@ -48,10 +48,10 @@ async function main() {
   const enLegal = legalText(en)
   const zhLegal = legalText(zh)
 
-  assert.doesNotMatch(enLegal, /showrunner@cuylerchen\.uk/, 'English legal copy should not use the old support email')
-  assert.doesNotMatch(zhLegal, /showrunner@cuylerchen\.uk/, 'Chinese legal copy should not use the old support email')
-  assert.match(enLegal, /chenkaileyxy@gmail\.com/, 'English legal copy should use store business support email')
-  assert.match(zhLegal, /chenkaileyxy@gmail\.com/, 'Chinese legal copy should use store business support email')
+  assert.doesNotMatch(enLegal, /chenkaileyxy@gmail\.com/, 'English legal copy should not use the old Gmail support email')
+  assert.doesNotMatch(zhLegal, /chenkaileyxy@gmail\.com/, 'Chinese legal copy should not use the old Gmail support email')
+  assert.match(enLegal, /support@cuylerchen\.uk/, 'English legal copy should use the branded support email')
+  assert.match(zhLegal, /support@cuylerchen\.uk/, 'Chinese legal copy should use the branded support email')
 
   assert.match(enLegal, /OpenAI-compatible chat completion/i, 'English legal copy should disclose AI chat model/provider')
   assert.match(enLegal, /Kokoro|OpenAI-compatible TTS/i, 'English legal copy should disclose narration provider')
@@ -62,7 +62,7 @@ async function main() {
   assert.match(zhLegal, /NSFW|成人|色情|性露骨/, 'Chinese terms should prohibit NSFW/adult/sexually explicit content')
 
   const legalPageSource = read('src/components/legal-page.tsx')
-  assert.match(legalPageSource, /chenkaileyxy@gmail\.com/, 'legal page should auto-link the store support email')
+  assert.match(legalPageSource, /support@cuylerchen\.uk/, 'legal page should auto-link the branded support email')
 
   const envExample = read('.env.local.example')
   assert.match(envExample, /CREEM_API_KEY=/, 'env example should document CREEM_API_KEY')
