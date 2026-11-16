@@ -3,14 +3,14 @@
 ## 概览
 
 ```
-本地开发 → 提交 GitHub → SSH 服务器拉取 → Docker 重建
+本地开发 → 提交 GitHub → SSH 服务器拉取 → systemd 重启
 ```
 
 | 环境 | 地址 |
 |------|------|
 | 本地开发 | `http://localhost:3000` |
 | GitHub 仓库 | `https://github.com/CuylerChen/showrunner` |
-| 生产服务器 | `claude`（45.32.160.59） |
+| 生产服务器 | `contabo-gigacoder`（89.117.21.6:56522） |
 | 生产域名 | `https://showrunner.cuylerchen.uk` |
 
 ---
@@ -76,55 +76,41 @@ git push origin main
 ### 3.1 SSH 登录服务器
 
 ```bash
-ssh claude
-# 等价于：ssh root@45.32.160.59 -i ~/.ssh/id_rsa
+ssh contabo-gigacoder
+# 等价于：ssh -p 56522 root@89.117.21.6 -i ~/.ssh/id_rsa
 ```
 
 ### 3.2 进入项目目录，拉取代码
 
 ```bash
-cd /opt/showrunner
+cd /opt/showrunner/app
 git pull origin main
 ```
 
-### 3.3 重建并重启容器
+### 3.3 构建并重启服务
 
-**只改了前端代码（web/）**，只重建 web 容器：
+在服务器上优先使用本地的一键脚本。手动部署时：
 
-```bash
-docker compose up -d --build web
-```
-
-**同时改了 worker 代码（worker/）**：
+**只改了前端代码（web/）**：
 
 ```bash
-docker compose up -d --build web worker
+./scripts/deploy.sh web
 ```
 
-**全部重建（不常用）**：
+**同时改了 worker 代码**：
 
 ```bash
-docker compose up -d --build
+./scripts/deploy.sh all
 ```
+
+服务由 systemd 管理：`showrunner-web.service` 和 `showrunner-worker.service`。
 
 ### 3.4 验证部署成功
 
 ```bash
-# 查看容器状态（web 应显示 Up X seconds）
-docker ps
-
-# 查看 web 启动日志
-docker logs showrunner-web-1 --tail 20
-
-# 查看 worker 日志
-docker logs showrunner-worker-1 --tail 20
-```
-
-正常启动日志：
-
-```
-▲ Next.js 16.1.6
-✓ Ready in 152ms
+systemctl is-active showrunner-web.service showrunner-worker.service
+journalctl -u showrunner-web.service -n 20 --no-pager
+journalctl -u showrunner-worker.service -n 20 --no-pager
 ```
 
 ---
@@ -141,10 +127,10 @@ echo "==> 推送到 GitHub..."
 git push origin main
 
 echo "==> 部署到服务器..."
-ssh claude "cd /opt/showrunner && git pull origin main && docker compose up -d --build web"
+ssh contabo-gigacoder "cd /opt/showrunner/app && git pull origin main && systemctl restart showrunner-web.service"
 
 echo "==> 验证部署..."
-ssh claude "docker ps --format 'table {{.Names}}\t{{.Status}}'"
+ssh contabo-gigacoder "systemctl is-active showrunner-web.service showrunner-worker.service"
 
 echo "✓ 部署完成：https://showrunner.cuylerchen.uk"
 ```

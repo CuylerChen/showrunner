@@ -365,22 +365,15 @@ certbot renew --dry-run
 git push origin main
 
 # SSH 到服务器
-ssh claude   # 或 ssh root@<VPS_IP>
+ssh contabo-gigacoder   # 或 ssh -p 56522 root@89.117.21.6
 
 # 进入项目目录
-cd /opt/showrunner
+cd /opt/showrunner/app
 
-# 拉取最新代码
-git pull origin main
-
-# 重建 web（前端有改动时）
-docker compose up -d --build web
-
-# 重建 worker（后端有改动时）
-docker compose up -d --build worker
-
-# 同时重建两者
-docker compose up -d --build web worker
+# 推荐直接使用部署脚本
+./scripts/deploy.sh web    # 只部署前端
+./scripts/deploy.sh worker # 只部署 worker
+./scripts/deploy.sh all    # 两者都部署
 ```
 
 ---
