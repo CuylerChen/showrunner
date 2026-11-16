@@ -102,8 +102,8 @@ else
   echo -e "${YELLOW}请输入以下配置信息：${RESET}"
   echo ""
 
-  read -rp "  DeepSeek API Key (sk-...): " DEEPSEEK_KEY
-  [ -z "$DEEPSEEK_KEY" ] && warn "DeepSeek API Key 为空，AI 解析功能将无法使用"
+  read -rp "  Grok API Key (sk-...): " GROK_KEY
+  [ -z "$GROK_KEY" ] && warn "Grok API Key 为空，AI 解析功能将无法使用"
 
   read -rp "  应用访问地址 (例: https://your-domain.com 或 http://1.2.3.4): " APP_URL
   [ -z "$APP_URL" ] && APP_URL="http://$(curl -s ifconfig.me)"
@@ -125,8 +125,10 @@ JWT_SECRET=${JWT_SECRET}
 # ── Redis ─────────────────────────────────────────────────
 REDIS_URL=redis://redis:6379
 
-# ── DeepSeek AI ───────────────────────────────────────────
-DEEPSEEK_API_KEY=${DEEPSEEK_KEY}
+# ── Grok（产品分镜）──────────────────────────────────────
+GROK_API_BASE=https://api.tongxinyiliao.com/v1
+GROK_MODEL=grok-4.7
+GROK_API_KEY=${GROK_KEY}
 
 # ── 应用地址 ──────────────────────────────────────────────
 NEXT_PUBLIC_APP_URL=${APP_URL}

@@ -143,9 +143,10 @@ JWT_SECRET=<32位以上随机字符串，例如 openssl rand -base64 32 生成>
 # ── Redis ─────────────────────────────────────────────────
 REDIS_URL=redis://redis:6379
 
-# ── DeepSeek AI（步骤解析）────────────────────────────────
-# 申请地址：https://platform.deepseek.com/api_keys
-DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxxxxxx
+# ── Grok（产品分镜，OpenAI 兼容接口）────────────────────
+GROK_API_BASE=https://api.tongxinyiliao.com/v1
+GROK_MODEL=grok-4.7
+GROK_API_KEY=sk-xxxxxxxxxxxxxxxxxxxx
 
 # ── 应用地址（填写你的域名或 IP）──────────────────────────
 NEXT_PUBLIC_APP_URL=https://your-domain.com

@@ -142,9 +142,11 @@ export async function generateProductStoryScenes(
   input: ProductStoryInput,
   assets: ScreenshotAsset[],
 ): Promise<ProductStoryScene[]> {
-  const apiKey = process.env.DEEPSEEK_API_KEY
+  const apiKey = process.env.GROK_API_KEY
+  const apiBase = (process.env.GROK_API_BASE || 'https://api.tongxinyiliao.com/v1').replace(/\/$/, '')
+  const model = process.env.GROK_MODEL || 'grok-4.7'
   if (!apiKey) {
-    console.warn('[parser] DEEPSEEK_API_KEY missing, using product story fallback')
+    console.warn('[parser] GROK_API_KEY missing, using product story fallback')
     return fallbackProductStory(input, assets)
   }
 
@@ -183,14 +185,14 @@ Rules:
   ].filter(Boolean).join('\n\n')
 
   try {
-    const resp = await fetch('https://api.deepseek.com/chat/completions', {
+    const resp = await fetch(`${apiBase}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'deepseek-chat',
+        model,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage },
@@ -202,7 +204,7 @@ Rules:
 
     if (!resp.ok) {
       const errText = await resp.text()
-      throw new Error(`DeepSeek API error ${resp.status}: ${errText.slice(0, 200)}`)
+      throw new Error(`Grok API error ${resp.status}: ${errText.slice(0, 200)}`)
     }
 
     const data = await resp.json() as { choices?: Array<{ message?: { content?: string } }> }

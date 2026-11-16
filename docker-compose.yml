@@ -78,7 +78,9 @@ services:
       MYSQL_PASSWORD:    ${MYSQL_PASSWORD}
       MYSQL_DATABASE:    ${MYSQL_DATABASE}
       REDIS_URL:         redis://redis:6379
-      DEEPSEEK_API_KEY:   ${DEEPSEEK_API_KEY}
+      GROK_API_KEY:      ${GROK_API_KEY}
+      GROK_API_BASE:     ${GROK_API_BASE:-https://api.tongxinyiliao.com/v1}
+      GROK_MODEL:        ${GROK_MODEL:-grok-4.7}
       VIDEO_DIR:         /data/videos
     expose:
       - "3001"   # 内网 HTTP API，供 web 服务代理，不对外暴露

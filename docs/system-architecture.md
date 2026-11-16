@@ -184,7 +184,9 @@ DATABASE_URL=
 REDIS_URL=
 
 # AI
-DEEPSEEK_API_KEY=
+GROK_API_BASE=https://api.tongxinyiliao.com/v1
+GROK_MODEL=grok-4.7
+GROK_API_KEY=
 
 # LemonSqueezy
 LEMONSQUEEZY_API_KEY=
